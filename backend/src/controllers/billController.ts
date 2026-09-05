@@ -13,6 +13,10 @@ export async function listBills(req: Request, res: Response, next: NextFunction)
     if (req.query.status) where.status = req.query.status;
     if (req.query.vendorId) where.vendorId = req.query.vendorId;
 
+    if (req.user!.role === 'user') {
+      where.createdBy = req.user!.id;
+    }
+
     const [data, total] = await Promise.all([
       prisma.vendorBill.findMany({
         where,
@@ -39,6 +43,9 @@ export async function getBill(req: Request, res: Response, next: NextFunction) {
       },
     });
     if (!bill) throw new AppError('NOT_FOUND', 'Bill not found', 404);
+    if (req.user!.role === 'user' && bill.createdBy !== req.user!.id) {
+      throw new AppError('FORBIDDEN', 'You do not have access to this bill', 403);
+    }
     res.json({ data: bill });
   } catch (err) { next(err); }
 }
@@ -96,13 +103,16 @@ export async function confirmBill(req: Request, res: Response, next: NextFunctio
     if (bill.status !== 'draft') throw new AppError('INVALID_STATUS', 'Only draft bills can be confirmed', 400);
 
     const purchaseJournal = await prisma.journal.findFirst({ where: { journalType: 'purchase' } });
+    if (!purchaseJournal) throw new AppError('CONFIG_ERROR', 'Purchase journal not found', 500);
     const apAccount = await prisma.chartOfAccount.findFirst({ where: { name: 'Accounts Payable' } });
+    if (!apAccount) throw new AppError('CONFIG_ERROR', 'Accounts Payable account not found', 500);
     const purchaseExpense = await prisma.chartOfAccount.findFirst({ where: { name: 'Purchase Expense' } });
+    if (!purchaseExpense) throw new AppError('CONFIG_ERROR', 'Purchase Expense account not found', 500);
 
-    let journalEntryId = null;
-    if (purchaseJournal && apAccount && purchaseExpense) {
-      const entryNumber = await generateSequence('JE');
-      const entry = await prisma.journalEntry.create({
+    const entryNumber = await generateSequence('JE');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const entry = await tx.journalEntry.create({
         data: {
           entryNumber,
           accountingDate: new Date(),
@@ -113,22 +123,23 @@ export async function confirmBill(req: Request, res: Response, next: NextFunctio
           createdBy: req.user!.id,
           lines: {
             create: [
-              { accountId: purchaseExpense.id, debit: Number(bill.total), credit: 0, srNo: 1 },
-              { accountId: apAccount.id, debit: 0, credit: Number(bill.total), srNo: 2 },
+              { srNo: 1, accountId: purchaseExpense.id, debit: Number(bill.total), credit: 0 },
+              { srNo: 2, accountId: apAccount.id, debit: 0, credit: Number(bill.total) },
             ],
           },
         },
       });
-      journalEntryId = entry.id;
-    }
 
-    const updated = await prisma.vendorBill.update({
-      where: { id: req.params.id },
-      data: { status: 'confirmed', journalEntryId },
-      include: { billLines: true },
+      const updated = await tx.vendorBill.update({
+        where: { id: req.params.id },
+        data: { status: 'confirmed', journalEntryId: entry.id },
+        include: { billLines: true },
+      });
+
+      return updated;
     });
 
-    res.json({ data: updated });
+    res.json({ data: result });
   } catch (err) { next(err); }
 }
 

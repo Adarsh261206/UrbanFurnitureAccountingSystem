@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
-import { generateSequence } from '../services/sequenceService';
 
 export async function listBudgets(req: Request, res: Response, next: NextFunction) {
   try {
@@ -36,8 +35,64 @@ export async function getBudget(req: Request, res: Response, next: NextFunction)
       include: { responsible: true, analytical: true, revisions: true },
     });
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
-    res.json({ data: budget });
+
+    const achievedAmount = await calculateAchievement(budget);
+    const committedAmount = Number(budget.committedAmount) || 0;
+    const amountToAchieve = committedAmount > 0 ? committedAmount - achievedAmount : 0;
+    const achievedPercentage = committedAmount > 0 ? Math.round((achievedAmount / committedAmount) * 100) : 0;
+
+    res.json({
+      data: {
+        ...budget,
+        achievedAmount,
+        achievedPercentage,
+        amountToAchieve,
+      },
+    });
   } catch (err) { next(err); }
+}
+
+async function calculateAchievement(budget: any): Promise<number> {
+  const startDate = new Date(budget.startDate);
+  const endDate = new Date(budget.endDate);
+  const analyticalId = budget.analyticalId;
+  const type = budget.type;
+
+  if (type === 'income') {
+    const invoices = await prisma.customerInvoice.findMany({
+      where: {
+        status: { in: ['confirmed', 'paid'] },
+        date: { gte: startDate, lte: endDate },
+        invoiceLines: {
+          some: { budgetAnalyticId: analyticalId },
+        },
+      },
+      include: {
+        invoiceLines: { where: { budgetAnalyticId: analyticalId } },
+      },
+    });
+    return invoices.reduce((sum, inv) => {
+      const lineTotal = inv.invoiceLines.reduce((ls, l) => ls + Number(l.total), 0);
+      return sum + lineTotal;
+    }, 0);
+  } else {
+    const bills = await prisma.vendorBill.findMany({
+      where: {
+        status: { in: ['confirmed', 'paid'] },
+        date: { gte: startDate, lte: endDate },
+        billLines: {
+          some: { budgetAnalyticId: analyticalId },
+        },
+      },
+      include: {
+        billLines: { where: { budgetAnalyticId: analyticalId } },
+      },
+    });
+    return bills.reduce((sum, bill) => {
+      const lineTotal = bill.billLines.reduce((ls, l) => ls + Number(l.total), 0);
+      return sum + lineTotal;
+    }, 0);
+  }
 }
 
 export async function createBudget(req: Request, res: Response, next: NextFunction) {
@@ -70,9 +125,19 @@ export async function updateBudget(req: Request, res: Response, next: NextFuncti
       throw new AppError('INVALID_STATUS', 'Only draft or revised budgets can be updated', 400);
     }
 
+    const { name, responsibleId, startDate, endDate, type, analyticalId, committedAmount } = req.body;
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (responsibleId !== undefined) updateData.responsibleId = responsibleId;
+    if (startDate !== undefined) updateData.startDate = new Date(startDate);
+    if (endDate !== undefined) updateData.endDate = new Date(endDate);
+    if (type !== undefined) updateData.type = type;
+    if (analyticalId !== undefined) updateData.analyticalId = analyticalId;
+    if (committedAmount !== undefined) updateData.committedAmount = committedAmount ? parseFloat(committedAmount) : null;
+
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: updateData,
       include: { responsible: true, analytical: true },
     });
 

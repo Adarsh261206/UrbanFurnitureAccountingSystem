@@ -86,37 +86,43 @@ export async function confirmPurchaseOrder(req: Request, res: Response, next: Ne
     if (!order) throw new AppError('NOT_FOUND', 'Purchase order not found', 404);
     if (order.status === 'confirmed') throw new AppError('ALREADY_CONFIRMED', 'Purchase order is already confirmed', 400);
 
-    const updated = await prisma.purchaseOrder.update({
-      where: { id: req.params.id },
-      data: { status: 'confirmed' },
-      include: { purchaseOrderLines: true },
-    });
-
-    const purchaseJournal = await prisma.journal.findFirst({ where: { journalType: 'purchase' } });
+    const journal = await prisma.journal.findFirst({ where: { journalType: 'purchase' } });
+    if (!journal) throw new AppError('CONFIG_ERROR', 'Purchase journal not found', 500);
     const apAccount = await prisma.chartOfAccount.findFirst({ where: { name: 'Accounts Payable' } });
+    if (!apAccount) throw new AppError('CONFIG_ERROR', 'Accounts Payable account not found', 500);
     const purchaseExpense = await prisma.chartOfAccount.findFirst({ where: { name: 'Purchase Expense' } });
+    if (!purchaseExpense) throw new AppError('CONFIG_ERROR', 'Purchase Expense account not found', 500);
 
-    if (purchaseJournal && apAccount && purchaseExpense) {
-      const entryNumber = await generateSequence('JE');
-      await prisma.journalEntry.create({
+    const entryNumber = await generateSequence('JE');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updated = await tx.purchaseOrder.update({
+        where: { id: req.params.id },
+        data: { status: 'confirmed' },
+        include: { purchaseOrderLines: true },
+      });
+
+      await tx.journalEntry.create({
         data: {
           entryNumber,
           accountingDate: new Date(),
-          journalId: purchaseJournal.id,
+          journalId: journal.id,
           sourceDocumentType: 'purchase_order',
           sourceDocumentId: order.id,
           status: 'posted',
           createdBy: req.user!.id,
           lines: {
             create: [
-              { accountId: purchaseExpense.id, debit: Number(order.total), credit: 0, srNo: 1 },
-              { accountId: apAccount.id, debit: 0, credit: Number(order.total), srNo: 2 },
+              { srNo: 1, accountId: purchaseExpense.id, debit: Number(order.total), credit: 0 },
+              { srNo: 2, accountId: apAccount.id, debit: 0, credit: Number(order.total) },
             ],
           },
         },
       });
-    }
 
-    res.json({ data: updated });
+      return updated;
+    });
+
+    res.json({ data: result });
   } catch (err) { next(err); }
 }

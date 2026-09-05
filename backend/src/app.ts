@@ -17,6 +17,7 @@ import billRoutes from './routes/bills';
 import paymentRoutes from './routes/payments';
 import budgetRoutes from './routes/budgets';
 import dashboardRoutes from './routes/dashboard';
+import reportRoutes from './routes/reports';
 import uploadRoutes from './routes/upload';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/v1/bills', billRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/budgets', budgetRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1', uploadRoutes);
 
 app.use(errorHandler);

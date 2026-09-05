@@ -13,6 +13,10 @@ export async function listInvoices(req: Request, res: Response, next: NextFuncti
     if (req.query.status) where.status = req.query.status;
     if (req.query.customerId) where.customerId = req.query.customerId;
 
+    if (req.user!.role === 'user') {
+      where.createdBy = req.user!.id;
+    }
+
     const [data, total] = await Promise.all([
       prisma.customerInvoice.findMany({
         where,
@@ -39,6 +43,9 @@ export async function getInvoice(req: Request, res: Response, next: NextFunction
       },
     });
     if (!invoice) throw new AppError('NOT_FOUND', 'Invoice not found', 404);
+    if (req.user!.role === 'user' && invoice.createdBy !== req.user!.id) {
+      throw new AppError('FORBIDDEN', 'You do not have access to this invoice', 403);
+    }
     res.json({ data: invoice });
   } catch (err) { next(err); }
 }
@@ -97,13 +104,16 @@ export async function confirmInvoice(req: Request, res: Response, next: NextFunc
     if (invoice.status !== 'draft') throw new AppError('INVALID_STATUS', 'Only draft invoices can be confirmed', 400);
 
     const salesJournal = await prisma.journal.findFirst({ where: { journalType: 'sale' } });
+    if (!salesJournal) throw new AppError('CONFIG_ERROR', 'Sale journal not found', 500);
     const arAccount = await prisma.chartOfAccount.findFirst({ where: { name: 'Accounts Receivable' } });
+    if (!arAccount) throw new AppError('CONFIG_ERROR', 'Accounts Receivable account not found', 500);
     const salesRevenue = await prisma.chartOfAccount.findFirst({ where: { name: 'Sales Revenue' } });
+    if (!salesRevenue) throw new AppError('CONFIG_ERROR', 'Sales Revenue account not found', 500);
 
-    let journalEntryId = null;
-    if (salesJournal && arAccount && salesRevenue) {
-      const entryNumber = await generateSequence('JE');
-      const entry = await prisma.journalEntry.create({
+    const entryNumber = await generateSequence('JE');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const entry = await tx.journalEntry.create({
         data: {
           entryNumber,
           accountingDate: new Date(),
@@ -114,22 +124,23 @@ export async function confirmInvoice(req: Request, res: Response, next: NextFunc
           createdBy: req.user!.id,
           lines: {
             create: [
-              { accountId: arAccount.id, debit: Number(invoice.total), credit: 0, srNo: 1 },
-              { accountId: salesRevenue.id, debit: 0, credit: Number(invoice.total), srNo: 2 },
+              { srNo: 1, accountId: arAccount.id, debit: Number(invoice.total), credit: 0 },
+              { srNo: 2, accountId: salesRevenue.id, debit: 0, credit: Number(invoice.total) },
             ],
           },
         },
       });
-      journalEntryId = entry.id;
-    }
 
-    const updated = await prisma.customerInvoice.update({
-      where: { id: req.params.id },
-      data: { status: 'confirmed', journalEntryId },
-      include: { invoiceLines: true },
+      const updated = await tx.customerInvoice.update({
+        where: { id: req.params.id },
+        data: { status: 'confirmed', journalEntryId: entry.id },
+        include: { invoiceLines: true },
+      });
+
+      return updated;
     });
 
-    res.json({ data: updated });
+    res.json({ data: result });
   } catch (err) { next(err); }
 }
 

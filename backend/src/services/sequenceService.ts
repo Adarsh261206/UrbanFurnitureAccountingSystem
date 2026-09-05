@@ -1,51 +1,52 @@
 import prisma from '../config/database';
 
-const sequencePrefixes: Record<string, string> = {
-  SO: 'SO',
-  INV: 'INV',
-  PO: 'PO',
-  BILL: 'BILL',
-  PAY: 'PAY',
-  JE: 'JE',
-  BUDGET: 'BUDGET',
+interface SequenceConfig {
+  prefix: string;
+  model: string;
+  field: string;
+}
+
+const SEQUENCE_CONFIG: Record<string, SequenceConfig> = {
+  SO: { prefix: 'SO', model: 'salesOrder', field: 'soNumber' },
+  INV: { prefix: 'INV', model: 'customerInvoice', field: 'invoiceReference' },
+  PO: { prefix: 'PO', model: 'purchaseOrder', field: 'poNumber' },
+  BILL: { prefix: 'BILL', model: 'vendorBill', field: 'billReference' },
+  PAY: { prefix: 'PAY', model: 'payment', field: 'paymentNumber' },
+  JE: { prefix: 'JE', model: 'journalEntry', field: 'entryNumber' },
 };
 
-const sequenceNames: Record<string, string> = {
-  SO: 'sales_order',
-  INV: 'customer_invoice',
-  PO: 'purchase_order',
-  BILL: 'vendor_bill',
-  PAY: 'payment',
-  JE: 'journal_entry',
-  BUDGET: 'budget',
-};
-
-let sequenceCounters: Record<string, number> = {};
+const sequenceCounters: Record<string, number> = {};
 
 export async function generateSequence(prefix: string): Promise<string> {
-  const seqName = sequenceNames[prefix];
-  if (!seqName) throw new Error(`Unknown sequence prefix: ${prefix}`);
+  const config = SEQUENCE_CONFIG[prefix];
+  if (!config) throw new Error(`Unknown sequence prefix: ${prefix}`);
 
-  if (!sequenceCounters[seqName]) {
-    const lastEntry = await (prisma as any).journalEntry.findFirst({
-      where: { entryNumber: { startsWith: `${prefix}-` } },
-      orderBy: { entryNumber: 'desc' },
+  if (sequenceCounters[config.prefix] === undefined) {
+    const model = (prisma as any)[config.model];
+    if (!model) throw new Error(`Prisma model not found: ${config.model}`);
+
+    const lastRecord = await model.findFirst({
+      where: { [config.field]: { startsWith: `${config.prefix}-` } },
+      orderBy: { [config.field]: 'desc' },
+      select: { [config.field]: true },
     });
-    if (lastEntry) {
-      const num = parseInt(lastEntry.entryNumber.split('-')[1]) || 0;
-      sequenceCounters[seqName] = num;
+
+    if (lastRecord && lastRecord[config.field]) {
+      const num = parseInt(lastRecord[config.field].split('-')[1]) || 0;
+      sequenceCounters[config.prefix] = num;
     } else {
-      sequenceCounters[seqName] = 0;
+      sequenceCounters[config.prefix] = 0;
     }
   }
 
-  sequenceCounters[seqName]++;
-  const padded = String(sequenceCounters[seqName]).padStart(5, '0');
-  return `${prefix}-${padded}`;
+  sequenceCounters[config.prefix]++;
+  const padded = String(sequenceCounters[config.prefix]).padStart(5, '0');
+  return `${config.prefix}-${padded}`;
 }
 
-export async function generateSequenceForEntity(entity: string): Promise<string> {
-  const prefix = sequencePrefixes[entity];
-  if (!prefix) throw new Error(`Unknown entity: ${entity}`);
-  return generateSequence(prefix);
+export function resetSequenceCounter(prefix: string): void {
+  const config = SEQUENCE_CONFIG[prefix];
+  if (config) {
+    delete sequenceCounters[config.prefix];
+  }
 }
