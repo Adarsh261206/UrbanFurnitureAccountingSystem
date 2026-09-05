@@ -108,9 +108,9 @@
   --sidebar-accent-foreground: #714b67;
   --sidebar-border: #e8ebef;
   --sidebar-ring: #714b67;
-  --navbar: #1f2530;
+  --navbar: #714b67;
   --navbar-foreground: #ffffff;
-  --navbar-muted: #8f8f8f;
+  --navbar-muted: #d8c8d3;
 }
 
 .dark {
@@ -152,9 +152,9 @@
   --sidebar-accent-foreground: #cba0be;
   --sidebar-border: #2c3036;
   --sidebar-ring: #9d6a90;
-  --navbar: #17181b;
-  --navbar-foreground: #eef0f3;
-  --navbar-muted: #9aa3ad;
+  --navbar: #5e3c55;
+  --navbar-foreground: #ffffff;
+  --navbar-muted: #cba0be;
 }
 
 @layer base {

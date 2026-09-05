@@ -288,21 +288,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top header */}
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center border-b border-sidebar-border bg-navbar px-4 text-navbar-foreground sm:px-6">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center border-b border-white/10 bg-navbar px-4 text-navbar-foreground sm:px-6">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 lg:hidden"
+          className="h-8 w-8 text-navbar-foreground/90 hover:bg-white/10 hover:text-white lg:hidden"
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
         >
           <Menu className="size-4" />
         </Button>
         <Link to="/dashboard" className="mr-4 flex shrink-0 items-center gap-2.5">
-          <span className="flex size-7 items-center justify-center rounded-md bg-primary text-[11px] font-bold text-primary-foreground">
+          <span className="flex size-7 items-center justify-center rounded-md bg-white text-[11px] font-bold text-[#714b67]">
             UF
           </span>
-          <span className="hidden text-[15px] font-bold tracking-tight sm:block">
+          <span className="hidden text-[15px] font-bold tracking-tight text-white sm:block">
             Urban Furniture
             <span className="ml-2 hidden text-[11px] font-medium uppercase tracking-[0.08em] text-navbar-muted md:inline">
               Accounting
@@ -315,19 +315,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <GlobalSearch items={searchItems} onNavigate={() => setMobileOpen(false)} />
           {/* Notifications */}
           <NotificationsBell />
-          <div className="hidden items-center gap-2.5 rounded-md border border-border bg-card py-1 pl-1.5 pr-3 sm:flex">
-            <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+          <div className="hidden items-center gap-2.5 rounded-md border border-white/25 bg-white/10 py-1 pl-1.5 pr-3 backdrop-blur-sm sm:flex">
+            <span className="flex size-6 items-center justify-center rounded-full bg-white/25 text-[10px] font-bold text-white">
               {user?.login_id ? initials(user.login_id) : "U"}
             </span>
-            <span className="text-[13px] font-medium text-foreground">{user?.login_id}</span>
-            <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secondary-foreground">
+            <span className="text-[13px] font-medium text-white">{user?.login_id}</span>
+            <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
               {user?.role}
             </span>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-navbar-muted hover:bg-muted hover:text-foreground"
+            className="h-8 text-navbar-muted hover:bg-white/10 hover:text-white"
             onClick={() => void logout()}
           >
             <LogOut className="size-3.5" aria-hidden />
@@ -411,7 +411,7 @@ function GlobalSearch({
   return (
     <div className="relative hidden md:block">
       <Search
-        className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-navbar-muted"
         aria-hidden
       />
       <input
@@ -428,7 +428,7 @@ function GlobalSearch({
         }}
         placeholder="Search modules…"
         aria-label="Search modules"
-        className="h-8 w-44 rounded-md border border-border bg-card pl-8 pr-3 text-[13px] text-foreground shadow-sm transition-[width] focus:w-64 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
+        className="h-8 w-44 rounded-md border border-white/25 bg-white/10 pl-8 pr-3 text-[13px] text-white placeholder:text-navbar-muted shadow-sm backdrop-blur-sm transition-[width] focus:w-64 focus:border-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
       />
       {open && matches.length > 0 ? (
         <ul className="absolute right-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-lg border bg-popover py-1 shadow-md">
@@ -457,7 +457,7 @@ function NotificationsBell() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-navbar-muted hover:bg-muted hover:text-foreground"
+        className="h-8 w-8 text-navbar-muted hover:bg-white/10 hover:text-white"
         aria-label="Notifications"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
