@@ -71,14 +71,14 @@ function DashboardPage() {
           <>
             <Link
               to="/invoices/new"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-secondary px-3.5 text-[13px] font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-[#5e3c55]"
             >
               <Plus className="size-4" aria-hidden />
               New Invoice
             </Link>
             <Link
               to="/bills/new"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-secondary px-3.5 text-[13px] font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-card px-3.5 text-[13px] font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <Plus className="size-4" aria-hidden />
               New Bill
