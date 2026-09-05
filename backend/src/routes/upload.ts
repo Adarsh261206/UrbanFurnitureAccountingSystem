@@ -49,8 +49,11 @@ router.post('/upload', (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: { code: 'NO_FILE', message: 'No file uploaded', field: 'file', details: {} } });
     }
+    // Uploads are served by THIS backend (app.use('/uploads', static)).
+    // Always build the URL from the request host, not the frontend APP_URL.
+    const base = `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
     res.json({
-      url: `/uploads/${req.file.filename}`,
+      url: `${base}/uploads/${req.file.filename}`,
     });
   });
 });

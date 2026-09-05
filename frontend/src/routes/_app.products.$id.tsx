@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
+import { imgUrl } from "@/lib/imgUrl";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -385,7 +386,7 @@ function Page() {
               images.map((img) => (
                 <div key={img.id} className="group relative overflow-hidden rounded-md border">
                   <img
-                    src={img.image_url}
+                    src={imgUrl(img.image_url) ?? ""}
                     alt=""
                     loading="lazy"
                     className="h-32 w-full object-cover"

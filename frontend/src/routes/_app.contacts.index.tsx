@@ -20,6 +20,7 @@ import { contactsService } from "@/services/masterDataService";
 import { date as fmtDate } from "@/lib/format";
 import type { Contact, ContactType } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { imgUrl } from "@/lib/imgUrl";
 
 export const Route = createFileRoute("/_app/contacts/")({
   head: () => ({
@@ -175,7 +176,7 @@ function Page() {
                   <div className="flex items-center gap-3">
                     {c.image_url ? (
                       <img
-                        src={c.image_url}
+                        src={imgUrl(c.image_url) ?? ""}
                         alt=""
                         loading="lazy"
                         className="size-10 rounded-full object-cover"

@@ -17,6 +17,7 @@ import {
   ShoppingCart,
   Tag,
   Users,
+  Mail,
   Wallet,
   X,
 } from "lucide-react";
@@ -135,7 +136,10 @@ const TABS: { group: string; items: NavItem[] }[] = [
   },
   {
     group: "Administration",
-    items: [{ label: "Users", to: "/users", icon: Users, roles: ["admin"] }],
+    items: [
+      { label: "Users", to: "/users", icon: Users, roles: ["admin"] },
+      { label: "SMTP Settings", to: "/settings/smtp", icon: Mail, roles: ["admin"] },
+    ],
   },
 ];
 

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadService } from "@/services/reportsService";
+import { imgUrl } from "@/lib/imgUrl";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +43,7 @@ export function ImageUpload({
       <div className="flex items-center gap-3">
         {value ? (
           <div className="relative h-16 w-16 overflow-hidden rounded-md border border-border">
-            <img src={value} alt="" className="h-full w-full object-cover" />
+            <img src={imgUrl(value) ?? ""} alt="" className="h-full w-full object-cover" />
             <button
               type="button"
               onClick={() => onChange("")}

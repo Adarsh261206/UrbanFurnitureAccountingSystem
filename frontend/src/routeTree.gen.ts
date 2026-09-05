@@ -51,6 +51,7 @@ import { Route as AppReportsProfitAndLossRouteImport } from './routes/_app.repor
 import { Route as AppSalesOrdersIndexRouteImport } from './routes/_app.sales-orders.index'
 import { Route as AppSalesOrdersIdRouteImport } from './routes/_app.sales-orders.$id'
 import { Route as AppSalesOrdersNewRouteImport } from './routes/_app.sales-orders.new'
+import { Route as AppSettingsSmtpRouteImport } from './routes/_app.settings.smtp'
 import { Route as AppUsersIndexRouteImport } from './routes/_app.users.index'
 import { Route as AppUsersNewRouteImport } from './routes/_app.users.new'
 import { Route as AppBillsIdIndexRouteImport } from './routes/_app.bills.$id.index'
@@ -267,6 +268,11 @@ const AppSalesOrdersNewRoute = AppSalesOrdersNewRouteImport.update({
   path: '/sales-orders/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsSmtpRoute = AppSettingsSmtpRouteImport.update({
+  id: '/settings/smtp',
+  path: '/settings/smtp',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppUsersIndexRoute = AppUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
+  '/settings/smtp': typeof AppSettingsSmtpRoute
   '/users/new': typeof AppUsersNewRoute
   '/analyticals/': typeof AppAnalyticalsIndexRoute
   '/bills/': typeof AppBillsIndexRoute
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
+  '/settings/smtp': typeof AppSettingsSmtpRoute
   '/users/new': typeof AppUsersNewRoute
   '/analyticals': typeof AppAnalyticalsIndexRoute
   '/bills': typeof AppBillsIndexRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/_app/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
   '/_app/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/_app/sales-orders/new': typeof AppSalesOrdersNewRoute
+  '/_app/settings/smtp': typeof AppSettingsSmtpRoute
   '/_app/users/new': typeof AppUsersNewRoute
   '/_app/analyticals/': typeof AppAnalyticalsIndexRoute
   '/_app/bills/': typeof AppBillsIndexRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/reports/profit-and-loss'
     | '/sales-orders/$id'
     | '/sales-orders/new'
+    | '/settings/smtp'
     | '/users/new'
     | '/analyticals/'
     | '/bills/'
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/reports/profit-and-loss'
     | '/sales-orders/$id'
     | '/sales-orders/new'
+    | '/settings/smtp'
     | '/users/new'
     | '/analyticals'
     | '/bills'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/_app/reports/profit-and-loss'
     | '/_app/sales-orders/$id'
     | '/_app/sales-orders/new'
+    | '/_app/settings/smtp'
     | '/_app/users/new'
     | '/_app/analyticals/'
     | '/_app/bills/'
@@ -903,6 +915,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSalesOrdersNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/smtp': {
+      id: '/_app/settings/smtp'
+      path: '/settings/smtp'
+      fullPath: '/settings/smtp'
+      preLoaderRoute: typeof AppSettingsSmtpRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/users/': {
       id: '/_app/users/'
       path: '/users'
@@ -971,6 +990,7 @@ interface AppRouteChildren {
   AppReportsProfitAndLossRoute: typeof AppReportsProfitAndLossRoute
   AppSalesOrdersIdRoute: typeof AppSalesOrdersIdRoute
   AppSalesOrdersNewRoute: typeof AppSalesOrdersNewRoute
+  AppSettingsSmtpRoute: typeof AppSettingsSmtpRoute
   AppUsersNewRoute: typeof AppUsersNewRoute
   AppAnalyticalsIndexRoute: typeof AppAnalyticalsIndexRoute
   AppBillsIndexRoute: typeof AppBillsIndexRoute
@@ -1016,6 +1036,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsProfitAndLossRoute: AppReportsProfitAndLossRoute,
   AppSalesOrdersIdRoute: AppSalesOrdersIdRoute,
   AppSalesOrdersNewRoute: AppSalesOrdersNewRoute,
+  AppSettingsSmtpRoute: AppSettingsSmtpRoute,
   AppUsersNewRoute: AppUsersNewRoute,
   AppAnalyticalsIndexRoute: AppAnalyticalsIndexRoute,
   AppBillsIndexRoute: AppBillsIndexRoute,

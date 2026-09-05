@@ -592,3 +592,12 @@ model Sequence {
   @@unique([name, year])
   @@map("sequences")
 }
+
+model AppSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("app_settings")
+}

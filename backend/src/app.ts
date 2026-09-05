@@ -20,6 +20,7 @@ import budgetRoutes from './routes/budgets';
 import dashboardRoutes from './routes/dashboard';
 import reportRoutes from './routes/reports';
 import uploadRoutes from './routes/upload';
+import settingsRoutes from './routes/settings';
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/v1/budgets', budgetRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1', uploadRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 app.use(errorHandler);
 
