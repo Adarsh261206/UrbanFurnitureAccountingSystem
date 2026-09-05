@@ -39,11 +39,13 @@ import { Route as AppProductsIndexRouteImport } from './routes/_app.products.ind
 import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
 import { Route as AppProductsNewRouteImport } from './routes/_app.products.new'
 import { Route as AppPurchaseOrdersIndexRouteImport } from './routes/_app.purchase-orders.index'
+import { Route as AppPurchaseOrdersIdRouteImport } from './routes/_app.purchase-orders.$id'
 import { Route as AppPurchaseOrdersNewRouteImport } from './routes/_app.purchase-orders.new'
 import { Route as AppReportsBalanceSheetRouteImport } from './routes/_app.reports.balance-sheet'
 import { Route as AppReportsBudgetReportRouteImport } from './routes/_app.reports.budget-report'
 import { Route as AppReportsProfitAndLossRouteImport } from './routes/_app.reports.profit-and-loss'
 import { Route as AppSalesOrdersIndexRouteImport } from './routes/_app.sales-orders.index'
+import { Route as AppSalesOrdersIdRouteImport } from './routes/_app.sales-orders.$id'
 import { Route as AppSalesOrdersNewRouteImport } from './routes/_app.sales-orders.new'
 import { Route as AppUsersIndexRouteImport } from './routes/_app.users.index'
 import { Route as AppUsersNewRouteImport } from './routes/_app.users.new'
@@ -201,6 +203,11 @@ const AppPurchaseOrdersIndexRoute = AppPurchaseOrdersIndexRouteImport.update({
   path: '/purchase-orders/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPurchaseOrdersIdRoute = AppPurchaseOrdersIdRouteImport.update({
+  id: '/purchase-orders/$id',
+  path: '/purchase-orders/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPurchaseOrdersNewRoute = AppPurchaseOrdersNewRouteImport.update({
   id: '/purchase-orders/new',
   path: '/purchase-orders/new',
@@ -224,6 +231,11 @@ const AppReportsProfitAndLossRoute = AppReportsProfitAndLossRouteImport.update({
 const AppSalesOrdersIndexRoute = AppSalesOrdersIndexRouteImport.update({
   id: '/sales-orders/',
   path: '/sales-orders/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSalesOrdersIdRoute = AppSalesOrdersIdRouteImport.update({
+  id: '/sales-orders/$id',
+  path: '/sales-orders/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSalesOrdersNewRoute = AppSalesOrdersNewRouteImport.update({
@@ -280,10 +292,12 @@ export interface FileRoutesByFullPath {
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
+  '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
   '/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/reports/budget-report': typeof AppReportsBudgetReportRoute
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/users/new': typeof AppUsersNewRoute
   '/analyticals/': typeof AppAnalyticalsIndexRoute
@@ -323,10 +337,12 @@ export interface FileRoutesByTo {
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
+  '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
   '/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/reports/budget-report': typeof AppReportsBudgetReportRoute
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/users/new': typeof AppUsersNewRoute
   '/analyticals': typeof AppAnalyticalsIndexRoute
@@ -368,10 +384,12 @@ export interface FileRoutesById {
   '/_app/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/products/new': typeof AppProductsNewRoute
+  '/_app/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/_app/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
   '/_app/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/_app/reports/budget-report': typeof AppReportsBudgetReportRoute
   '/_app/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/_app/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/_app/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/_app/users/new': typeof AppUsersNewRoute
   '/_app/analyticals/': typeof AppAnalyticalsIndexRoute
@@ -413,10 +431,12 @@ export interface FileRouteTypes {
     | '/journal-entries/new'
     | '/products/$id'
     | '/products/new'
+    | '/purchase-orders/$id'
     | '/purchase-orders/new'
     | '/reports/balance-sheet'
     | '/reports/budget-report'
     | '/reports/profit-and-loss'
+    | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/users/new'
     | '/analyticals/'
@@ -456,10 +476,12 @@ export interface FileRouteTypes {
     | '/journal-entries/new'
     | '/products/$id'
     | '/products/new'
+    | '/purchase-orders/$id'
     | '/purchase-orders/new'
     | '/reports/balance-sheet'
     | '/reports/budget-report'
     | '/reports/profit-and-loss'
+    | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/users/new'
     | '/analyticals'
@@ -500,10 +522,12 @@ export interface FileRouteTypes {
     | '/_app/journal-entries/new'
     | '/_app/products/$id'
     | '/_app/products/new'
+    | '/_app/purchase-orders/$id'
     | '/_app/purchase-orders/new'
     | '/_app/reports/balance-sheet'
     | '/_app/reports/budget-report'
     | '/_app/reports/profit-and-loss'
+    | '/_app/sales-orders/$id'
     | '/_app/sales-orders/new'
     | '/_app/users/new'
     | '/_app/analyticals/'
@@ -746,6 +770,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPurchaseOrdersIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/purchase-orders/$id': {
+      id: '/_app/purchase-orders/$id'
+      path: '/purchase-orders/$id'
+      fullPath: '/purchase-orders/$id'
+      preLoaderRoute: typeof AppPurchaseOrdersIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/purchase-orders/new': {
       id: '/_app/purchase-orders/new'
       path: '/purchase-orders/new'
@@ -779,6 +810,13 @@ declare module '@tanstack/react-router' {
       path: '/sales-orders'
       fullPath: '/sales-orders/'
       preLoaderRoute: typeof AppSalesOrdersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/sales-orders/$id': {
+      id: '/_app/sales-orders/$id'
+      path: '/sales-orders/$id'
+      fullPath: '/sales-orders/$id'
+      preLoaderRoute: typeof AppSalesOrdersIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sales-orders/new': {
@@ -847,10 +885,12 @@ interface AppRouteChildren {
   AppJournalEntriesNewRoute: typeof AppJournalEntriesNewRoute
   AppProductsIdRoute: typeof AppProductsIdRoute
   AppProductsNewRoute: typeof AppProductsNewRoute
+  AppPurchaseOrdersIdRoute: typeof AppPurchaseOrdersIdRoute
   AppPurchaseOrdersNewRoute: typeof AppPurchaseOrdersNewRoute
   AppReportsBalanceSheetRoute: typeof AppReportsBalanceSheetRoute
   AppReportsBudgetReportRoute: typeof AppReportsBudgetReportRoute
   AppReportsProfitAndLossRoute: typeof AppReportsProfitAndLossRoute
+  AppSalesOrdersIdRoute: typeof AppSalesOrdersIdRoute
   AppSalesOrdersNewRoute: typeof AppSalesOrdersNewRoute
   AppUsersNewRoute: typeof AppUsersNewRoute
   AppAnalyticalsIndexRoute: typeof AppAnalyticalsIndexRoute
@@ -887,10 +927,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppJournalEntriesNewRoute: AppJournalEntriesNewRoute,
   AppProductsIdRoute: AppProductsIdRoute,
   AppProductsNewRoute: AppProductsNewRoute,
+  AppPurchaseOrdersIdRoute: AppPurchaseOrdersIdRoute,
   AppPurchaseOrdersNewRoute: AppPurchaseOrdersNewRoute,
   AppReportsBalanceSheetRoute: AppReportsBalanceSheetRoute,
   AppReportsBudgetReportRoute: AppReportsBudgetReportRoute,
   AppReportsProfitAndLossRoute: AppReportsProfitAndLossRoute,
+  AppSalesOrdersIdRoute: AppSalesOrdersIdRoute,
   AppSalesOrdersNewRoute: AppSalesOrdersNewRoute,
   AppUsersNewRoute: AppUsersNewRoute,
   AppAnalyticalsIndexRoute: AppAnalyticalsIndexRoute,

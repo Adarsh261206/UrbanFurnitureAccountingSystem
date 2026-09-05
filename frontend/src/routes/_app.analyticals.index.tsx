@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_app/analyticals/")({
       { title: "Analyticals — Urban Furniture Accounting" },
       {
         name: "description",
-        content: "Analytical accounts used for budget and cost tracking in Urban Furniture Accounting.",
+        content:
+          "Analytical accounts used for budget and cost tracking in Urban Furniture Accounting.",
       },
       { property: "og:title", content: "Analyticals — Urban Furniture Accounting" },
       { property: "og:description", content: "Analytical accounts for budget and cost tracking." },
@@ -54,6 +55,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Analyticals"
+        crumbs={[{ label: "Master Settings" }, { label: "Analyticals" }]}
         description="Analytical accounts available for budgets and document lines."
         actions={<Button onClick={() => navigate({ to: "/analyticals/new" })}>New</Button>}
       />
@@ -66,7 +68,9 @@ function Page() {
         <EmptyState
           title="No analytical accounts yet"
           description="Create an analytical account to track budgets and costs."
-          action={<Button onClick={() => navigate({ to: "/analyticals/new" })}>New analytical</Button>}
+          action={
+            <Button onClick={() => navigate({ to: "/analyticals/new" })}>New analytical</Button>
+          }
         />
       ) : (
         <DataTable

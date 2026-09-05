@@ -25,28 +25,55 @@ export const Route = createFileRoute("/_app/journals/")({
 
 function Page() {
   const journalsQuery = useQuery({ queryKey: ["journals"], queryFn: () => journalsService.list() });
-  const accountsQuery = useQuery({ queryKey: ["chart-of-accounts"], queryFn: () => accountsService.list() });
+  const accountsQuery = useQuery({
+    queryKey: ["chart-of-accounts"],
+    queryFn: () => accountsService.list(),
+  });
 
   const accountName = (id: string) => accountsQuery.data?.find((a) => a.id === id)?.name ?? id;
 
   const columns: Column<Journal>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
-    { key: "journal_type", header: "Type", cell: (r) => <span className="capitalize">{r.journal_type}</span> },
-    { key: "default_account_id", header: "Default account", cell: (r) => accountName(r.default_account_id) },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
+    {
+      key: "journal_type",
+      header: "Type",
+      cell: (r) => <span className="capitalize">{r.journal_type}</span>,
+    },
+    {
+      key: "default_account_id",
+      header: "Default account",
+      cell: (r) => accountName(r.default_account_id),
+    },
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Journals" description="Journals used to record accounting entries." />
+      <PageHeader
+        title="Journals"
+        crumbs={[{ label: "Account" }, { label: "Journals" }]}
+        description="Journals used to record accounting entries."
+      />
 
       {journalsQuery.isLoading ? (
         <LoadingState label="Loading journals" />
       ) : journalsQuery.isError ? (
         <ErrorState error={journalsQuery.error} onRetry={() => journalsQuery.refetch()} />
       ) : journalsQuery.data && journalsQuery.data.length > 0 ? (
-        <DataTable columns={columns} rows={journalsQuery.data} rowKey={(r) => r.id} caption="Journals" />
+        <DataTable
+          columns={columns}
+          rows={journalsQuery.data}
+          rowKey={(r) => r.id}
+          caption="Journals"
+        />
       ) : (
-        <EmptyState title="No journals yet" description="Journals will appear here once configured." />
+        <EmptyState
+          title="No journals yet"
+          description="Journals will appear here once configured."
+        />
       )}
     </div>
   );

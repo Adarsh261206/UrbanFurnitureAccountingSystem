@@ -14,9 +14,15 @@ export const Route = createFileRoute("/_app/chart-of-accounts/")({
   head: () => ({
     meta: [
       { title: "Chart of accounts — Urban Furniture Accounting" },
-      { name: "description", content: "Chart of accounts in the Urban Furniture Accounting System." },
+      {
+        name: "description",
+        content: "Chart of accounts in the Urban Furniture Accounting System.",
+      },
       { property: "og:title", content: "Chart of accounts — Urban Furniture Accounting" },
-      { property: "og:description", content: "Chart of accounts in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "Chart of accounts in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -34,7 +40,11 @@ function Page() {
   });
 
   const columns: Column<ChartOfAccount>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
     { key: "account_type", header: "Type", cell: (r) => <StatusBadge status={r.account_type} /> },
   ];
 
@@ -42,6 +52,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Chart of accounts"
+        crumbs={[{ label: "Account" }, { label: "Chart of Accounts" }]}
         description="Ledger accounts used across journals, invoices and bills."
         actions={
           <Button onClick={() => navigate({ to: "/chart-of-accounts/new" })}>
@@ -55,7 +66,12 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.length > 0 ? (
-        <DataTable columns={columns} rows={query.data} rowKey={(r) => r.id} caption="Chart of accounts" />
+        <DataTable
+          columns={columns}
+          rows={query.data}
+          rowKey={(r) => r.id}
+          caption="Chart of accounts"
+        />
       ) : (
         <EmptyState
           title="No accounts yet"

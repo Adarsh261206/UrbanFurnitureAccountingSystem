@@ -50,7 +50,11 @@ function Page() {
   });
 
   const columns: Column<User>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name ?? "—"}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name ?? "—"}</span>,
+    },
     { key: "login_id", header: "Login ID", cell: (r) => r.login_id },
     { key: "email", header: "Email", cell: (r) => r.email },
     { key: "role", header: "Role", cell: (r) => <StatusBadge status={r.role} /> },
@@ -60,6 +64,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Users"
+        crumbs={[{ label: "Administration" }, { label: "Users" }]}
         description="Manage accounts that can sign in to the system."
         actions={
           <Button onClick={() => navigate({ to: "/users/new" })}>
@@ -85,8 +90,18 @@ function Page() {
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.users.length > 0 ? (
         <div className="space-y-4">
-          <DataTable columns={columns} rows={query.data.users} rowKey={(r) => r.id} caption="Users" />
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <DataTable
+            columns={columns}
+            rows={query.data.users}
+            rowKey={(r) => r.id}
+            caption="Users"
+          />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <EmptyState

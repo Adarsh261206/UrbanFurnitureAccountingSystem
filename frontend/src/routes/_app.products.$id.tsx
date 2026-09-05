@@ -4,7 +4,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ErrorState, LoadingState } from "@/components/common/States";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categoriesService, productsService, type ProductInput } from "@/services/masterDataService";
+import {
+  categoriesService,
+  productsService,
+  type ProductInput,
+} from "@/services/masterDataService";
 import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
 import type { Product, ProductType } from "@/types/api";
@@ -63,7 +73,10 @@ function Page() {
   const queryClient = useQueryClient();
 
   const query = useQuery({ queryKey: ["products", id], queryFn: () => productsService.get(id) });
-  const categoriesQuery = useQuery({ queryKey: ["categories"], queryFn: () => categoriesService.list() });
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => categoriesService.list(),
+  });
 
   const [form, setForm] = useState<FormState | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -99,7 +112,11 @@ function Page() {
     if (!form["name"].trim()) errors["name"] = "Name is required";
     if (!form["product_type"]) errors["product_type"] = "Product type is required";
     if (!form["category_id"]) errors["category_id"] = "Category is required";
-    if (!form["sales_price"].trim() || Number.isNaN(Number(form["sales_price"])) || Number(form["sales_price"]) < 0)
+    if (
+      !form["sales_price"].trim() ||
+      Number.isNaN(Number(form["sales_price"])) ||
+      Number(form["sales_price"]) < 0
+    )
       errors["sales_price"] = "Enter a valid sales price";
     if (!form["cost"].trim() || Number.isNaN(Number(form["cost"])) || Number(form["cost"]) < 0)
       errors["cost"] = "Enter a valid cost";
@@ -123,6 +140,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={query.data.name}
+        crumbs={[{ label: "Master Settings" }, { label: "Product", to: "/products" }]}
         description="Edit product details."
         actions={
           <Button variant="outline" onClick={() => navigate({ to: "/products" })}>
@@ -135,10 +153,23 @@ function Page() {
           <ErrorBanner message={formError} />
           <FormGrid>
             <Field label="Name" htmlFor="name" required error={fieldErrors["name"] ?? null}>
-              <Input id="name" value={form["name"]} onChange={(e) => setField("name", e.target.value)} required />
+              <Input
+                id="name"
+                value={form["name"]}
+                onChange={(e) => setField("name", e.target.value)}
+                required
+              />
             </Field>
-            <Field label="Product type" htmlFor="product_type" required error={fieldErrors["product_type"] ?? null}>
-              <Select value={form["product_type"]} onValueChange={(v) => setField("product_type", v as ProductType)}>
+            <Field
+              label="Product type"
+              htmlFor="product_type"
+              required
+              error={fieldErrors["product_type"] ?? null}
+            >
+              <Select
+                value={form["product_type"]}
+                onValueChange={(v) => setField("product_type", v as ProductType)}
+              >
                 <SelectTrigger id="product_type" aria-label="Product type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -151,7 +182,12 @@ function Page() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Category" htmlFor="category_id" required error={fieldErrors["category_id"] ?? null}>
+            <Field
+              label="Category"
+              htmlFor="category_id"
+              required
+              error={fieldErrors["category_id"] ?? null}
+            >
               <Select value={form["category_id"]} onValueChange={(v) => setField("category_id", v)}>
                 <SelectTrigger id="category_id" aria-label="Category">
                   <SelectValue placeholder="Select category" />
@@ -166,9 +202,18 @@ function Page() {
               </Select>
             </Field>
             <Field label="Image URL" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
-              <Input id="image_url" value={form["image_url"]} onChange={(e) => setField("image_url", e.target.value)} />
+              <Input
+                id="image_url"
+                value={form["image_url"]}
+                onChange={(e) => setField("image_url", e.target.value)}
+              />
             </Field>
-            <Field label="Sales price" htmlFor="sales_price" required error={fieldErrors["sales_price"] ?? null}>
+            <Field
+              label="Sales price"
+              htmlFor="sales_price"
+              required
+              error={fieldErrors["sales_price"] ?? null}
+            >
               <Input
                 id="sales_price"
                 type="number"

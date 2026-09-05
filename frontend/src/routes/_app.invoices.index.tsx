@@ -94,9 +94,12 @@ function InvoicesPage() {
     <div className="space-y-6">
       <PageHeader
         title={canManage ? "Invoices" : "My Invoices"}
+        crumbs={[{ label: "Sales" }, { label: "Sale Invoice" }]}
         description="Track customer invoices, statuses and outstanding balances."
         actions={
-          canManage ? <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button> : undefined
+          canManage ? (
+            <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button>
+          ) : undefined
         }
       />
 
@@ -108,7 +111,9 @@ function InvoicesPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-44"><SelectValue placeholder="All statuses" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all">All statuses</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
@@ -124,11 +129,15 @@ function InvoicesPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-56"><SelectValue placeholder="All customers" /></SelectTrigger>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All customers" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">All customers</SelectItem>
               {(contactsQuery.data?.contacts ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -147,7 +156,11 @@ function InvoicesPage() {
               ? "Create an invoice directly, or confirm a sales order first."
               : "No invoices have been issued to you yet."
           }
-          action={canManage ? <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button> : undefined}
+          action={
+            canManage ? (
+              <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -157,7 +170,12 @@ function InvoicesPage() {
             rowKey={(r) => r.id}
             onRowClick={(r) => navigate({ to: "/invoices/$id", params: { id: r.id } })}
           />
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
-import { serializeSalesOrderRow } from '../utils/serializers';
+import { serializeSalesOrderRow, serializeSalesOrderDetail } from '../utils/serializers';
 
 async function getRequiredAccounts(journalType: string, documentType: string) {
   const journal = await prisma.journal.findFirst({ where: { journalType: journalType as any } });
@@ -56,10 +56,13 @@ export async function getSalesOrder(req: Request, res: Response, next: NextFunct
   try {
     const order = await prisma.salesOrder.findUnique({
       where: { id: req.params.id },
-      include: { customer: true },
+      include: {
+        customer: true,
+        salesOrderLines: { include: { product: true } },
+      },
     });
     if (!order) throw new AppError('NOT_FOUND', 'Sales order not found', 404);
-    res.json(serializeSalesOrderRow(order));
+    res.json(serializeSalesOrderDetail(order));
   } catch (err) { next(err); }
 }
 

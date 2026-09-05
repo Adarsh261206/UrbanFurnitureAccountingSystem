@@ -25,13 +25,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-export function RequireRole({
-  roles,
-  children,
-}: {
-  roles: Role[];
-  children: ReactNode;
-}) {
+export function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { status, user, homePath } = useAuth();
   const navigate = useNavigate();
   const allowed = user ? roles.includes(user.role) : false;

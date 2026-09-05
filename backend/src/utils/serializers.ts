@@ -150,6 +150,36 @@ export function serializePurchaseOrderRow(o: any): any {
   };
 }
 
+export function serializePurchaseOrderLine(l: any): any {
+  return {
+    id: l.id,
+    sr_no: l.srNo,
+    product_id: l.productId,
+    product_name: l.product?.name ?? null,
+    chart_of_account_id: l.chartOfAccountId,
+    budget_analytic_id: l.budgetAnalyticId ?? null,
+    qty: num(l.qty),
+    unit_price: num(l.unitPrice),
+    total: num(l.total),
+  };
+}
+
+export function serializePurchaseOrderDetail(o: any): any {
+  return {
+    ...serializePurchaseOrderRow(o),
+    vendor: o.vendor ? { id: o.vendor.id, name: o.vendor.name } : null,
+    lines: (o.purchaseOrderLines ?? o.lines ?? []).map(serializePurchaseOrderLine),
+  };
+}
+
+export function serializeSalesOrderDetail(o: any): any {
+  return {
+    ...serializeSalesOrderRow(o),
+    customer: o.customer ? { id: o.customer.id, name: o.customer.name } : null,
+    lines: (o.salesOrderLines ?? o.lines ?? []).map(serializePurchaseOrderLine),
+  };
+}
+
 export function serializeInvoiceLine(l: any): any {
   return {
     id: l.id,

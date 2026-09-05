@@ -73,10 +73,19 @@ function Page() {
   });
 
   const columns: Column<Product>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
     { key: "category_name", header: "Category", cell: (r) => r.category_name ?? "—" },
     { key: "product_type", header: "Type", cell: (r) => <StatusBadge status={r.product_type} /> },
-    { key: "sales_price", header: "Sales price", cell: (r) => money(r.sales_price), align: "right" },
+    {
+      key: "sales_price",
+      header: "Sales price",
+      cell: (r) => money(r.sales_price),
+      align: "right",
+    },
     { key: "cost", header: "Cost", cell: (r) => money(r.cost), align: "right" },
   ];
 
@@ -84,6 +93,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Products"
+        crumbs={[{ label: "Master Settings" }, { label: "Product" }]}
         description="Goods, services and combo items sold or purchased."
         actions={
           <Button onClick={() => navigate({ to: "/products/new" })}>
@@ -184,12 +194,21 @@ function Page() {
               ))}
             </KanbanGrid>
           )}
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <EmptyState
           title="No products found"
-          description={debounced || categoryId !== ALL_CATEGORIES ? "Try a different search or category." : "Create your first product to get started."}
+          description={
+            debounced || categoryId !== ALL_CATEGORIES
+              ? "Try a different search or category."
+              : "Create your first product to get started."
+          }
           action={
             !debounced && categoryId === ALL_CATEGORIES ? (
               <Button onClick={() => navigate({ to: "/products/new" })}>

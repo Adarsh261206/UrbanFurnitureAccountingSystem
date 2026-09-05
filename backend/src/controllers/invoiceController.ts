@@ -3,6 +3,8 @@ import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
 import { serializeInvoiceDetail, serializeInvoiceListRow } from '../utils/serializers';
+import { generateInvoicePdf } from '../services/documentPdfService';
+import { sendPdfBuffer } from '../services/pdfService';
 
 async function getUserContactId(user: any): Promise<string | null> {
   if (user.role !== 'user') return null;
@@ -265,6 +267,24 @@ export async function payInvoice(req: Request, res: Response, next: NextFunction
     const entryNumber = await generateSequence('JE');
 
     const updated = await prisma.$transaction(async (tx) => {
+      // Atomically claim the payment: only succeeds if the invoice is still
+      // confirmed AND has enough remaining balance. Concurrent payments
+      // race here — exactly one wins, the rest update 0 rows and fail.
+      const claimed = await tx.customerInvoice.updateMany({
+        where: {
+          id: invoice.id,
+          status: 'confirmed',
+          amountDue: { gte: payAmount },
+        },
+        data: { amountDue: { decrement: payAmount } },
+      });
+      if (claimed.count === 0) {
+        throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount exceeds the amount due', 400, 'amount');
+      }
+
+      const freshInvoice = await tx.customerInvoice.findUniqueOrThrow({ where: { id: invoice.id } });
+      const newAmountDue = Number(freshInvoice.amountDue);
+
       const payment = await tx.payment.create({
         data: {
           paymentNumber,
@@ -295,10 +315,9 @@ export async function payInvoice(req: Request, res: Response, next: NextFunction
         },
       });
 
-      const newAmountDue = Number(invoice.amountDue) - payAmount;
       const inv = await tx.customerInvoice.update({
         where: { id: invoice.id },
-        data: { amountDue: newAmountDue, status: newAmountDue <= 0 ? 'paid' : 'confirmed' },
+        data: { status: newAmountDue <= 0 ? 'paid' : 'confirmed' },
         include: { customer: true, partner: true, invoiceLines: { include: { product: true } } },
       });
 
@@ -328,11 +347,37 @@ export async function cancelInvoice(req: Request, res: Response, next: NextFunct
   } catch (err) { next(err); }
 }
 
-export async function printInvoice(_req: Request, res: Response, next: NextFunction) {
+export async function printInvoice(req: Request, res: Response, next: NextFunction) {
   try {
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline');
-    res.send(Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n'));
+    const invoice = await prisma.customerInvoice.findUnique({
+      where: { id: req.params.id },
+      include: {
+        customer: true,
+        invoiceLines: { include: { product: true } },
+      },
+    });
+    if (!invoice) throw new AppError('NOT_FOUND', 'Invoice not found', 404);
+
+    const buffer = await generateInvoicePdf({
+      document_no: invoice.invoiceNumber,
+      reference: invoice.invoiceReference ?? null,
+      party: invoice.customer ? { name: invoice.customer.name } : null,
+      document_date: invoice.invoiceDate.toISOString(),
+      due_date: invoice.dueDate ? invoice.dueDate.toISOString() : null,
+      payment_type: invoice.paymentType ?? null,
+      payment_via: invoice.paymentVia ?? null,
+      status: invoice.status,
+      total: Number(invoice.total),
+      amount_due: Number(invoice.amountDue),
+      lines: invoice.invoiceLines.map((l) => ({
+        sr_no: l.srNo,
+        product_name: l.product?.name ?? null,
+        qty: Number(l.qty),
+        unit_price: Number(l.unitPrice),
+        total: Number(l.total),
+      })),
+    });
+    sendPdfBuffer(res, buffer, `invoice-${invoice.invoiceNumber}.pdf`);
   } catch (err) { next(err); }
 }
 

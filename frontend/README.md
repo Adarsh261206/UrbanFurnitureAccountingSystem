@@ -1,29 +1,39 @@
-# Welcome to your Lovable project
+# Urban Furniture Accounting System — Frontend
 
-This project was built with [Lovable](https://lovable.dev).
+Accounting ERP frontend for Urban Furniture: sales, purchase, journal entries,
+payments and financial reports.
 
-## Build with Lovable
+## Stack
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- TanStack Start + React + TypeScript
+- Tailwind CSS v4
+- Axios + TanStack Query
+- Backend: Express + Prisma + PostgreSQL (see `../backend`)
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
 
-## Built with
+The app runs at the URL printed by Vite (default `http://localhost:5173`).
+The backend must be running on `http://localhost:3000` (see `../backend/.env`).
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+## Structure
+
+```
+src/
+├── components/   shared UI (common, layout, domain, ui primitives)
+├── routes/       TanStack file-based routes
+├── services/     typed API clients (single axios instance in lib/api/client.ts)
+├── lib/          api client, error normalization, auth context, formatting
+└── types/        canonical API types (snake_case backend contract)
+```
+
+## Build
+
+```sh
+npm run build       # production build
+npm run lint        # eslint
+```

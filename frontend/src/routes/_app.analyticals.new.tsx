@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +31,15 @@ export const Route = createFileRoute("/_app/analyticals/new")({
   head: () => ({
     meta: [
       { title: "New analytical account — Urban Furniture Accounting" },
-      { name: "description", content: "New analytical account in the Urban Furniture Accounting System." },
+      {
+        name: "description",
+        content: "New analytical account in the Urban Furniture Accounting System.",
+      },
       { property: "og:title", content: "New analytical account — Urban Furniture Accounting" },
-      { property: "og:description", content: "New analytical account in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "New analytical account in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -51,7 +63,10 @@ function Page() {
     queryKey: ["contacts", "all-for-select"],
     queryFn: () => contactsService.list({ limit: 200 }),
   });
-  const listQuery = useQuery({ queryKey: ["analyticals"], queryFn: () => analyticalsService.list() });
+  const listQuery = useQuery({
+    queryKey: ["analyticals"],
+    queryFn: () => analyticalsService.list(),
+  });
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -85,11 +100,19 @@ function Page() {
   });
 
   const columns: Column<Analytical>[] = [
-    { key: "name", header: "Name", cell: (r) => (
-        <Link to="/analyticals/$id" params={{ id: r.id }} className="font-medium text-primary hover:underline">
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => (
+        <Link
+          to="/analyticals/$id"
+          params={{ id: r.id }}
+          className="font-medium text-primary hover:underline"
+        >
           {r.name}
         </Link>
-      ) },
+      ),
+    },
     { key: "analytic_account", header: "Analytic account", cell: (r) => r.analytic_account },
     { key: "start_date", header: "Start", cell: (r) => fmtDate(r.start_date) },
     { key: "end_date", header: "End", cell: (r) => fmtDate(r.end_date) },
@@ -97,7 +120,10 @@ function Page() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Analytical accounts" description="Track budgets and costs by analytic dimension." />
+      <PageHeader
+        title="Analytical accounts"
+        description="Track budgets and costs by analytic dimension."
+      />
 
       <form
         className="space-y-6"
@@ -127,13 +153,31 @@ function Page() {
               </Select>
             </Field>
             <Field label="Start date" htmlFor="start_date" required>
-              <Input id="start_date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+              <Input
+                id="start_date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
             </Field>
             <Field label="To date" htmlFor="to_date" required>
-              <Input id="to_date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} required />
+              <Input
+                id="to_date"
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                required
+              />
             </Field>
             <Field label="End date" htmlFor="end_date" required>
-              <Input id="end_date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+              <Input
+                id="end_date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
             </Field>
             <Field label="Analytic account" htmlFor="analytic_account" required>
               <Input
@@ -161,9 +205,17 @@ function Page() {
         ) : listQuery.isError ? (
           <ErrorState error={listQuery.error} onRetry={() => listQuery.refetch()} />
         ) : listQuery.data && listQuery.data.length > 0 ? (
-          <DataTable columns={columns} rows={listQuery.data} rowKey={(r) => r.id} caption="Analytical accounts" />
+          <DataTable
+            columns={columns}
+            rows={listQuery.data}
+            rowKey={(r) => r.id}
+            caption="Analytical accounts"
+          />
         ) : (
-          <EmptyState title="No analytical accounts yet" description="Create one using the form above." />
+          <EmptyState
+            title="No analytical accounts yet"
+            description="Create one using the form above."
+          />
         )}
       </FormSection>
     </div>

@@ -21,9 +21,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { invoicesService } from "@/services/salesService";
 import { paymentsService } from "@/services/reportsService";
+import { budgetsService } from "@/services/budgetsService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage } from "@/lib/api/errors";
 import { money, date } from "@/lib/format";
+import { useBudgetWarnings } from "@/components/accounting/useBudgetWarnings";
+import { BudgetWarningBanner } from "@/components/accounting/BudgetWarningBanner";
 
 export const Route = createFileRoute("/_app/invoices/$id/")({
   head: () => ({
@@ -63,6 +66,13 @@ function Page() {
     queryFn: () => paymentsService.list({ invoice_id: id }),
     enabled: !!id,
   });
+
+  const budgetsQuery = useQuery({
+    queryKey: ["budgets", "warning-check"],
+    queryFn: () => budgetsService.list({ limit: 200 }),
+  });
+
+  const warnings = useBudgetWarnings(query.data?.lines ?? [], budgetsQuery.data?.budgets ?? []);
 
   const confirmMutation = useMutation({
     mutationFn: () => invoicesService.confirm(id),
@@ -129,8 +139,12 @@ function Page() {
 
   return (
     <div className="space-y-6">
+      {canManage && isDraft && warnings.length > 0 ? (
+        <BudgetWarningBanner warnings={warnings} />
+      ) : null}
       <PageHeader
         title={`Invoice ${invoice.invoice_number}`}
+        crumbs={[{ label: "Sales" }, { label: "Sale Invoice", to: "/invoices" }]}
         description={invoice.invoice_reference}
         actions={
           <>
@@ -150,7 +164,9 @@ function Page() {
               </Button>
             ) : null}
             {canPay ? (
-              <Button onClick={() => navigate({ to: "/invoices/$id/pay", params: { id } })}>Pay</Button>
+              <Button onClick={() => navigate({ to: "/invoices/$id/pay", params: { id } })}>
+                Pay
+              </Button>
             ) : null}
             {canPrintSend ? (
               <Button variant="outline" disabled={printing} onClick={handlePrint}>
@@ -178,38 +194,63 @@ function Page() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
+          <div className="rounded-lg border bg-card shadow-sm p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Invoice document</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{invoice.customer?.name}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Customer invoice
+                </p>
+                <h2 className="mt-1 text-base font-bold text-foreground">
+                  {invoice.customer?.name ?? "—"}
+                </h2>
+                {invoice.invoice_reference ? (
+                  <p className="mt-0.5 text-[13px] text-muted-foreground">
+                    {invoice.invoice_reference}
+                  </p>
+                ) : null}
               </div>
               <StatusBadge status={invoice.status} />
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Invoice date</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Invoice date
+                </dt>
                 <dd className="mt-1 font-medium text-foreground">{date(invoice.invoice_date)}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Due date</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Due date
+                </dt>
                 <dd className="mt-1 font-medium text-foreground">{date(invoice.due_date)}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Payment type</dt>
-                <dd className="mt-1 font-medium capitalize text-foreground">{invoice.payment_type ?? "—"}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Payment type
+                </dt>
+                <dd className="mt-1 font-medium capitalize text-foreground">
+                  {invoice.payment_type ?? "—"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Paid via</dt>
-                <dd className="mt-1 font-medium capitalize text-foreground">{invoice.payment_via ?? "—"}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Paid via
+                </dt>
+                <dd className="mt-1 font-medium capitalize text-foreground">
+                  {invoice.payment_via ?? "—"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-muted-foreground">Partner</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  Partner
+                </dt>
                 <dd className="mt-1 font-medium text-foreground">{invoice.partner?.name ?? "—"}</dd>
               </div>
               {invoice.journal_entry_id ? (
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Journal entry</dt>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    Journal entry
+                  </dt>
                   <dd className="mt-1 font-medium text-foreground">
                     {canManage ? (
                       <Link
@@ -227,15 +268,25 @@ function Page() {
             </dl>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50">
+              <thead className="bg-muted/40">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">#</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qty</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unit price</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    #
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Product
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Qty
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Unit price
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Total
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -245,7 +296,9 @@ function Page() {
                     <td className="px-4 py-3">{line.product_name ?? line.product_id}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{money(line.unit_price)}</td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums">{money(line.total)}</td>
+                    <td className="px-4 py-3 text-right font-medium tabular-nums">
+                      {money(line.total)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -259,14 +312,22 @@ function Page() {
             ) : payments.length === 0 ? (
               <EmptyState title="No payments recorded yet" />
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-border bg-card">
+              <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
+                  <thead className="bg-muted/40">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payment #</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Via</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Payment #
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Via
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Amount
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -275,7 +336,9 @@ function Page() {
                         <td className="px-4 py-3">{p.payment_number}</td>
                         <td className="px-4 py-3">{date(p.payment_date)}</td>
                         <td className="px-4 py-3 capitalize">{p.payment_via}</td>
-                        <td className="px-4 py-3 text-right font-medium tabular-nums">{money(p.amount)}</td>
+                        <td className="px-4 py-3 text-right font-medium tabular-nums">
+                          {money(p.amount)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -286,7 +349,7 @@ function Page() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-card p-5">
+          <div className="rounded-lg border bg-card shadow-sm p-5">
             <h2 className="text-sm font-semibold text-foreground">Summary</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
@@ -295,7 +358,9 @@ function Page() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Amount due</dt>
-                <dd className="font-semibold tabular-nums text-foreground">{money(invoice.amount_due)}</dd>
+                <dd className="font-semibold tabular-nums text-foreground">
+                  {money(invoice.amount_due)}
+                </dd>
               </div>
             </dl>
           </div>
@@ -375,24 +440,46 @@ function WorkflowStrip({
   salesOrderId: string | null;
 }) {
   const steps = [
-    { label: "Sales order", done: !!salesOrderId, alwaysShown: true },
+    {
+      label: "Sales order",
+      done: !!salesOrderId,
+      link: salesOrderId
+        ? ({ to: "/sales-orders/$id", params: { id: salesOrderId } } as const)
+        : null,
+    },
     { label: "Invoice confirmed", done: status === "confirmed" || status === "paid" },
     { label: "Journal entry", done: !!journalEntryId },
     { label: "Paid", done: status === "paid" || (status !== "draft" && amountDue <= 0) },
   ];
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card shadow-sm px-4 py-3">
       {steps.map((step, idx) => (
         <div key={step.label} className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             {step.done ? (
-              <CheckCircle2 className="size-4 text-emerald-600" aria-hidden />
+              <CheckCircle2 className="size-4 text-success" aria-hidden />
             ) : (
               <Circle className="size-4 text-muted-foreground" aria-hidden />
             )}
-            <span className={step.done ? "text-sm font-medium text-foreground" : "text-sm text-muted-foreground"}>
-              {step.label}
-            </span>
+            {step.link ? (
+              <Link
+                to={step.link.to}
+                params={step.link.params}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                {step.label}
+              </Link>
+            ) : (
+              <span
+                className={
+                  step.done
+                    ? "text-sm font-medium text-foreground"
+                    : "text-sm text-muted-foreground"
+                }
+              >
+                {step.label}
+              </span>
+            )}
           </div>
           {idx < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
         </div>

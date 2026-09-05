@@ -10,6 +10,7 @@ import { ConfirmationModal } from "@/components/common/ConfirmationModal";
 import { ErrorBanner, Field } from "@/components/common/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { budgetsService } from "@/services/budgetsService";
 import { errorMessage } from "@/lib/api/errors";
 import { date as fmtDate, money, percent } from "@/lib/format";
@@ -111,7 +112,7 @@ function Page() {
 
       <ErrorBanner message={error} />
 
-      <div className="grid gap-4 rounded-lg border border-border bg-card p-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 rounded-lg border bg-card shadow-sm p-5 sm:grid-cols-2 lg:grid-cols-4">
         <Detail label="Responsible" value={budget.responsible?.name ?? "—"} />
         <Detail label="Analytical account" value={budget.analytical?.name ?? "—"} />
         <Detail label="Start date" value={fmtDate(budget.start_date)} />
@@ -122,7 +123,25 @@ function Page() {
         <Detail label="Amount to achieve" value={money(budget.amount_to_achieve)} />
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-5">
+      {budget.status === "confirmed" || budget.status === "revised" ? (
+        <div className="rounded-lg border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between text-[13px]">
+            <span className="font-medium text-foreground">Achievement</span>
+            <span className="font-semibold tabular-nums text-foreground">
+              {money(budget.achieved_amount)} / {money(budget.committed_amount)}{" "}
+              <span className="ml-1 text-muted-foreground">
+                ({percent(budget.achieved_percentage)})
+              </span>
+            </span>
+          </div>
+          <Progress
+            value={Math.min(100, Math.max(0, budget.achieved_percentage ?? 0))}
+            className="mt-3 h-2"
+          />
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card shadow-sm p-5">
         {budget.status === "draft" ? (
           <>
             <Field label="Committed amount" htmlFor="committed_amount" required className="w-56">
@@ -136,7 +155,9 @@ function Page() {
               />
             </Field>
             <Button
-              disabled={!committedAmount || Number(committedAmount) < 0 || confirmMutation.isPending}
+              disabled={
+                !committedAmount || Number(committedAmount) < 0 || confirmMutation.isPending
+              }
               onClick={() => confirmMutation.mutate()}
             >
               {confirmMutation.isPending ? "Confirming…" : "Confirm"}
@@ -145,7 +166,11 @@ function Page() {
         ) : null}
 
         {budget.status === "confirmed" ? (
-          <Button variant="outline" disabled={reviseMutation.isPending} onClick={() => reviseMutation.mutate()}>
+          <Button
+            variant="outline"
+            disabled={reviseMutation.isPending}
+            onClick={() => reviseMutation.mutate()}
+          >
             {reviseMutation.isPending ? "Revising…" : "Revise"}
           </Button>
         ) : null}

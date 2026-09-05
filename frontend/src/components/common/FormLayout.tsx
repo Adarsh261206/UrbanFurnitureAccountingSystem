@@ -14,18 +14,14 @@ export function FormSection({
   className?: string;
 }) {
   return (
-    <section
-      className={cn("rounded-lg border border-border bg-card p-5 sm:p-6", className)}
-    >
+    <section className={cn("rounded-lg border bg-card shadow-sm", className)}>
       {title ? (
-        <div className="mb-5">
+        <header className="flex flex-col gap-0.5 border-b px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          {description ? (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          ) : null}
-        </div>
+          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+        </header>
       ) : null}
-      {children}
+      <div className="p-5">{children}</div>
     </section>
   );
 }
@@ -56,7 +52,7 @@ export function Field({
       {children}
       {hint && !error ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       {error ? (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-xs font-medium text-destructive">
           {error}
         </p>
       ) : null}
@@ -65,15 +61,11 @@ export function Field({
 }
 
 export function FormGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
+  return <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">{children}</div>;
 }
 
 export function FormActions({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-5">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-wrap items-center justify-end gap-2 pt-2">{children}</div>;
 }
 
 export function ErrorBanner({ message }: { message: string | null }) {
@@ -81,7 +73,7 @@ export function ErrorBanner({ message }: { message: string | null }) {
   return (
     <p
       role="alert"
-      className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+      className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm font-medium text-destructive"
     >
       {message}
     </p>

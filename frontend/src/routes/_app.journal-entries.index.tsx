@@ -23,7 +23,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { journalEntriesService, journalsService, accountsService, contactsService } from "@/services/masterDataService";
+import {
+  journalEntriesService,
+  journalsService,
+  accountsService,
+  contactsService,
+} from "@/services/masterDataService";
 import { date as fmtDate, money } from "@/lib/format";
 import type { JournalEntryRow } from "@/types/api";
 
@@ -33,7 +38,10 @@ export const Route = createFileRoute("/_app/journal-entries/")({
       { title: "Journal entries — Urban Furniture Accounting" },
       { name: "description", content: "Journal entries in the Urban Furniture Accounting System." },
       { property: "og:title", content: "Journal entries — Urban Furniture Accounting" },
-      { property: "og:description", content: "Journal entries in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "Journal entries in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -71,7 +79,11 @@ function Page() {
   });
 
   const columns: Column<JournalEntryRow>[] = [
-    { key: "entry_number", header: "Entry #", cell: (r) => <span className="font-medium text-foreground">{r.entry_number}</span> },
+    {
+      key: "entry_number",
+      header: "Entry #",
+      cell: (r) => <span className="font-medium text-foreground">{r.entry_number}</span>,
+    },
     { key: "journal_name", header: "Journal", cell: (r) => r.journal_name },
     { key: "accounting_date", header: "Date", cell: (r) => fmtDate(r.accounting_date) },
     { key: "reference", header: "Reference", cell: (r) => r.reference ?? "—" },
@@ -82,6 +94,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Journal entries"
+        crumbs={[{ label: "Account" }, { label: "Journal Entries" }]}
         description="All manual and system-generated accounting entries."
         actions={
           <Button onClick={() => navigate({ to: "/journal-entries/new" })}>
@@ -172,7 +185,12 @@ function Page() {
             onRowClick={(r) => setSelectedId(r.id)}
             caption="Journal entries"
           />
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <EmptyState
@@ -186,7 +204,10 @@ function Page() {
         />
       )}
 
-      <JournalEntryDetailDialog id={selectedId} onOpenChange={(open) => !open && setSelectedId(null)} />
+      <JournalEntryDetailDialog
+        id={selectedId}
+        onOpenChange={(open) => !open && setSelectedId(null)}
+      />
     </div>
   );
 }
@@ -203,7 +224,10 @@ function JournalEntryDetailDialog({
     queryFn: () => journalEntriesService.get(id as string),
     enabled: !!id,
   });
-  const accountsQuery = useQuery({ queryKey: ["chart-of-accounts"], queryFn: () => accountsService.list() });
+  const accountsQuery = useQuery({
+    queryKey: ["chart-of-accounts"],
+    queryFn: () => accountsService.list(),
+  });
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all-for-select"],
     queryFn: () => contactsService.list({ limit: 200 }),
@@ -211,7 +235,7 @@ function JournalEntryDetailDialog({
 
   const accountName = (aid: string) => accountsQuery.data?.find((a) => a.id === aid)?.name ?? aid;
   const partnerName = (pid: string | null) =>
-    pid ? contactsQuery.data?.contacts.find((c) => c.id === pid)?.name ?? pid : "—";
+    pid ? (contactsQuery.data?.contacts.find((c) => c.id === pid)?.name ?? pid) : "—";
 
   const totals = useMemo(() => {
     const lines = detailQuery.data?.lines ?? [];
@@ -227,7 +251,9 @@ function JournalEntryDetailDialog({
         <DialogHeader>
           <DialogTitle>Journal entry {detailQuery.data?.entry_number ?? ""}</DialogTitle>
           <DialogDescription>
-            {detailQuery.data ? `${detailQuery.data.journal_name} · ${fmtDate(detailQuery.data.accounting_date)}` : "Loading entry details"}
+            {detailQuery.data
+              ? `${detailQuery.data.journal_name} · ${fmtDate(detailQuery.data.accounting_date)}`
+              : "Loading entry details"}
           </DialogDescription>
         </DialogHeader>
 
@@ -239,16 +265,26 @@ function JournalEntryDetailDialog({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <StatusBadge status={detailQuery.data.status} />
-              <span className="text-muted-foreground">Reference: {detailQuery.data.reference ?? "—"}</span>
+              <span className="text-muted-foreground">
+                Reference: {detailQuery.data.reference ?? "—"}
+              </span>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Account</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Partner</th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase text-muted-foreground">Debit</th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase text-muted-foreground">Credit</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">
+                      Account
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">
+                      Partner
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase text-muted-foreground">
+                      Debit
+                    </th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase text-muted-foreground">
+                      Credit
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

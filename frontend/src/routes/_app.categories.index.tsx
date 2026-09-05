@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_app/categories/")({
       { title: "Categories — Urban Furniture Accounting" },
       { name: "description", content: "Categories in the Urban Furniture Accounting System." },
       { property: "og:title", content: "Categories — Urban Furniture Accounting" },
-      { property: "og:description", content: "Categories in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "Categories in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -66,7 +69,11 @@ function Page() {
   }
 
   const columns: Column<Category>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
   ];
 
   return (
@@ -76,7 +83,13 @@ function Page() {
       <FormSection title="Add category">
         <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3" noValidate>
           <ErrorBanner message={formError} />
-          <Field label="Category name" htmlFor="category-name" required error={fieldError} className="min-w-[240px] flex-1">
+          <Field
+            label="Category name"
+            htmlFor="category-name"
+            required
+            error={fieldError}
+            className="min-w-[240px] flex-1"
+          >
             <Input
               id="category-name"
               value={name}

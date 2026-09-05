@@ -7,7 +7,13 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { KanbanCard, KanbanGrid, SectionTabs, ViewToggle, type ViewMode } from "@/components/common/ViewToggle";
+import {
+  KanbanCard,
+  KanbanGrid,
+  SectionTabs,
+  ViewToggle,
+  type ViewMode,
+} from "@/components/common/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { purchaseOrdersService } from "@/services/purchaseService";
 import { errorMessage } from "@/lib/api/errors";
@@ -20,7 +26,10 @@ export const Route = createFileRoute("/_app/purchase-orders/")({
       { title: "Purchase orders — Urban Furniture Accounting" },
       { name: "description", content: "Purchase orders in the Urban Furniture Accounting System." },
       { property: "og:title", content: "Purchase orders — Urban Furniture Accounting" },
-      { property: "og:description", content: "Purchase orders in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "Purchase orders in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -64,7 +73,11 @@ function Page() {
   });
 
   const columns: Column<PurchaseOrderRow>[] = [
-    { key: "po_number", header: "PO number", cell: (r) => <span className="font-medium">{r.po_number}</span> },
+    {
+      key: "po_number",
+      header: "PO number",
+      cell: (r) => <span className="font-medium">{r.po_number}</span>,
+    },
     { key: "vendor_name", header: "Vendor", cell: (r) => r.vendor_name },
     { key: "order_date", header: "Order date", cell: (r) => date(r.order_date) },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
@@ -86,6 +99,17 @@ function Page() {
           >
             {confirmMutation.isPending && confirmingId === r.id ? "Confirming…" : "Confirm"}
           </Button>
+        ) : r.status === "confirmed" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              void navigate({ to: "/bills/new", search: { po: r.id } });
+            }}
+          >
+            Create Bill
+          </Button>
         ) : null,
     },
   ];
@@ -94,6 +118,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Purchase orders"
+        crumbs={[{ label: "Purchase" }, { label: "Purchase Order" }]}
         description="Create and confirm vendor purchase orders."
         actions={
           <>
@@ -115,7 +140,7 @@ function Page() {
             }}
             placeholder="Search PO number or vendor…"
             aria-label="Search purchase orders"
-            className="h-9 w-64 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-9 w-64 rounded-md border border-input bg-card px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
           />
           <SectionTabs
             label="Purchase order status"
@@ -142,19 +167,28 @@ function Page() {
         <EmptyState
           title="No purchase orders yet"
           description="Create a purchase order to start the procure-to-pay workflow."
-          action={<Button onClick={() => navigate({ to: "/purchase-orders/new" })}>New purchase order</Button>}
+          action={
+            <Button onClick={() => navigate({ to: "/purchase-orders/new" })}>
+              New purchase order
+            </Button>
+          }
         />
       ) : (
         <div className="space-y-4">
           {view === "list" ? (
-            <DataTable columns={columns} rows={query.data.purchase_orders} rowKey={(r) => r.id} />
+            <DataTable
+              columns={columns}
+              rows={query.data.purchase_orders}
+              rowKey={(r) => r.id}
+              onRowClick={(r) => navigate({ to: "/purchase-orders/$id", params: { id: r.id } })}
+            />
           ) : (
             <KanbanGrid>
               {query.data.purchase_orders.map((r) => (
                 <KanbanCard
                   key={r.id}
                   ariaLabel={`Purchase order ${r.po_number}`}
-                  onClick={() => navigate({ to: "/purchase-orders" })}
+                  onClick={() => navigate({ to: "/purchase-orders/$id", params: { id: r.id } })}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-foreground">{r.po_number}</span>
@@ -175,14 +209,21 @@ function Page() {
                         confirmMutation.mutate(r.id);
                       }}
                     >
-                      {confirmMutation.isPending && confirmingId === r.id ? "Confirming…" : "Confirm"}
+                      {confirmMutation.isPending && confirmingId === r.id
+                        ? "Confirming…"
+                        : "Confirm"}
                     </Button>
                   ) : null}
                 </KanbanCard>
               ))}
             </KanbanGrid>
           )}
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

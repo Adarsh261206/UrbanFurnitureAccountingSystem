@@ -5,6 +5,7 @@ import type {
   InvoiceStatus,
   OrderLineInput,
   PayRequest,
+  SalesOrderDetail,
   SalesOrderList,
   SalesOrderRow,
 } from "@/types/api";
@@ -16,9 +17,9 @@ export interface SalesOrderInput {
   lines: OrderLineInput[];
 }
 export const salesOrdersService = {
-  list: (
-    params: { page?: number; limit?: number; status?: string; search?: string } = {},
-  ) => http.get<SalesOrderList>("/sales-orders", { params }),
+  list: (params: { page?: number; limit?: number; status?: string; search?: string } = {}) =>
+    http.get<SalesOrderList>("/sales-orders", { params }),
+  get: (id: string) => http.get<SalesOrderDetail>(`/sales-orders/${id}`),
   create: (body: SalesOrderInput) => http.post<SalesOrderRow>("/sales-orders", body),
   /** Draft only. */
   confirm: (id: string) => http.put<SalesOrderRow>(`/sales-orders/${id}/confirm`),
@@ -56,8 +57,7 @@ export const invoicesService = {
   confirm: (id: string) => http.post<InvoiceDetail>(`/invoices/${id}/confirm`),
   /** A4 — POST cancel, draft only. */
   cancel: (id: string) => http.post<InvoiceDetail>(`/invoices/${id}/cancel`),
-  pay: (id: string, body: PayRequest) =>
-    http.post<InvoiceDetail>(`/invoices/${id}/pay`, body),
+  pay: (id: string, body: PayRequest) => http.post<InvoiceDetail>(`/invoices/${id}/pay`, body),
   print: (id: string) => http.blob(`/invoices/${id}/print`),
   send: (id: string, body: SendDocumentRequest) =>
     http.post<{ message: string }>(`/invoices/${id}/send`, body),

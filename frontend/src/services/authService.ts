@@ -1,11 +1,5 @@
 import { http } from "@/lib/api/client";
-import type {
-  LoginResponse,
-  MeResponse,
-  MessageResponse,
-  SignupResponse,
-  User,
-} from "@/types/api";
+import type { LoginResponse, MeResponse, MessageResponse, SignupResponse, User } from "@/types/api";
 
 export interface SignupRequest {
   login_id: string;
@@ -36,6 +30,5 @@ export const authService = {
   me: () => http.get<MeResponse>("/auth/me"),
 
   /** POST /auth/forgot-password → 200 { message }. */
-  forgotPassword: (email: string) =>
-    http.post<MessageResponse>("/auth/forgot-password", { email }),
+  forgotPassword: (email: string) => http.post<MessageResponse>("/auth/forgot-password", { email }),
 };

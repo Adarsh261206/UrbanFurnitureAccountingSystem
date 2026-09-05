@@ -5,7 +5,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,9 +35,15 @@ export const Route = createFileRoute("/_app/journal-entries/new")({
   head: () => ({
     meta: [
       { title: "New journal entry — Urban Furniture Accounting" },
-      { name: "description", content: "New journal entry in the Urban Furniture Accounting System." },
+      {
+        name: "description",
+        content: "New journal entry in the Urban Furniture Accounting System.",
+      },
       { property: "og:title", content: "New journal entry — Urban Furniture Accounting" },
-      { property: "og:description", content: "New journal entry in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "New journal entry in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -64,7 +76,10 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
 
   const journalsQuery = useQuery({ queryKey: ["journals"], queryFn: () => journalsService.list() });
-  const accountsQuery = useQuery({ queryKey: ["chart-of-accounts"], queryFn: () => accountsService.list() });
+  const accountsQuery = useQuery({
+    queryKey: ["chart-of-accounts"],
+    queryFn: () => accountsService.list(),
+  });
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all-for-select"],
     queryFn: () => contactsService.list({ limit: 200 }),
@@ -91,7 +106,13 @@ function Page() {
     lines.every((l) => {
       const debit = Number(l.debit) || 0;
       const credit = Number(l.credit) || 0;
-      return l.account_id !== "" && debit >= 0 && credit >= 0 && (debit > 0 || credit > 0) && !(debit > 0 && credit > 0);
+      return (
+        l.account_id !== "" &&
+        debit >= 0 &&
+        credit >= 0 &&
+        (debit > 0 || credit > 0) &&
+        !(debit > 0 && credit > 0)
+      );
     });
 
   const canSubmit = journalId !== "" && accountingDate !== "" && linesValid && balanced;
@@ -121,7 +142,16 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New journal entry" description="Record a manual accounting entry." />
+      <PageHeader
+        title="New journal entry"
+        crumbs={[{ label: "Account" }, { label: "Journal Entries", to: "/journal-entries" }]}
+        description="Record a manual accounting entry."
+        actions={
+          <Button variant="outline" onClick={() => navigate({ to: "/journal-entries" })}>
+            Back
+          </Button>
+        }
+      />
 
       <form
         className="space-y-6"
@@ -157,117 +187,186 @@ function Page() {
               />
             </Field>
             <Field label="Reference" htmlFor="reference">
-              <Input id="reference" value={reference} onChange={(e) => setReference(e.target.value)} />
+              <Input
+                id="reference"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
             </Field>
           </FormGrid>
         </FormSection>
 
         <FormSection
-          title="Lines"
+          title="Journal lines"
           description="Each line must have either a debit or a credit amount. Total debit must equal total credit."
         >
-          <div className="space-y-3">
-            {lines.map((line, idx) => (
-              <div key={line.key} className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[2fr_2fr_1fr_1fr_auto]">
-                <Field label="Account" htmlFor={`account-${line.key}`} required className="sm:mb-0">
-                  <Select value={line.account_id} onValueChange={(v) => updateLine(line.key, { account_id: v })}>
-                    <SelectTrigger id={`account-${line.key}`}>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accountsQuery.data?.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Partner" htmlFor={`partner-${line.key}`}>
-                  <Select
-                    value={line.partner_id || "none"}
-                    onValueChange={(v) => updateLine(line.key, { partner_id: v === "none" ? "" : v })}
-                  >
-                    <SelectTrigger id={`partner-${line.key}`}>
-                      <SelectValue placeholder="Optional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {contactsQuery.data?.contacts.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field label="Debit" htmlFor={`debit-${line.key}`}>
-                  <Input
-                    id={`debit-${line.key}`}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={line.debit}
-                    onChange={(e) => updateLine(line.key, { debit: e.target.value, credit: e.target.value ? "" : line.credit })}
-                  />
-                </Field>
-                <Field label="Credit" htmlFor={`credit-${line.key}`}>
-                  <Input
-                    id={`credit-${line.key}`}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={line.credit}
-                    onChange={(e) => updateLine(line.key, { credit: e.target.value, debit: e.target.value ? "" : line.debit })}
-                  />
-                </Field>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={lines.length <= 2}
-                    onClick={() => removeLine(line.key)}
-                    aria-label={`Remove line ${idx + 1}`}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-hidden rounded-md border">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/40">
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                      #
+                    </th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                      Account
+                    </th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                      Partner
+                    </th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                      Debit
+                    </th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                      Credit
+                    </th>
+                    <th className="w-12 px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((line, idx) => (
+                    <tr key={line.key} className="border-b last:border-0">
+                      <td className="px-3 py-2 text-[13px] text-muted-foreground">{idx + 1}</td>
+                      <td className="min-w-[200px] px-3 py-2">
+                        <Select
+                          value={line.account_id}
+                          onValueChange={(v) => updateLine(line.key, { account_id: v })}
+                        >
+                          <SelectTrigger id={`account-${line.key}`}>
+                            <SelectValue placeholder="Select account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accountsQuery.data?.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="min-w-[180px] px-3 py-2">
+                        <Select
+                          value={line.partner_id || "none"}
+                          onValueChange={(v) =>
+                            updateLine(line.key, { partner_id: v === "none" ? "" : v })
+                          }
+                        >
+                          <SelectTrigger id={`partner-${line.key}`}>
+                            <SelectValue placeholder="Optional" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {contactsQuery.data?.contacts.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="w-32 px-3 py-2">
+                        <Input
+                          id={`debit-${line.key}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="text-right"
+                          value={line.debit}
+                          onChange={(e) =>
+                            updateLine(line.key, {
+                              debit: e.target.value,
+                              credit: e.target.value ? "" : line.credit,
+                            })
+                          }
+                        />
+                      </td>
+                      <td className="w-32 px-3 py-2">
+                        <Input
+                          id={`credit-${line.key}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="text-right"
+                          value={line.credit}
+                          onChange={(e) =>
+                            updateLine(line.key, {
+                              credit: e.target.value,
+                              debit: e.target.value ? "" : line.debit,
+                            })
+                          }
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={lines.length <= 2}
+                          onClick={() => removeLine(line.key)}
+                          aria-label={`Remove line ${idx + 1}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t bg-muted/40 px-4 py-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setLines((prev) => [...prev, newLine()])}
+              >
+                <Plus className="size-4" /> Add line
+              </Button>
+            </div>
           </div>
 
-          <Button type="button" variant="outline" className="mt-3" onClick={() => setLines((prev) => [...prev, newLine()])}>
-            <Plus className="size-4" /> Add line
-          </Button>
-
-          <div className="mt-4 flex flex-wrap items-center justify-end gap-6 border-t border-border pt-4 text-sm">
-            <span>
-              Total debit: <span className="font-medium tabular-nums text-foreground">{money(totals.debit)}</span>
-            </span>
-            <span>
-              Total credit: <span className="font-medium tabular-nums text-foreground">{money(totals.credit)}</span>
-            </span>
-            <span
-              className={
-                balanced
-                  ? "rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
-                  : "rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive"
-              }
-            >
-              {balanced ? "Balanced" : `Unbalanced (${Math.abs(totals.debit - totals.credit).toFixed(2)})`}
-            </span>
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+              <span className="text-muted-foreground">
+                Total debit:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {money(totals.debit)}
+                </span>
+              </span>
+              <span className="text-muted-foreground">
+                Total credit:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {money(totals.credit)}
+                </span>
+              </span>
+              <span className="text-muted-foreground">
+                Balance:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {money(Math.abs(totals.debit - totals.credit))}
+                </span>
+              </span>
+              <span className={balanced ? "text-success" : "text-destructive"}>
+                {balanced ? "Balanced" : "Unbalanced"}
+              </span>
+            </div>
           </div>
         </FormSection>
 
         <ErrorBanner message={error} />
 
         <FormActions>
-          <Button type="button" variant="outline" onClick={() => navigate({ to: "/journal-entries" })}>
-            Back
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate({ to: "/journal-entries" })}
+          >
+            Cancel
           </Button>
           <Button type="submit" disabled={!canSubmit || mutation.isPending}>
-            {mutation.isPending ? "Submitting…" : "Confirm"}
+            {mutation.isPending ? "Submitting…" : "Confirm entry"}
           </Button>
         </FormActions>
       </form>

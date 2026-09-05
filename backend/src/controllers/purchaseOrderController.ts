@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
-import { serializePurchaseOrderRow } from '../utils/serializers';
+import { serializePurchaseOrderRow, serializePurchaseOrderDetail } from '../utils/serializers';
 
 export async function listPurchaseOrders(req: Request, res: Response, next: NextFunction) {
   try {
@@ -33,10 +33,13 @@ export async function getPurchaseOrder(req: Request, res: Response, next: NextFu
   try {
     const order = await prisma.purchaseOrder.findUnique({
       where: { id: req.params.id },
-      include: { vendor: true },
+      include: {
+        vendor: true,
+        purchaseOrderLines: { include: { product: true } },
+      },
     });
     if (!order) throw new AppError('NOT_FOUND', 'Purchase order not found', 404);
-    res.json(serializePurchaseOrderRow(order));
+    res.json(serializePurchaseOrderDetail(order));
   } catch (err) { next(err); }
 }
 

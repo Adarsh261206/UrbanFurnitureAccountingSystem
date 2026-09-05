@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CheckCircle2, Circle } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
@@ -22,8 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { billsService } from "@/services/purchaseService";
 import { paymentsService } from "@/services/reportsService";
+import { budgetsService } from "@/services/budgetsService";
 import { errorMessage } from "@/lib/api/errors";
 import { money, date } from "@/lib/format";
+import { useBudgetWarnings } from "@/components/accounting/useBudgetWarnings";
+import { BudgetWarningBanner } from "@/components/accounting/BudgetWarningBanner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/bills/$id/")({
@@ -57,6 +60,13 @@ function Page() {
     queryKey: ["bill", id],
     queryFn: () => billsService.get(id),
   });
+
+  const budgetsQuery = useQuery({
+    queryKey: ["budgets", "warning-check"],
+    queryFn: () => budgetsService.list({ limit: 200 }),
+  });
+
+  const warnings = useBudgetWarnings(billQuery.data?.lines ?? [], budgetsQuery.data?.budgets ?? []);
 
   const paymentsQuery = useQuery({
     queryKey: ["payments", "bill", id],
@@ -112,7 +122,8 @@ function Page() {
   });
 
   if (billQuery.isLoading) return <LoadingState label="Loading bill" />;
-  if (billQuery.isError) return <ErrorState error={billQuery.error} onRetry={() => billQuery.refetch()} />;
+  if (billQuery.isError)
+    return <ErrorState error={billQuery.error} onRetry={() => billQuery.refetch()} />;
   const bill = billQuery.data;
   if (!bill) return null;
 
@@ -121,7 +132,13 @@ function Page() {
   const canPrintSend = bill.status !== "draft";
 
   const steps = [
-    { label: "Purchase order", done: !!bill.purchase_order_id },
+    {
+      label: "Purchase order",
+      done: !!bill.purchase_order_id,
+      link: bill.purchase_order_id
+        ? ({ to: "/purchase-orders/$id", params: { id: bill.purchase_order_id } } as const)
+        : null,
+    },
     { label: "Bill", done: true },
     { label: "Confirmed", done: bill.status !== "draft" },
     { label: "Journal entry", done: !!bill.journal_entry_id },
@@ -131,8 +148,10 @@ function Page() {
 
   return (
     <div className="space-y-6">
+      {isDraft && warnings.length > 0 ? <BudgetWarningBanner warnings={warnings} /> : null}
       <PageHeader
         title={`Bill ${bill.bill_reference}`}
+        crumbs={[{ label: "Purchase" }, { label: "Purchase Bill", to: "/bills" }]}
         description={`Vendor: ${bill.vendor.name}`}
         actions={
           <>
@@ -153,10 +172,16 @@ function Page() {
               </Button>
             ) : null}
             {canPay ? (
-              <Button onClick={() => navigate({ to: "/bills/$id/pay", params: { id } })}>Pay</Button>
+              <Button onClick={() => navigate({ to: "/bills/$id/pay", params: { id } })}>
+                Pay
+              </Button>
             ) : null}
             {canPrintSend ? (
-              <Button variant="outline" disabled={printMutation.isPending} onClick={() => printMutation.mutate()}>
+              <Button
+                variant="outline"
+                disabled={printMutation.isPending}
+                onClick={() => printMutation.mutate()}
+              >
                 {printMutation.isPending ? "Preparing…" : "Print"}
               </Button>
             ) : null}
@@ -171,19 +196,34 @@ function Page() {
 
       <ErrorBanner message={actionError} />
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-4 text-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card shadow-sm p-4 text-sm">
         {steps.map((step, index) => (
           <div key={step.label} className="flex items-center gap-2">
-            <div className={cn("flex items-center gap-1.5", step.done ? "text-primary" : "text-muted-foreground")}>
+            <div
+              className={cn(
+                "flex items-center gap-1.5",
+                step.done ? "text-primary" : "text-muted-foreground",
+              )}
+            >
               {step.done ? <CheckCircle2 className="size-4" /> : <Circle className="size-4" />}
-              <span className="font-medium">{step.label}</span>
+              {step.link ? (
+                <Link
+                  to={step.link.to}
+                  params={step.link.params}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {step.label}
+                </Link>
+              ) : (
+                <span className="font-medium">{step.label}</span>
+              )}
             </div>
             {index < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
           </div>
         ))}
       </div>
 
-      <div className="grid gap-4 rounded-lg border border-border bg-card p-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 rounded-lg border bg-card shadow-sm p-6 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
           <div className="mt-1">
@@ -212,9 +252,9 @@ function Page() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-left">#</th>
               <th className="px-4 py-3 text-left">Product</th>
@@ -230,7 +270,9 @@ function Page() {
                 <td className="px-4 py-3">{line.product_name ?? line.product_id}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(line.unit_price)}</td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">{money(line.total)}</td>
+                <td className="px-4 py-3 text-right font-medium tabular-nums">
+                  {money(line.total)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -252,9 +294,9 @@ function Page() {
         ) : !paymentsQuery.data || paymentsQuery.data.payments.length === 0 ? (
           <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left">Payment</th>
                   <th className="px-4 py-3 text-left">Date</th>
@@ -296,7 +338,12 @@ function Page() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="email_to">Recipient email</Label>
-              <Input id="email_to" type="email" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} />
+              <Input
+                id="email_to"
+                type="email"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="subject">Subject</Label>

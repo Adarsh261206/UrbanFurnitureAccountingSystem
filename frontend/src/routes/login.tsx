@@ -62,12 +62,12 @@ function LoginPage() {
         <div className="flex flex-col gap-1">
           <span>
             No account?{" "}
-            <Link to="/signup" className="font-medium text-primary hover:underline">
-              Create one
+            <Link to="/signup" className="font-semibold text-primary hover:underline">
+              Sign Up
             </Link>
           </span>
-          <Link to="/forgot-password" className="font-medium text-primary hover:underline">
-            Forgot your password?
+          <Link to="/forgot-password" className="font-semibold text-primary hover:underline">
+            Forgot Password
           </Link>
         </div>
       }
@@ -97,13 +97,16 @@ function LoginPage() {
           />
         </div>
         {error ? (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
             {errorMessage(error)}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="h-9 w-full text-sm" disabled={submitting}>
           {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          Sign in
+          SIGN IN
         </Button>
       </form>
     </AuthLayout>

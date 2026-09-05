@@ -48,11 +48,16 @@ function Page() {
 
   const query = useQuery({
     queryKey: ["contacts", page, debounced],
-    queryFn: () => contactsService.list({ page, limit: LIMIT, ...(debounced ? { search: debounced } : {}) }),
+    queryFn: () =>
+      contactsService.list({ page, limit: LIMIT, ...(debounced ? { search: debounced } : {}) }),
   });
 
   const columns: Column<Contact>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
     { key: "email", header: "Email", cell: (r) => r.email },
     { key: "phone", header: "Phone", cell: (r) => r.phone ?? "—" },
     { key: "city", header: "City", cell: (r) => r.city ?? "—" },
@@ -63,6 +68,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Contacts"
+        crumbs={[{ label: "Master Settings" }, { label: "Contact" }]}
         description="Customers and vendors used across sales, purchase and invoicing."
         actions={
           <Button onClick={() => navigate({ to: "/contacts/new" })}>
@@ -73,13 +79,13 @@ function Page() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1 min-w-[220px]">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search contacts by name or email…"
-          className="pl-9"
-          aria-label="Search contacts"
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search contacts by name or email…"
+            className="pl-9"
+            aria-label="Search contacts"
           />
         </div>
         <ViewToggle value={view} onChange={setView} label="Contacts view mode" />
@@ -122,7 +128,9 @@ function Page() {
                     )}
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-foreground">{c.name}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{c.email}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {c.email}
+                      </span>
                     </span>
                   </div>
                   <dl className="space-y-1 text-sm text-muted-foreground">
@@ -153,7 +161,9 @@ function Page() {
       ) : (
         <EmptyState
           title="No contacts found"
-          description={debounced ? "Try a different search term." : "Create your first contact to get started."}
+          description={
+            debounced ? "Try a different search term." : "Create your first contact to get started."
+          }
           action={
             !debounced ? (
               <Button onClick={() => navigate({ to: "/contacts/new" })}>

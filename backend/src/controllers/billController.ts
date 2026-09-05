@@ -3,6 +3,8 @@ import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
 import { serializeBillDetail, serializeBillListRow } from '../utils/serializers';
+import { generateBillPdf } from '../services/documentPdfService';
+import { sendPdfBuffer } from '../services/pdfService';
 
 export async function listBills(req: Request, res: Response, next: NextFunction) {
   try {
@@ -238,6 +240,24 @@ export async function payBill(req: Request, res: Response, next: NextFunction) {
     const entryNumber = await generateSequence('JE');
 
     const updated = await prisma.$transaction(async (tx) => {
+      // Atomically claim the payment: only succeeds if the bill is still
+      // confirmed AND has enough remaining balance. Concurrent payments
+      // race here — exactly one wins, the rest update 0 rows and fail.
+      const claimed = await tx.vendorBill.updateMany({
+        where: {
+          id: bill.id,
+          status: 'confirmed',
+          amountDue: { gte: payAmount },
+        },
+        data: { amountDue: { decrement: payAmount } },
+      });
+      if (claimed.count === 0) {
+        throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount exceeds the amount due', 400, 'amount');
+      }
+
+      const freshBill = await tx.vendorBill.findUniqueOrThrow({ where: { id: bill.id } });
+      const newAmountDue = Number(freshBill.amountDue);
+
       const payment = await tx.payment.create({
         data: {
           paymentNumber,
@@ -268,10 +288,9 @@ export async function payBill(req: Request, res: Response, next: NextFunction) {
         },
       });
 
-      const newAmountDue = Number(bill.amountDue) - payAmount;
       const b = await tx.vendorBill.update({
         where: { id: bill.id },
-        data: { amountDue: newAmountDue, status: newAmountDue <= 0 ? 'paid' : 'confirmed' },
+        data: { status: newAmountDue <= 0 ? 'paid' : 'confirmed' },
         include: { vendor: true, partner: true, billLines: { include: { product: true } } },
       });
 
@@ -301,11 +320,37 @@ export async function cancelBill(req: Request, res: Response, next: NextFunction
   } catch (err) { next(err); }
 }
 
-export async function printBill(_req: Request, res: Response, next: NextFunction) {
+export async function printBill(req: Request, res: Response, next: NextFunction) {
   try {
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline');
-    res.send(Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n190\n%%EOF\n'));
+    const bill = await prisma.vendorBill.findUnique({
+      where: { id: req.params.id },
+      include: {
+        vendor: true,
+        billLines: { include: { product: true } },
+      },
+    });
+    if (!bill) throw new AppError('NOT_FOUND', 'Bill not found', 404);
+
+    const buffer = await generateBillPdf({
+      document_no: bill.billReference,
+      reference: bill.vendorBillNo ?? null,
+      party: bill.vendor ? { name: bill.vendor.name } : null,
+      document_date: bill.billDate.toISOString(),
+      due_date: bill.dueDate ? bill.dueDate.toISOString() : null,
+      payment_type: bill.paymentType ?? null,
+      payment_via: bill.paymentVia ?? null,
+      status: bill.status,
+      total: Number(bill.total),
+      amount_due: Number(bill.amountDue),
+      lines: bill.billLines.map((l) => ({
+        sr_no: l.srNo,
+        product_name: l.product?.name ?? null,
+        qty: Number(l.qty),
+        unit_price: Number(l.unitPrice),
+        total: Number(l.total),
+      })),
+    });
+    sendPdfBuffer(res, buffer, `bill-${bill.billReference}.pdf`);
   } catch (err) { next(err); }
 }
 

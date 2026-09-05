@@ -5,6 +5,7 @@ import type {
   InvoiceStatus,
   OrderLineInput,
   PayRequest,
+  PurchaseOrderDetail,
   PurchaseOrderList,
   PurchaseOrderRow,
 } from "@/types/api";
@@ -17,11 +18,10 @@ export interface PurchaseOrderInput {
   lines: OrderLineInput[];
 }
 export const purchaseOrdersService = {
-  list: (
-    params: { page?: number; limit?: number; status?: string; search?: string } = {},
-  ) => http.get<PurchaseOrderList>("/purchase-orders", { params }),
-  create: (body: PurchaseOrderInput) =>
-    http.post<PurchaseOrderRow>("/purchase-orders", body),
+  list: (params: { page?: number; limit?: number; status?: string; search?: string } = {}) =>
+    http.get<PurchaseOrderList>("/purchase-orders", { params }),
+  get: (id: string) => http.get<PurchaseOrderDetail>(`/purchase-orders/${id}`),
+  create: (body: PurchaseOrderInput) => http.post<PurchaseOrderRow>("/purchase-orders", body),
   /** Draft only. */
   confirm: (id: string) => http.put<PurchaseOrderRow>(`/purchase-orders/${id}/confirm`),
 };
@@ -46,8 +46,7 @@ export const billsService = {
   get: (id: string) => http.get<BillDetail>(`/bills/${id}`),
   create: (body: BillInput) => http.post<BillDetail>("/bills", body),
   /** Draft only. */
-  update: (id: string, body: Partial<BillInput>) =>
-    http.put<BillDetail>(`/bills/${id}`, body),
+  update: (id: string, body: Partial<BillInput>) => http.put<BillDetail>(`/bills/${id}`, body),
   /** Draft only — creates the journal entry. */
   confirm: (id: string) => http.post<BillDetail>(`/bills/${id}/confirm`),
   /** A4 — POST cancel, draft only. */

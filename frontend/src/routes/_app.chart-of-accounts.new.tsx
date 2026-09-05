@@ -24,7 +24,10 @@ export const Route = createFileRoute("/_app/chart-of-accounts/new")({
       { title: "New account — Urban Furniture Accounting" },
       { name: "description", content: "New account in the Urban Furniture Accounting System." },
       { property: "og:title", content: "New account — Urban Furniture Accounting" },
-      { property: "og:description", content: "New account in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "New account in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -34,7 +37,15 @@ export const Route = createFileRoute("/_app/chart-of-accounts/new")({
   ),
 });
 
-const ACCOUNT_TYPES: AccountType[] = ["asset", "liability", "bank", "capital", "cash", "income", "expense"];
+const ACCOUNT_TYPES: AccountType[] = [
+  "asset",
+  "liability",
+  "bank",
+  "capital",
+  "cash",
+  "income",
+  "expense",
+];
 
 function Page() {
   const navigate = useNavigate();
@@ -44,7 +55,8 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: () => accountsService.create({ name: name.trim(), account_type: accountType as AccountType }),
+    mutationFn: () =>
+      accountsService.create({ name: name.trim(), account_type: accountType as AccountType }),
     onSuccess: () => {
       toast.success("Account created");
       queryClient.invalidateQueries({ queryKey: ["chart-of-accounts"] });
@@ -57,7 +69,10 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New account" description="Add a ledger account to the chart of accounts." />
+      <PageHeader
+        title="New account"
+        description="Add a ledger account to the chart of accounts."
+      />
       <form
         className="space-y-6"
         onSubmit={(e) => {
@@ -91,7 +106,11 @@ function Page() {
         <ErrorBanner message={error} />
 
         <FormActions>
-          <Button type="button" variant="outline" onClick={() => navigate({ to: "/chart-of-accounts" })}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate({ to: "/chart-of-accounts" })}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={!canSubmit || mutation.isPending}>

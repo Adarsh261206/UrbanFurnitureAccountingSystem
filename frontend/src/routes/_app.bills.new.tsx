@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -12,16 +12,29 @@ import {
   FormActions,
   ErrorBanner,
 } from "@/components/common/FormLayout";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LineEditor, emptyLine, type EditableLine } from "@/components/purchase/LineEditor";
 import { billsService, purchaseOrdersService } from "@/services/purchaseService";
-import { contactsService, productsService, accountsService, analyticalsService } from "@/services/masterDataService";
+import {
+  contactsService,
+  productsService,
+  accountsService,
+  analyticalsService,
+} from "@/services/masterDataService";
 import { errorMessage } from "@/lib/api/errors";
 import { today, money } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/bills/new")({
+  validateSearch: (search: Record<string, unknown>): { po?: string } =>
+    typeof search.po === "string" ? { po: search.po } : {},
   head: () => ({
     meta: [
       { title: "New bill — Urban Furniture Accounting" },
@@ -39,10 +52,11 @@ export const Route = createFileRoute("/_app/bills/new")({
 
 function Page() {
   const navigate = useNavigate();
+  const { po } = Route.useSearch();
   const [vendorId, setVendorId] = useState("");
   const [billDate, setBillDate] = useState(today());
   const [dueDate, setDueDate] = useState(today());
-  const [purchaseOrderId, setPurchaseOrderId] = useState("");
+  const [purchaseOrderId, setPurchaseOrderId] = useState(po ?? "");
   const [lines, setLines] = useState<EditableLine[]>([emptyLine()]);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -55,11 +69,40 @@ function Page() {
     queryFn: () => productsService.list({ limit: 200 }),
   });
   const accountsQuery = useQuery({ queryKey: ["accounts"], queryFn: () => accountsService.list() });
-  const analyticalsQuery = useQuery({ queryKey: ["analyticals"], queryFn: () => analyticalsService.list() });
+  const analyticalsQuery = useQuery({
+    queryKey: ["analyticals"],
+    queryFn: () => analyticalsService.list(),
+  });
   const purchaseOrdersQuery = useQuery({
     queryKey: ["purchase-orders", "confirmed"],
     queryFn: () => purchaseOrdersService.list({ status: "confirmed", limit: 200 }),
   });
+
+  /** Create Bill from PO — carry forward vendor + lines from the confirmed PO. */
+  const poDetailQuery = useQuery({
+    queryKey: ["purchase-order", po],
+    queryFn: () => (po ? purchaseOrdersService.get(po) : null),
+    enabled: !!po,
+  });
+
+  const poLoadedRef = useRef(false);
+  if (poDetailQuery.data && !poLoadedRef.current && !poDetailQuery.isLoading) {
+    poLoadedRef.current = true;
+    const poDetail = poDetailQuery.data;
+    setVendorId(poDetail.vendor_id);
+    setPurchaseOrderId(poDetail.id);
+    setLines(
+      poDetail.lines.length > 0
+        ? poDetail.lines.map((l) => ({
+            product_id: l.product_id,
+            account_id: l.chart_of_account_id,
+            analytical_id: l.budget_analytic_id ?? "",
+            quantity: String(l.qty),
+            unit_price: String(l.unit_price),
+          }))
+        : [emptyLine()],
+    );
+  }
 
   const loading =
     contactsQuery.isLoading ||
@@ -68,7 +111,11 @@ function Page() {
     analyticalsQuery.isLoading ||
     purchaseOrdersQuery.isLoading;
   const loadError =
-    contactsQuery.error || productsQuery.error || accountsQuery.error || analyticalsQuery.error || purchaseOrdersQuery.error;
+    contactsQuery.error ||
+    productsQuery.error ||
+    accountsQuery.error ||
+    analyticalsQuery.error ||
+    purchaseOrdersQuery.error;
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -92,17 +139,23 @@ function Page() {
     onError: (error) => setFormError(errorMessage(error)),
   });
 
-  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
+  const total = lines.reduce(
+    (sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0),
+    0,
+  );
 
   const canSubmit =
     vendorId &&
     billDate &&
     dueDate &&
     lines.length > 0 &&
-    lines.every((l) => l.product_id && l.account_id && Number(l.quantity) > 0 && Number(l.unit_price) >= 0);
+    lines.every(
+      (l) => l.product_id && l.account_id && Number(l.quantity) > 0 && Number(l.unit_price) >= 0,
+    );
 
   if (loading) return <LoadingState label="Loading form data" />;
-  if (loadError) return <ErrorState error={loadError} onRetry={() => void contactsQuery.refetch()} />;
+  if (loadError)
+    return <ErrorState error={loadError} onRetry={() => void contactsQuery.refetch()} />;
 
   return (
     <div className="space-y-6">
@@ -133,7 +186,11 @@ function Page() {
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Purchase order" htmlFor="purchase_order_id" hint="Optional — link a confirmed PO">
+          <Field
+            label="Purchase order"
+            htmlFor="purchase_order_id"
+            hint="Optional — link a confirmed PO"
+          >
             <Select
               value={purchaseOrderId || "none"}
               onValueChange={(v) => setPurchaseOrderId(v === "none" ? "" : v)}
@@ -152,10 +209,20 @@ function Page() {
             </Select>
           </Field>
           <Field label="Bill date" htmlFor="bill_date" required>
-            <Input id="bill_date" type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} />
+            <Input
+              id="bill_date"
+              type="date"
+              value={billDate}
+              onChange={(e) => setBillDate(e.target.value)}
+            />
           </Field>
           <Field label="Due date" htmlFor="due_date" required>
-            <Input id="due_date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <Input
+              id="due_date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </Field>
         </FormGrid>
       </FormSection>
@@ -177,7 +244,10 @@ function Page() {
         <Button variant="outline" onClick={() => navigate({ to: "/bills" })}>
           Cancel
         </Button>
-        <Button disabled={!canSubmit || createMutation.isPending} onClick={() => createMutation.mutate()}>
+        <Button
+          disabled={!canSubmit || createMutation.isPending}
+          onClick={() => createMutation.mutate()}
+        >
           {createMutation.isPending ? "Creating…" : "Create bill"}
         </Button>
       </FormActions>

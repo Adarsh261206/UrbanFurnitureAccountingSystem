@@ -4,7 +4,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +31,10 @@ export const Route = createFileRoute("/_app/budgets/new")({
       { title: "New budget — Urban Furniture Accounting" },
       { name: "description", content: "New budget in the Urban Furniture Accounting System." },
       { property: "og:title", content: "New budget — Urban Furniture Accounting" },
-      { property: "og:description", content: "New budget in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "New budget in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -51,7 +60,10 @@ function Page() {
     queryKey: ["contacts", "all-for-select"],
     queryFn: () => contactsService.list({ limit: 200 }),
   });
-  const analyticalsQuery = useQuery({ queryKey: ["analyticals"], queryFn: () => analyticalsService.list() });
+  const analyticalsQuery = useQuery({
+    queryKey: ["analyticals"],
+    queryFn: () => analyticalsService.list(),
+  });
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -135,10 +147,22 @@ function Page() {
               </Select>
             </Field>
             <Field label="Start date" htmlFor="start_date" required>
-              <Input id="start_date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+              <Input
+                id="start_date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
             </Field>
             <Field label="End date" htmlFor="end_date" required>
-              <Input id="end_date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+              <Input
+                id="end_date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
             </Field>
           </FormGrid>
         </FormSection>

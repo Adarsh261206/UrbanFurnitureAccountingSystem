@@ -1,26 +1,28 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Status presentation only — the backend is authoritative for every status
- * value (17_STATE_MACHINES). Unknown values render neutrally, never guessed.
+ * One consistent status system — subtle tinted badges with semantic meaning.
+ * Unknown values render neutrally, never guessed.
  */
 const TONES: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground border-border",
-  confirmed: "bg-primary/10 text-primary border-primary/20",
-  posted: "bg-primary/10 text-primary border-primary/20",
-  paid: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
-  partially_paid: "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400",
-  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
-  active: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
-  inactive: "bg-muted text-muted-foreground border-border",
+  draft: "bg-secondary text-secondary-foreground",
+  confirmed: "bg-info/10 text-info",
+  posted: "bg-info/10 text-info",
+  paid: "bg-success/10 text-success",
+  partially_paid: "bg-warning/10 text-warning",
+  cancelled: "bg-destructive/10 text-destructive",
+  active: "bg-success/10 text-success",
+  inactive: "bg-secondary text-secondary-foreground",
+  revised: "bg-info/10 text-info",
+  successful: "bg-success/10 text-success",
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
-  const tone = TONES[status] ?? "bg-muted text-muted-foreground border-border";
+  const tone = TONES[status] ?? "bg-secondary text-secondary-foreground";
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize",
         tone,
         className,
       )}

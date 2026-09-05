@@ -4,7 +4,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -90,10 +96,21 @@ function Page() {
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </Field>
             <Field label="Login ID" htmlFor="login_id" required>
-              <Input id="login_id" value={loginId} onChange={(e) => setLoginId(e.target.value)} required />
+              <Input
+                id="login_id"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+                required
+              />
             </Field>
             <Field label="Email" htmlFor="email" required>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </Field>
             <Field label="Role" htmlFor="role" required>
               <Select value={role} onValueChange={(v) => setRole(v as Role)}>
@@ -122,7 +139,9 @@ function Page() {
               label="Confirm password"
               htmlFor="confirm_password"
               required
-              error={confirmPassword.length > 0 && !passwordsMatch ? "Passwords do not match" : null}
+              error={
+                confirmPassword.length > 0 && !passwordsMatch ? "Passwords do not match" : null
+              }
             >
               <Input
                 id="confirm_password"

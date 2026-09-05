@@ -18,6 +18,10 @@ export interface Column<T> {
   align?: "left" | "right";
 }
 
+/**
+ * Premium data table: white surface, uppercase column headers, compact rows,
+ * hover state, clickable rows. Numbers are right-aligned by the column def.
+ */
 export function DataTable<T>({
   columns,
   rows,
@@ -32,56 +36,56 @@ export function DataTable<T>({
   caption?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card">
-      <Table>
-        {caption ? <caption className="sr-only">{caption}</caption> : null}
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            {columns.map((c) => (
-              <TableHead
-                key={c.key}
-                className={cn(
-                  "whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-                  c.align === "right" && "text-right",
-                  c.className,
-                )}
-              >
-                {c.header}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow
-              key={rowKey(row)}
-              tabIndex={onRowClick ? 0 : undefined}
-              role={onRowClick ? "button" : undefined}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
-              onKeyDown={
-                onRowClick
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onRowClick(row);
-                      }
-                    }
-                  : undefined
-              }
-              className={cn(onRowClick && "cursor-pointer focus:bg-muted/60")}
-            >
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <Table>
+          {caption ? <caption className="sr-only">{caption}</caption> : null}
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
               {columns.map((c) => (
-                <TableCell
+                <TableHead
                   key={c.key}
-                  className={cn("py-3 text-sm", c.align === "right" && "text-right", c.className)}
+                  className={cn(c.align === "right" && "text-right", c.className)}
                 >
-                  {c.cell(row)}
-                </TableCell>
+                  {c.header}
+                </TableHead>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow
+                key={rowKey(row)}
+                tabIndex={onRowClick ? 0 : undefined}
+                role={onRowClick ? "button" : undefined}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                className={cn(
+                  onRowClick && "cursor-pointer focus-visible:outline-none focus-visible:bg-muted",
+                )}
+              >
+                {columns.map((c) => (
+                  <TableCell
+                    key={c.key}
+                    className={cn(c.align === "right" && "text-right tabular-nums", c.className)}
+                  >
+                    {c.cell(row)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
@@ -101,9 +105,13 @@ export function TablePagination({
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted-foreground">
       <p>
-        Showing {from}–{to} of {total}
+        Showing{" "}
+        <span className="font-medium text-foreground">
+          {from}–{to}
+        </span>{" "}
+        of <span className="font-medium text-foreground">{total}</span>
       </p>
       <div className="flex items-center gap-2">
         <Button

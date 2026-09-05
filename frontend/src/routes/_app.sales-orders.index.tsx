@@ -7,7 +7,13 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { KanbanCard, KanbanGrid, SectionTabs, ViewToggle, type ViewMode } from "@/components/common/ViewToggle";
+import {
+  KanbanCard,
+  KanbanGrid,
+  SectionTabs,
+  ViewToggle,
+  type ViewMode,
+} from "@/components/common/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { salesOrdersService } from "@/services/salesService";
 import { errorMessage } from "@/lib/api/errors";
@@ -20,7 +26,10 @@ export const Route = createFileRoute("/_app/sales-orders/")({
       { title: "Sales orders — Urban Furniture Accounting" },
       { name: "description", content: "Sales orders in the Urban Furniture Accounting System." },
       { property: "og:title", content: "Sales orders — Urban Furniture Accounting" },
-      { property: "og:description", content: "Sales orders in the Urban Furniture Accounting System." },
+      {
+        property: "og:description",
+        content: "Sales orders in the Urban Furniture Accounting System.",
+      },
     ],
   }),
   component: () => (
@@ -64,7 +73,11 @@ function Page() {
   });
 
   const columns: Column<SalesOrderRow>[] = [
-    { key: "so_number", header: "SO number", cell: (r) => <span className="font-medium">{r.so_number}</span> },
+    {
+      key: "so_number",
+      header: "SO number",
+      cell: (r) => <span className="font-medium">{r.so_number}</span>,
+    },
     { key: "customer_name", header: "Customer", cell: (r) => r.customer_name },
     { key: "order_date", header: "Order date", cell: (r) => date(r.order_date) },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
@@ -86,6 +99,17 @@ function Page() {
           >
             {confirmMutation.isPending && confirmingId === r.id ? "Confirming…" : "Confirm"}
           </Button>
+        ) : r.status === "confirmed" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              void navigate({ to: "/invoices/new", search: { so: r.id } });
+            }}
+          >
+            Create Invoice
+          </Button>
         ) : null,
     },
   ];
@@ -94,6 +118,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Sales orders"
+        crumbs={[{ label: "Sales" }, { label: "Sales Order" }]}
         description="Create and confirm customer sales orders."
         actions={
           <>
@@ -115,7 +140,7 @@ function Page() {
             }}
             placeholder="Search SO number or customer…"
             aria-label="Search sales orders"
-            className="h-9 w-64 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-9 w-64 rounded-md border border-input bg-card px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
           />
           <SectionTabs
             label="Sales order status"
@@ -142,7 +167,9 @@ function Page() {
         <EmptyState
           title="No sales orders yet"
           description="Create a sales order to start the order-to-cash workflow."
-          action={<Button onClick={() => navigate({ to: "/sales-orders/new" })}>New sales order</Button>}
+          action={
+            <Button onClick={() => navigate({ to: "/sales-orders/new" })}>New sales order</Button>
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -151,6 +178,7 @@ function Page() {
               columns={columns}
               rows={query.data.sales_orders}
               rowKey={(r) => r.id}
+              onRowClick={(r) => navigate({ to: "/sales-orders/$id", params: { id: r.id } })}
             />
           ) : (
             <KanbanGrid>
@@ -158,7 +186,7 @@ function Page() {
                 <KanbanCard
                   key={r.id}
                   ariaLabel={`Sales order ${r.so_number}`}
-                  onClick={() => navigate({ to: "/sales-orders" })}
+                  onClick={() => navigate({ to: "/sales-orders/$id", params: { id: r.id } })}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-foreground">{r.so_number}</span>
@@ -179,7 +207,9 @@ function Page() {
                         confirmMutation.mutate(r.id);
                       }}
                     >
-                      {confirmMutation.isPending && confirmingId === r.id ? "Confirming…" : "Confirm"}
+                      {confirmMutation.isPending && confirmingId === r.id
+                        ? "Confirming…"
+                        : "Confirm"}
                     </Button>
                   ) : null}
                 </KanbanCard>

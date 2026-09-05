@@ -40,7 +40,11 @@ function Page() {
   });
 
   const columns: Column<BillListRow>[] = [
-    { key: "bill_reference", header: "Bill", cell: (r) => <span className="font-medium">{r.bill_reference}</span> },
+    {
+      key: "bill_reference",
+      header: "Bill",
+      cell: (r) => <span className="font-medium">{r.bill_reference}</span>,
+    },
     { key: "vendor_name", header: "Vendor", cell: (r) => r.vendor_name },
     { key: "bill_date", header: "Bill date", cell: (r) => date(r.bill_date) },
     { key: "due_date", header: "Due date", cell: (r) => date(r.due_date) },
@@ -54,6 +58,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Bills"
+        crumbs={[{ label: "Purchase" }, { label: "Purchase Bill" }]}
         description="Vendor bills, their journal entries and payment status."
         actions={
           <>
@@ -72,7 +77,7 @@ function Page() {
             setStatus(e.target.value as InvoiceStatus | "");
             setPage(1);
           }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-9 rounded-md border border-input bg-card px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
         >
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
@@ -99,7 +104,12 @@ function Page() {
             rowKey={(r) => r.id}
             onRowClick={(r) => navigate({ to: "/bills/$id", params: { id: r.id } })}
           />
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   testTimeout: 30000,
+  globalSetup: '<rootDir>/tests/global-setup.ts',
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },

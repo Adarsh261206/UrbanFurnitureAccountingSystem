@@ -63,15 +63,39 @@ function Page() {
   });
 
   const columns: Column<BudgetListRow>[] = [
-    { key: "name", header: "Name", cell: (r) => <span className="font-medium text-foreground">{r.name}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+    },
     { key: "responsible", header: "Responsible", cell: (r) => responsibleName(r.responsible) },
     { key: "type", header: "Type", cell: (r) => <span className="capitalize">{r.type}</span> },
     { key: "start_date", header: "Start", cell: (r) => fmtDate(r.start_date) },
     { key: "end_date", header: "End", cell: (r) => fmtDate(r.end_date) },
-    { key: "committed_amount", header: "Committed", cell: (r) => money(r.committed_amount), align: "right" },
-    { key: "achieved_amount", header: "Achieved", cell: (r) => money(r.achieved_amount), align: "right" },
-    { key: "achieved_percentage", header: "Achieved %", cell: (r) => percent(r.achieved_percentage), align: "right" },
-    { key: "amount_to_achieve", header: "To achieve", cell: (r) => money(r.amount_to_achieve), align: "right" },
+    {
+      key: "committed_amount",
+      header: "Committed",
+      cell: (r) => money(r.committed_amount),
+      align: "right",
+    },
+    {
+      key: "achieved_amount",
+      header: "Achieved",
+      cell: (r) => money(r.achieved_amount),
+      align: "right",
+    },
+    {
+      key: "achieved_percentage",
+      header: "Achieved %",
+      cell: (r) => percent(r.achieved_percentage),
+      align: "right",
+    },
+    {
+      key: "amount_to_achieve",
+      header: "To achieve",
+      cell: (r) => money(r.amount_to_achieve),
+      align: "right",
+    },
     { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
   ];
 
@@ -79,6 +103,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Budgets"
+        crumbs={[{ label: "Master Settings" }, { label: "Analytical Budget" }]}
         description="Track committed and achieved amounts against analytic accounts."
         actions={
           <Button onClick={() => navigate({ to: "/budgets/new" })}>
@@ -175,7 +200,9 @@ function Page() {
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt>Achieved %</dt>
-                      <dd className="tabular-nums text-foreground">{percent(b.achieved_percentage)}</dd>
+                      <dd className="tabular-nums text-foreground">
+                        {percent(b.achieved_percentage)}
+                      </dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt>To achieve</dt>
@@ -192,7 +219,12 @@ function Page() {
               ))}
             </KanbanGrid>
           )}
-          <TablePagination page={page} limit={LIMIT} total={query.data.total} onPageChange={setPage} />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <EmptyState

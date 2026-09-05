@@ -2,12 +2,11 @@ import axios, { type AxiosRequestConfig } from "axios";
 import { normalizeError } from "./errors";
 
 /**
- * Axios instance — 24_LOVABLE_INTEGRATION_GUIDE §3.
+ * Axios instance — single API client for the whole app.
  * Cookie (HttpOnly) auth only: no token is ever read, stored or attached here.
  */
 export const API_BASE_URL: string =
-  (import.meta.env["VITE_API_URL"] as string | undefined) ??
-  "http://localhost:3000/api/v1";
+  (import.meta.env["VITE_API_URL"] as string | undefined) ?? "http://localhost:3000/api/v1";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

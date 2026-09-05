@@ -82,11 +82,14 @@ function ForgotPasswordPage() {
           </p>
         ) : null}
         {error ? (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
             {errorMessage(error)}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" className="h-9 w-full text-sm" disabled={submitting}>
           {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
           Send reset link
         </Button>

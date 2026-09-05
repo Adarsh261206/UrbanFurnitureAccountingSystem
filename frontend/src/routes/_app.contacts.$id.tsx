@@ -4,7 +4,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ErrorState, LoadingState } from "@/components/common/States";
-import { FormSection, Field, FormGrid, FormActions, ErrorBanner } from "@/components/common/FormLayout";
+import {
+  FormSection,
+  Field,
+  FormGrid,
+  FormActions,
+  ErrorBanner,
+} from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { contactsService, type ContactInput } from "@/services/masterDataService";
@@ -86,7 +92,8 @@ function Page() {
     const errors: Record<string, string> = {};
     if (!form["name"].trim()) errors["name"] = "Name is required";
     if (!form["email"].trim()) errors["email"] = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form["email"].trim())) errors["email"] = "Enter a valid email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form["email"].trim()))
+      errors["email"] = "Enter a valid email";
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     mutation.mutate(form);
@@ -100,6 +107,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={query.data.name}
+        crumbs={[{ label: "Master Settings" }, { label: "Contact", to: "/contacts" }]}
         description={`Created ${fmtDate(query.data.created_at)}`}
         actions={
           <Button variant="outline" onClick={() => navigate({ to: "/contacts" })}>
@@ -112,31 +120,70 @@ function Page() {
           <ErrorBanner message={formError} />
           <FormGrid>
             <Field label="Name" htmlFor="name" required error={fieldErrors["name"] ?? null}>
-              <Input id="name" value={form["name"]} onChange={(e) => setField("name", e.target.value)} required />
+              <Input
+                id="name"
+                value={form["name"]}
+                onChange={(e) => setField("name", e.target.value)}
+                required
+              />
             </Field>
             <Field label="Email" htmlFor="email" required error={fieldErrors["email"] ?? null}>
-              <Input id="email" type="email" value={form["email"]} onChange={(e) => setField("email", e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                value={form["email"]}
+                onChange={(e) => setField("email", e.target.value)}
+                required
+              />
             </Field>
             <Field label="Phone" htmlFor="phone" error={fieldErrors["phone"] ?? null}>
-              <Input id="phone" value={form.phone} onChange={(e) => setField("phone", e.target.value)} />
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => setField("phone", e.target.value)}
+              />
             </Field>
             <Field label="Image URL" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
-              <Input id="image_url" value={form.image_url} onChange={(e) => setField("image_url", e.target.value)} />
+              <Input
+                id="image_url"
+                value={form.image_url}
+                onChange={(e) => setField("image_url", e.target.value)}
+              />
             </Field>
             <Field label="Street" htmlFor="street" error={fieldErrors["street"] ?? null}>
-              <Input id="street" value={form.street} onChange={(e) => setField("street", e.target.value)} />
+              <Input
+                id="street"
+                value={form.street}
+                onChange={(e) => setField("street", e.target.value)}
+              />
             </Field>
             <Field label="City" htmlFor="city" error={fieldErrors["city"] ?? null}>
-              <Input id="city" value={form.city} onChange={(e) => setField("city", e.target.value)} />
+              <Input
+                id="city"
+                value={form.city}
+                onChange={(e) => setField("city", e.target.value)}
+              />
             </Field>
             <Field label="State" htmlFor="state" error={fieldErrors["state"] ?? null}>
-              <Input id="state" value={form.state} onChange={(e) => setField("state", e.target.value)} />
+              <Input
+                id="state"
+                value={form.state}
+                onChange={(e) => setField("state", e.target.value)}
+              />
             </Field>
             <Field label="Country" htmlFor="country" error={fieldErrors["country"] ?? null}>
-              <Input id="country" value={form.country} onChange={(e) => setField("country", e.target.value)} />
+              <Input
+                id="country"
+                value={form.country}
+                onChange={(e) => setField("country", e.target.value)}
+              />
             </Field>
             <Field label="Pincode" htmlFor="pincode" error={fieldErrors["pincode"] ?? null}>
-              <Input id="pincode" value={form.pincode} onChange={(e) => setField("pincode", e.target.value)} />
+              <Input
+                id="pincode"
+                value={form.pincode}
+                onChange={(e) => setField("pincode", e.target.value)}
+              />
             </Field>
           </FormGrid>
           <FormActions>

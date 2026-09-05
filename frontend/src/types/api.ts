@@ -7,13 +7,7 @@
 export type Role = "admin" | "accountant" | "user";
 export type ProductType = "goods" | "service" | "combo";
 export type AccountType =
-  | "asset"
-  | "liability"
-  | "bank"
-  | "capital"
-  | "cash"
-  | "income"
-  | "expense";
+  "asset" | "liability" | "bank" | "capital" | "cash" | "income" | "expense";
 export type BudgetType = "income" | "expense";
 export type BudgetStatus = "draft" | "confirmed" | "revised" | "cancelled";
 export type InvoiceStatus = "draft" | "confirmed" | "paid";
@@ -111,8 +105,7 @@ export interface BudgetListRow {
   is_archived: boolean;
   created_at: string;
 }
-export interface BudgetDetail
-  extends Omit<BudgetListRow, "responsible" | "analytical_id"> {
+export interface BudgetDetail extends Omit<BudgetListRow, "responsible" | "analytical_id"> {
   responsible: { id: string; name: string } | null;
   analytical: { id: string; name: string } | null;
 }
@@ -158,6 +151,26 @@ export interface OrderLineInput {
   quantity: number;
   unit_price: number;
 }
+/** Shared line shape returned on document details (PO/SO/Invoice/Bill). */
+export interface DocumentLine {
+  id: string;
+  sr_no: number;
+  product_id: string;
+  product_name?: string;
+  chart_of_account_id: string;
+  budget_analytic_id: string | null;
+  qty: number;
+  unit_price: number;
+  total: number;
+}
+export interface SalesOrderDetail extends SalesOrderRow {
+  customer: { id: string; name: string } | null;
+  lines: DocumentLine[];
+}
+export interface PurchaseOrderDetail extends PurchaseOrderRow {
+  vendor: { id: string; name: string } | null;
+  lines: DocumentLine[];
+}
 export interface InvoiceListRow {
   id: string;
   invoice_reference: string;
@@ -173,17 +186,6 @@ export interface InvoiceListRow {
   sales_order_id: string | null;
   journal_entry_id: string | null;
   created_at: string;
-}
-export interface InvoiceLine {
-  id: string;
-  sr_no: number;
-  product_id: string;
-  product_name?: string;
-  chart_of_account_id: string;
-  budget_analytic_id: string | null;
-  qty: number;
-  unit_price: number;
-  total: number;
 }
 export interface InvoiceDetail {
   id: string;
@@ -201,7 +203,7 @@ export interface InvoiceDetail {
   amount_due: number;
   status: InvoiceStatus;
   journal_entry_id: string | null;
-  lines: InvoiceLine[];
+  lines: DocumentLine[];
   created_at: string;
 }
 
@@ -231,7 +233,6 @@ export interface BillListRow {
   journal_entry_id: string | null;
   created_at: string;
 }
-export type BillLine = InvoiceLine;
 export interface BillDetail {
   id: string;
   bill_reference: string;
@@ -248,7 +249,7 @@ export interface BillDetail {
   amount_due: number;
   status: InvoiceStatus;
   journal_entry_id: string | null;
-  lines: BillLine[];
+  lines: DocumentLine[];
   created_at: string;
 }
 

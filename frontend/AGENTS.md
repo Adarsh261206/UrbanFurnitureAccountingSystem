@@ -1,10 +1,15 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Project Notes
+
+## Tech Stack
+
+- TanStack Start (file-based routing in `src/routes/`) + React + TypeScript
+- Tailwind CSS v4, shadcn-style UI primitives in `src/components/ui/`
+- Axios API client (`src/lib/api/client.ts`) + TanStack Query
+- Backend: Express + Prisma + PostgreSQL (see `../backend`)
+
+## Conventions
+
+- API types live in `src/types/api.ts` (snake_case, backend contract).
+- All API calls go through `src/services/*` — components never call axios directly.
+- Financial values are backend-authoritative; the frontend only formats them.
+- Role checks are centralized in `src/components/guards/RouteGuards.tsx`.
