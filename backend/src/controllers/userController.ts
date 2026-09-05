@@ -3,17 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { authConfig } from '../config/auth';
-
-const userSelect = {
-  id: true,
-  name: true,
-  loginId: true,
-  email: true,
-  role: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
-};
+import { serializeUser } from '../utils/serializers';
 
 export async function listUsers(req: Request, res: Response, next: NextFunction) {
   try {
@@ -21,59 +11,66 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
-    const [data, total] = await Promise.all([
-      prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' }, select: userSelect }),
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.user.count(),
     ]);
 
-    res.json({ data, total, page, limit });
+    res.json({ users: users.map(serializeUser), total, page, limit });
   } catch (err) { next(err); }
 }
 
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: userSelect });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
-    res.json({ data: user });
+    res.json(serializeUser(user));
   } catch (err) { next(err); }
 }
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, loginId, email, password, role } = req.body;
+    const loginId = req.body.login_id ?? req.body.loginId;
+    const email = req.body.email;
+    const password = req.body.password;
+    const role = req.body.role || 'user';
+    const name = req.body.name;
 
-    const existingUser = await prisma.user.findFirst({
+    const existing = await prisma.user.findFirst({
       where: { OR: [{ loginId }, { email }] },
     });
-    if (existingUser) {
-      throw new AppError('USER_EXISTS', 'User with this login ID or email already exists', 409, 'loginId');
+    if (existing) {
+      if (existing.loginId === loginId) {
+        throw new AppError('DUPLICATE_LOGIN_ID', 'This Login Id is already taken', 409, 'login_id');
+      }
+      throw new AppError('DUPLICATE_EMAIL', 'This email is already registered', 409, 'email');
     }
 
     const passwordHash = await bcrypt.hash(password, authConfig.bcryptRounds);
     const user = await prisma.user.create({
-      data: {
-        name,
-        loginId,
-        email,
-        passwordHash,
-        role: role || 'user',
-      },
-      select: userSelect,
+      data: { name, loginId, email, passwordHash, role },
     });
 
-    res.status(201).json({ data: user });
+    res.status(201).json(serializeUser(user));
   } catch (err) { next(err); }
 }
 
 export async function updateUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, email, role, isActive } = req.body;
+    const name = req.body.name;
+    const email = req.body.email;
+    const role = req.body.role;
+    const isActive = req.body.is_active ?? req.body.isActive;
     const user = await prisma.user.update({
       where: { id: req.params.id },
-      data: { ...(name && { name }), ...(email && { email }), ...(role && { role }), ...(isActive !== undefined && { isActive }) },
-      select: userSelect,
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(role !== undefined ? { role } : {}),
+        ...(isActive !== undefined ? { isActive } : {}),
+      },
     });
-    res.json({ data: user });
+    res.json(serializeUser(user));
   } catch (err) { next(err); }
 }
 

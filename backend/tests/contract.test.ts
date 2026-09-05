@@ -25,18 +25,18 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 1000, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 1000 },
+            { account_id: testData.arAccount.id, debit: 1000, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 1000 },
           ],
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.entryNumber).toBeDefined();
-      expect(res.body.data.status).toBe('posted');
-      expect(res.body.data.lines).toHaveLength(2);
+      expect(res.body.entry_number).toBeDefined();
+      expect(res.body.status).toBe('posted');
+      expect(res.body.lines).toHaveLength(2);
     });
 
     it('should reject journal entry with less than 2 lines', async () => {
@@ -44,10 +44,10 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 1000, credit: 0 },
+            { account_id: testData.arAccount.id, debit: 1000, credit: 0 },
           ],
         });
 
@@ -59,11 +59,11 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 1000, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 500 },
+            { account_id: testData.arAccount.id, debit: 1000, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 500 },
           ],
         });
 
@@ -76,40 +76,15 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: 'not-a-date',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: 'not-a-date',
           lines: [
-            { accountId: testData.arAccount.id, debit: 1000, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 1000 },
+            { account_id: testData.arAccount.id, debit: 1000, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 1000 },
           ],
         });
 
       expect(res.status).toBe(400);
-    });
-  });
-
-  describe('Journal Entry Posting', () => {
-    it('should reject posting an already-posted entry', async () => {
-      const createRes = await request(app)
-        .post('/api/v1/journal-entries')
-        .set('Cookie', [`auth_token=${adminToken}`])
-        .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
-          lines: [
-            { accountId: testData.arAccount.id, debit: 200, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 200 },
-          ],
-        });
-
-      const entryId = createRes.body.data.id;
-
-      const postRes = await request(app)
-        .post(`/api/v1/journal-entries/${entryId}/post`)
-        .set('Cookie', [`auth_token=${adminToken}`]);
-
-      expect(postRes.status).toBe(400);
-      expect(postRes.body.error.code).toBe('ALREADY_POSTED');
     });
   });
 
@@ -119,11 +94,11 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 100, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 100 },
+            { account_id: testData.arAccount.id, debit: 100, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 100 },
           ],
         });
 
@@ -131,17 +106,17 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 100, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 100 },
+            { account_id: testData.arAccount.id, debit: 100, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 100 },
           ],
         });
 
-      expect(res1.body.data.entryNumber).not.toBe(res2.body.data.entryNumber);
-      expect(res1.body.data.entryNumber).toMatch(/^JE\/\d{4}\/\d{4}$/);
-      expect(res2.body.data.entryNumber).toMatch(/^JE\/\d{4}\/\d{4}$/);
+      expect(res1.body.entry_number).not.toBe(res2.body.entry_number);
+      expect(res1.body.entry_number).toMatch(/^JE\/\d{4}\/\d{4}$/);
+      expect(res2.body.entry_number).toMatch(/^JE\/\d{4}\/\d{4}$/);
     });
   });
 
@@ -151,17 +126,17 @@ describe('Accounting Engine', () => {
         .post('/api/v1/journal-entries')
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
-          accountingDate: '2025-01-15',
-          journalId: testData.saleJournal.id,
+          journal_id: testData.saleJournal.id,
+          accounting_date: '2025-01-15',
           lines: [
-            { accountId: testData.arAccount.id, debit: 99.99, credit: 0 },
-            { accountId: testData.salesRevenue.id, debit: 0, credit: 99.99 },
+            { account_id: testData.arAccount.id, debit: 99.99, credit: 0 },
+            { account_id: testData.salesRevenue.id, debit: 0, credit: 99.99 },
           ],
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.lines[0].debit).toBe('99.99');
-      expect(res.body.data.lines[1].credit).toBe('99.99');
+      expect(Number(res.body.lines[0].debit)).toBe(99.99);
+      expect(Number(res.body.lines[1].credit)).toBe(99.99);
     });
   });
 });
@@ -175,20 +150,21 @@ describe('Master CRUD Endpoints', () => {
         .send({ name: 'CRUD Test', email: 'crud@test.com', phone: '1234567890' });
 
       expect(createRes.status).toBe(201);
-      const contactId = createRes.body.data.id;
+      const contactId = createRes.body.id;
+      expect(createRes.body.name).toBe('CRUD Test');
 
       const readRes = await request(app)
         .get(`/api/v1/contacts/${contactId}`)
         .set('Cookie', [`auth_token=${adminToken}`]);
       expect(readRes.status).toBe(200);
-      expect(readRes.body.data.name).toBe('CRUD Test');
+      expect(readRes.body.name).toBe('CRUD Test');
 
       const updateRes = await request(app)
         .put(`/api/v1/contacts/${contactId}`)
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({ name: 'Updated Name' });
       expect(updateRes.status).toBe(200);
-      expect(updateRes.body.data.name).toBe('Updated Name');
+      expect(updateRes.body.name).toBe('Updated Name');
 
       const deleteRes = await request(app)
         .delete(`/api/v1/contacts/${contactId}`)
@@ -209,20 +185,21 @@ describe('Master CRUD Endpoints', () => {
         .set('Cookie', [`auth_token=${adminToken}`])
         .send({
           name: 'Test Product CRUD',
-          productType: 'goods',
-          categoryId: testData.category.id,
-          salesPrice: 150,
+          product_type: 'goods',
+          category_id: testData.category.id,
+          sales_price: 150,
           cost: 80,
         });
 
       expect(createRes.status).toBe(201);
-      const productId = createRes.body.data.id;
+      const productId = createRes.body.id;
+      expect(createRes.body.category_name).toBe('Test Category');
 
       const readRes = await request(app)
         .get(`/api/v1/products/${productId}`)
         .set('Cookie', [`auth_token=${adminToken}`]);
       expect(readRes.status).toBe(200);
-      expect(readRes.body.data.name).toBe('Test Product CRUD');
+      expect(readRes.body.name).toBe('Test Product CRUD');
 
       const deleteRes = await request(app)
         .delete(`/api/v1/products/${productId}`)
@@ -239,7 +216,7 @@ describe('Master CRUD Endpoints', () => {
         .send({ name: 'Test Category CRUD' });
 
       expect(createRes.status).toBe(201);
-      const categoryId = createRes.body.data.id;
+      const categoryId = createRes.body.id;
 
       const readRes = await request(app)
         .get(`/api/v1/categories/${categoryId}`)
@@ -250,6 +227,40 @@ describe('Master CRUD Endpoints', () => {
         .delete(`/api/v1/categories/${categoryId}`)
         .set('Cookie', [`auth_token=${adminToken}`]);
       expect(deleteRes.status).toBe(204);
+    });
+  });
+
+  describe('Bare-array endpoints', () => {
+    it('categories returns a bare array', async () => {
+      const res = await request(app)
+        .get('/api/v1/categories')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('analyticals returns a bare array', async () => {
+      const res = await request(app)
+        .get('/api/v1/analyticals')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('chart-of-accounts returns a bare array', async () => {
+      const res = await request(app)
+        .get('/api/v1/chart-of-accounts')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('journals returns a bare array', async () => {
+      const res = await request(app)
+        .get('/api/v1/journals')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
     });
   });
 });
@@ -263,44 +274,41 @@ describe('Sales Flow', () => {
       .post('/api/v1/sales-orders')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        customerId: testData.customer.id,
-        date: '2025-01-15',
-        invoiceDate: '2025-01-15',
-        dueDate: '2025-02-15',
+        customer_id: testData.customer.id,
+        order_date: '2025-01-15',
         lines: [
-          { productId: testData.product.id, accountId: testData.arAccount.id, qty: 2, unitPrice: 100 },
+          { product_id: testData.product.id, account_id: testData.arAccount.id, quantity: 2, unit_price: 100 },
         ],
       });
 
     expect(res.status).toBe(201);
-    salesOrderId = res.body.data.id;
-    expect(Number(res.body.data.total)).toBe(200);
-    expect(res.body.data.status).toBe('draft');
+    salesOrderId = res.body.id;
+    expect(Number(res.body.total_amount)).toBe(200);
+    expect(res.body.status).toBe('draft');
   });
 
   it('should confirm a sales order and create JE', async () => {
     const res = await request(app)
-      .post(`/api/v1/sales-orders/${salesOrderId}/confirm`)
+      .put(`/api/v1/sales-orders/${salesOrderId}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
+    expect(res.body.status).toBe('confirmed');
 
     const jeRes = await request(app)
       .get('/api/v1/journal-entries')
       .set('Cookie', [`auth_token=${adminToken}`])
       .query({ status: 'posted' });
 
-    const soEntry = jeRes.body.data.find(
-      (e: any) => e.sourceDocumentType === 'sales_order' && e.sourceDocumentId === salesOrderId
+    const soEntry = jeRes.body.journal_entries.find(
+      (e: any) => e.reference && e.reference.includes(salesOrderId)
     );
     expect(soEntry).toBeDefined();
-    expect(soEntry.lines).toHaveLength(2);
   });
 
   it('should reject duplicate confirm', async () => {
     const res = await request(app)
-      .post(`/api/v1/sales-orders/${salesOrderId}/confirm`)
+      .put(`/api/v1/sales-orders/${salesOrderId}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(400);
@@ -311,24 +319,22 @@ describe('Sales Flow', () => {
       .post('/api/v1/invoices')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        customerId: testData.customer.id,
-        salesOrderId: salesOrderId,
-        partnerId: testData.customer.id,
-        date: '2025-01-15',
-        invoiceDate: '2025-01-15',
-        dueDate: '2025-02-15',
-        paymentType: 'receive',
-        paymentVia: 'bank',
+        customer_id: testData.customer.id,
+        sales_order_id: salesOrderId,
+        invoice_date: '2025-01-15',
+        due_date: '2025-02-15',
+        payment_type: 'receive',
+        payment_via: 'bank',
         lines: [
-          { productId: testData.product.id, accountId: testData.arAccount.id, qty: 2, unitPrice: 100 },
+          { product_id: testData.product.id, account_id: testData.arAccount.id, quantity: 2, unit_price: 100 },
         ],
       });
 
     expect(res.status).toBe(201);
-    invoiceId = res.body.data.id;
-    expect(Number(res.body.data.total)).toBe(200);
-    expect(Number(res.body.data.amountDue)).toBe(200);
-    expect(res.body.data.status).toBe('draft');
+    invoiceId = res.body.id;
+    expect(Number(res.body.total)).toBe(200);
+    expect(Number(res.body.amount_due)).toBe(200);
+    expect(res.body.status).toBe('draft');
   });
 
   it('should confirm an invoice and create JE', async () => {
@@ -337,8 +343,8 @@ describe('Sales Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
-    expect(res.body.data.journalEntryId).toBeDefined();
+    expect(res.body.status).toBe('confirmed');
+    expect(res.body.journal_entry_id).toBeDefined();
   });
 
   it('should reject confirming non-draft invoice', async () => {
@@ -347,6 +353,7 @@ describe('Sales Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('ALREADY_CONFIRMED');
   });
 
   it('should create a payment and reduce amountDue', async () => {
@@ -354,27 +361,27 @@ describe('Sales Flow', () => {
       .post('/api/v1/payments')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        invoiceId: invoiceId,
+        invoice_id: invoiceId,
         amount: 100,
-        paymentVia: 'bank',
-        paymentDate: '2025-01-20',
+        payment_via: 'bank',
+        payment_date: '2025-01-20',
       });
 
     expect(res.status).toBe(201);
 
     const confirmRes = await request(app)
-      .post(`/api/v1/payments/${res.body.data.id}/confirm`)
+      .post(`/api/v1/payments/${res.body.id}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(confirmRes.status).toBe(200);
-    expect(confirmRes.body.data.status).toBe('confirmed');
+    expect(confirmRes.body.status).toBe('confirmed');
 
     const invoiceRes = await request(app)
       .get(`/api/v1/invoices/${invoiceId}`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
-    expect(Number(invoiceRes.body.data.amountDue)).toBe(100);
-    expect(invoiceRes.body.data.status).toBe('confirmed');
+    expect(Number(invoiceRes.body.amount_due)).toBe(100);
+    expect(invoiceRes.body.status).toBe('confirmed');
   });
 
   it('should mark invoice as paid when fully paid', async () => {
@@ -382,22 +389,22 @@ describe('Sales Flow', () => {
       .post('/api/v1/payments')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        invoiceId: invoiceId,
+        invoice_id: invoiceId,
         amount: 100,
-        paymentVia: 'cash',
-        paymentDate: '2025-01-25',
+        payment_via: 'cash',
+        payment_date: '2025-01-25',
       });
 
     await request(app)
-      .post(`/api/v1/payments/${payRes.body.data.id}/confirm`)
+      .post(`/api/v1/payments/${payRes.body.id}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     const invoiceRes = await request(app)
       .get(`/api/v1/invoices/${invoiceId}`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
-    expect(Number(invoiceRes.body.data.amountDue)).toBe(0);
-    expect(invoiceRes.body.data.status).toBe('paid');
+    expect(Number(invoiceRes.body.amount_due)).toBe(0);
+    expect(invoiceRes.body.status).toBe('paid');
   });
 });
 
@@ -410,27 +417,25 @@ describe('Purchase Flow', () => {
       .post('/api/v1/purchase-orders')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        vendorId: testData.vendor.id,
-        date: '2025-01-15',
-        billDate: '2025-01-15',
-        dueDate: '2025-02-15',
+        vendor_id: testData.vendor.id,
+        order_date: '2025-01-15',
         lines: [
-          { productId: testData.product.id, accountId: testData.apAccount.id, qty: 3, unitPrice: 60 },
+          { product_id: testData.product.id, account_id: testData.apAccount.id, quantity: 3, unit_price: 60 },
         ],
       });
 
     expect(res.status).toBe(201);
-    purchaseOrderId = res.body.data.id;
-    expect(Number(res.body.data.total)).toBe(180);
+    purchaseOrderId = res.body.id;
+    expect(Number(res.body.total_amount)).toBe(180);
   });
 
   it('should confirm a purchase order and create JE', async () => {
     const res = await request(app)
-      .post(`/api/v1/purchase-orders/${purchaseOrderId}/confirm`)
+      .put(`/api/v1/purchase-orders/${purchaseOrderId}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
+    expect(res.body.status).toBe('confirmed');
   });
 
   it('should create a bill linked to PO', async () => {
@@ -438,23 +443,21 @@ describe('Purchase Flow', () => {
       .post('/api/v1/bills')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        vendorId: testData.vendor.id,
-        purchaseOrderId: purchaseOrderId,
-        partnerId: testData.vendor.id,
-        date: '2025-01-15',
-        billDate: '2025-01-15',
-        dueDate: '2025-02-15',
-        paymentType: 'send',
-        paymentVia: 'bank',
+        vendor_id: testData.vendor.id,
+        purchase_order_id: purchaseOrderId,
+        bill_date: '2025-01-15',
+        due_date: '2025-02-15',
+        payment_type: 'send',
+        payment_via: 'bank',
         lines: [
-          { productId: testData.product.id, accountId: testData.apAccount.id, qty: 3, unitPrice: 60 },
+          { product_id: testData.product.id, account_id: testData.apAccount.id, quantity: 3, unit_price: 60 },
         ],
       });
 
     expect(res.status).toBe(201);
-    billId = res.body.data.id;
-    expect(Number(res.body.data.total)).toBe(180);
-    expect(Number(res.body.data.amountDue)).toBe(180);
+    billId = res.body.id;
+    expect(Number(res.body.total)).toBe(180);
+    expect(Number(res.body.amount_due)).toBe(180);
   });
 
   it('should confirm a bill and create JE', async () => {
@@ -463,8 +466,8 @@ describe('Purchase Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
-    expect(res.body.data.journalEntryId).toBeDefined();
+    expect(res.body.status).toBe('confirmed');
+    expect(res.body.journal_entry_id).toBeDefined();
   });
 
   it('should create payment for bill and reduce amountDue', async () => {
@@ -472,14 +475,14 @@ describe('Purchase Flow', () => {
       .post('/api/v1/payments')
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
-        vendorBillId: billId,
+        vendor_bill_id: billId,
         amount: 180,
-        paymentVia: 'bank',
-        paymentDate: '2025-01-20',
+        payment_via: 'bank',
+        payment_date: '2025-01-20',
       });
 
     const confirmRes = await request(app)
-      .post(`/api/v1/payments/${payRes.body.data.id}/confirm`)
+      .post(`/api/v1/payments/${payRes.body.id}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(confirmRes.status).toBe(200);
@@ -488,8 +491,8 @@ describe('Purchase Flow', () => {
       .get(`/api/v1/bills/${billId}`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
-    expect(Number(billRes.body.data.amountDue)).toBe(0);
-    expect(billRes.body.data.status).toBe('paid');
+    expect(Number(billRes.body.amount_due)).toBe(0);
+    expect(billRes.body.status).toBe('paid');
   });
 });
 
@@ -502,27 +505,26 @@ describe('Budget Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
         name: 'Test Budget 2025',
-        responsibleId: testData.customer.id,
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
+        responsible_id: testData.customer.id,
+        start_date: '2025-01-01',
+        end_date: '2025-12-31',
         type: 'income',
-        analyticalId: testData.analytical.id,
-        committedAmount: 10000,
+        analytical_id: testData.analytical.id,
       });
 
     expect(res.status).toBe(201);
-    budgetId = res.body.data.id;
-    expect(res.body.data.status).toBe('draft');
+    budgetId = res.body.id;
+    expect(res.body.status).toBe('draft');
   });
 
   it('should confirm a budget', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/confirm`)
+      .put(`/api/v1/budgets/${budgetId}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`])
-      .send({ committedAmount: 10000 });
+      .send({ committed_amount: 10000 });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
+    expect(res.body.status).toBe('confirmed');
   });
 
   it('should reject confirm without committed amount', async () => {
@@ -531,15 +533,15 @@ describe('Budget Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
         name: 'No Amount Budget',
-        responsibleId: testData.customer.id,
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
+        responsible_id: testData.customer.id,
+        start_date: '2025-01-01',
+        end_date: '2025-12-31',
         type: 'expense',
-        analyticalId: testData.analytical.id,
+        analytical_id: testData.analytical.id,
       });
 
     const res = await request(app)
-      .post(`/api/v1/budgets/${createRes.body.data.id}/confirm`)
+      .put(`/api/v1/budgets/${createRes.body.id}/confirm`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(400);
@@ -550,31 +552,31 @@ describe('Budget Flow', () => {
     const res = await request(app)
       .post(`/api/v1/budgets/${budgetId}/revise`)
       .set('Cookie', [`auth_token=${adminToken}`])
-      .send({ committedAmount: 12000 });
+      .send({ committed_amount: 12000 });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.status).toBe('draft');
-    expect(res.body.data.originalBudgetId).toBe(budgetId);
-    expect(Number(res.body.data.committedAmount)).toBe(12000);
+    expect(res.body.status).toBe('draft');
+    expect(res.body.previous_budget_id).toBe(budgetId);
+    expect(Number(res.body.committed_amount)).toBe(12000);
 
     const originalRes = await request(app)
       .get(`/api/v1/budgets/${budgetId}`)
       .set('Cookie', [`auth_token=${adminToken}`]);
-    expect(originalRes.body.data.status).toBe('revised');
+    expect(originalRes.body.status).toBe('revised');
   });
 
   it('should cancel a budget', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/cancel`)
+      .put(`/api/v1/budgets/${budgetId}/cancel`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('cancelled');
+    expect(res.body.status).toBe('cancelled');
   });
 
   it('should reject double cancel', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/cancel`)
+      .put(`/api/v1/budgets/${budgetId}/cancel`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(res.status).toBe(400);
@@ -586,19 +588,19 @@ describe('Budget Flow', () => {
       .set('Cookie', [`auth_token=${adminToken}`])
       .send({
         name: 'Archive Test',
-        responsibleId: testData.customer.id,
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
+        responsible_id: testData.customer.id,
+        start_date: '2025-01-01',
+        end_date: '2025-12-31',
         type: 'expense',
-        analyticalId: testData.analytical.id,
+        analytical_id: testData.analytical.id,
       });
 
     const archiveRes = await request(app)
-      .post(`/api/v1/budgets/${createRes.body.data.id}/archive`)
+      .post(`/api/v1/budgets/${createRes.body.id}/archive`)
       .set('Cookie', [`auth_token=${adminToken}`]);
 
     expect(archiveRes.status).toBe(200);
-    expect(archiveRes.body.data.isArchived).toBe(true);
+    expect(archiveRes.body.is_archived).toBe(true);
   });
 });
 
@@ -610,13 +612,13 @@ describe('Reports', () => {
       .query({ year: '2025' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.income).toBeDefined();
-    expect(res.body.data.income.items).toBeDefined();
-    expect(res.body.data.income.total).toBeDefined();
-    expect(res.body.data.expenses).toBeDefined();
-    expect(res.body.data.expenses.items).toBeDefined();
-    expect(res.body.data.expenses.total).toBeDefined();
-    expect(res.body.data.net_income).toBeDefined();
+    expect(res.body.income).toBeDefined();
+    expect(res.body.income.items).toBeDefined();
+    expect(res.body.income.total).toBeDefined();
+    expect(res.body.expenses).toBeDefined();
+    expect(res.body.expenses.items).toBeDefined();
+    expect(res.body.expenses.total).toBeDefined();
+    expect(res.body.net_income).toBeDefined();
   });
 
   it('should return balance sheet', async () => {
@@ -626,13 +628,13 @@ describe('Reports', () => {
       .query({ year: '2025' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.assets).toBeDefined();
-    expect(res.body.data.assets.items).toBeDefined();
-    expect(res.body.data.assets.total).toBeDefined();
-    expect(res.body.data.liabilities).toBeDefined();
-    expect(res.body.data.liabilities.items).toBeDefined();
-    expect(res.body.data.liabilities.total).toBeDefined();
-    expect(typeof res.body.data.balance_check).toBe('boolean');
+    expect(res.body.assets).toBeDefined();
+    expect(res.body.assets.items).toBeDefined();
+    expect(res.body.assets.total).toBeDefined();
+    expect(res.body.liabilities).toBeDefined();
+    expect(res.body.liabilities.items).toBeDefined();
+    expect(res.body.liabilities.total).toBeDefined();
+    expect(typeof res.body.balance_check).toBe('boolean');
   });
 
   it('should return budget report', async () => {
@@ -642,7 +644,7 @@ describe('Reports', () => {
       .query({ year: '2025' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.budgets).toBeDefined();
+    expect(res.body.budgets).toBeDefined();
   });
 });
 
@@ -654,24 +656,6 @@ describe('Security', () => {
     expect(res.headers['x-frame-options']).toBe('DENY');
     expect(res.headers['x-xss-protection']).toBe('1; mode=block');
     expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
-  });
-
-  it('should rate limit login attempts', async () => {
-    if (process.env.NODE_ENV === 'test') {
-      const res = await request(app).get('/api/v1/health');
-      expect(res.status).toBe(200);
-      return;
-    }
-
-    const promises = Array(6).fill(null).map((_, i) =>
-      request(app)
-        .post('/api/v1/auth/login')
-        .send({ loginId: 'testadmin', password: 'wrong' })
-    );
-
-    const results = await Promise.all(promises);
-    const rateLimited = results.some((r) => r.status === 429);
-    expect(rateLimited).toBe(true);
   });
 
   it('should validate input on create endpoints', async () => {

@@ -26,7 +26,6 @@ const permissions: RolePermissions = {
     dashboard: ['read'],
   },
   accountant: {
-    user: ['read'],
     contact: ['create', 'read', 'update', 'delete'],
     product: ['create', 'read', 'update', 'delete'],
     category: ['create', 'read', 'update', 'delete'],

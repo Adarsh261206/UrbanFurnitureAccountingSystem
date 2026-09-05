@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
+import { serializePayment } from '../utils/serializers';
 
 export async function listPayments(req: Request, res: Response, next: NextFunction) {
   try {
@@ -11,13 +12,13 @@ export async function listPayments(req: Request, res: Response, next: NextFuncti
     const where: any = {};
 
     if (req.query.status) where.status = req.query.status;
-    if (req.query.invoiceId) where.invoiceId = req.query.invoiceId;
-    if (req.query.vendorBillId) where.vendorBillId = req.query.vendorBillId;
+    if (req.query.invoice_id) where.invoiceId = req.query.invoice_id;
+    if (req.query.vendor_bill_id) where.vendorBillId = req.query.vendor_bill_id;
 
     if (req.user!.role === 'user') {
       const contact = await prisma.contact.findFirst({ where: { email: req.user!.email } });
       if (!contact) {
-        return res.json({ data: [], total: 0, page, limit });
+        return res.json({ payments: [], total: 0, page, limit });
       }
       const ownInvoiceIds = await prisma.customerInvoice.findMany({
         where: { customerId: contact.id },
@@ -32,21 +33,17 @@ export async function listPayments(req: Request, res: Response, next: NextFuncti
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { invoice: true, vendorBill: true },
       }),
       prisma.payment.count({ where }),
     ]);
 
-    res.json({ data, total, page, limit });
+    res.json({ payments: data.map(serializePayment), total, page, limit });
   } catch (err) { next(err); }
 }
 
 export async function getPayment(req: Request, res: Response, next: NextFunction) {
   try {
-    const payment = await prisma.payment.findUnique({
-      where: { id: req.params.id },
-      include: { invoice: true, vendorBill: true, journalEntry: true },
-    });
+    const payment = await prisma.payment.findUnique({ where: { id: req.params.id } });
     if (!payment) throw new AppError('NOT_FOUND', 'Payment not found', 404);
     if (req.user!.role === 'user') {
       const contact = await prisma.contact.findFirst({ where: { email: req.user!.email } });
@@ -57,13 +54,17 @@ export async function getPayment(req: Request, res: Response, next: NextFunction
         throw new AppError('FORBIDDEN', 'You do not have access to this payment', 403);
       }
     }
-    res.json({ data: payment });
+    res.json(serializePayment(payment));
   } catch (err) { next(err); }
 }
 
 export async function createPayment(req: Request, res: Response, next: NextFunction) {
   try {
-    const { invoiceId, vendorBillId, amount, paymentVia, paymentDate } = req.body;
+    const invoiceId = req.body.invoice_id ?? req.body.invoiceId ?? null;
+    const vendorBillId = req.body.vendor_bill_id ?? req.body.vendorBillId ?? null;
+    const amount = req.body.amount;
+    const paymentVia = req.body.payment_via ?? req.body.paymentVia ?? 'bank';
+    const paymentDate = req.body.payment_date ?? req.body.paymentDate;
 
     if (invoiceId && vendorBillId) {
       throw new AppError('VALIDATION_ERROR', 'Payment cannot be linked to both invoice and bill', 400);
@@ -75,13 +76,13 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
     if (invoiceId) {
       const invoice = await prisma.customerInvoice.findUnique({ where: { id: invoiceId } });
       if (!invoice) throw new AppError('NOT_FOUND', 'Invoice not found', 404);
-      if (invoice.status !== 'confirmed') throw new AppError('INVALID_STATUS', 'Can only pay confirmed invoices', 400);
+      if (invoice.status !== 'confirmed') throw new AppError('CONFIRMED_REQUIRED', 'Can only pay confirmed invoices', 400);
     }
 
     if (vendorBillId) {
       const bill = await prisma.vendorBill.findUnique({ where: { id: vendorBillId } });
       if (!bill) throw new AppError('NOT_FOUND', 'Vendor bill not found', 404);
-      if (bill.status !== 'confirmed') throw new AppError('INVALID_STATUS', 'Can only pay confirmed bills', 400);
+      if (bill.status !== 'confirmed') throw new AppError('CONFIRMED_REQUIRED', 'Can only pay confirmed bills', 400);
     }
 
     const paymentNumber = await generateSequence('PAY');
@@ -89,18 +90,17 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
     const payment = await prisma.payment.create({
       data: {
         paymentNumber,
-        invoiceId: invoiceId || null,
-        vendorBillId: vendorBillId || null,
+        invoiceId,
+        vendorBillId,
         amount: parseFloat(amount),
-        paymentVia: paymentVia || 'bank',
+        paymentVia,
         paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
         status: 'draft',
         createdBy: req.user!.id,
       },
-      include: { invoice: true, vendorBill: true },
     });
 
-    res.status(201).json({ data: payment });
+    res.status(201).json(serializePayment(payment));
   } catch (err) { next(err); }
 }
 
@@ -125,11 +125,11 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
       if (payment.invoiceId) {
         const invoice = await tx.customerInvoice.findUnique({ where: { id: payment.invoiceId } });
         if (!invoice || invoice.status !== 'confirmed') {
-          throw new AppError('INVALID_STATUS', 'Invoice must be confirmed before payment', 400);
+          throw new AppError('CONFIRMED_REQUIRED', 'Invoice must be confirmed before payment', 400);
         }
 
         if (Number(payment.amount) > Number(invoice.amountDue)) {
-          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount cannot exceed amount due', 400);
+          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount exceeds the amount due', 400);
         }
 
         const arAccount = await tx.chartOfAccount.findFirst({ where: { name: 'Accounts Receivable' } });
@@ -163,11 +163,11 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
       if (payment.vendorBillId) {
         const bill = await tx.vendorBill.findUnique({ where: { id: payment.vendorBillId } });
         if (!bill || bill.status !== 'confirmed') {
-          throw new AppError('INVALID_STATUS', 'Bill must be confirmed before payment', 400);
+          throw new AppError('CONFIRMED_REQUIRED', 'Bill must be confirmed before payment', 400);
         }
 
         if (Number(payment.amount) > Number(bill.amountDue)) {
-          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount cannot exceed amount due', 400);
+          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount exceeds the amount due', 400);
         }
 
         const apAccount = await tx.chartOfAccount.findFirst({ where: { name: 'Accounts Payable' } });
@@ -206,6 +206,6 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
       return updated;
     }, { isolationLevel: 'Serializable' });
 
-    res.json({ data: result });
+    res.json(serializePayment(result));
   } catch (err) { next(err); }
 }

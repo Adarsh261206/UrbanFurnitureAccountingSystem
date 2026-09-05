@@ -1,40 +1,50 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
-import { GenericController } from './genericController';
+import { AppError } from '../utils/errors';
+import { serializeChartOfAccount } from '../utils/serializers';
 
-const controller = new GenericController(prisma, 'chartOfAccount');
-
-export async function listCOA(req: Request, res: Response, next: NextFunction) {
+export async function listCOA(_req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await controller.list(req.query);
-    res.json(result);
+    const data = await prisma.chartOfAccount.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' } });
+    res.json(data.map(serializeChartOfAccount));
   } catch (err) { next(err); }
 }
 
 export async function getCOA(req: Request, res: Response, next: NextFunction) {
   try {
-    const item = await controller.getById(req.params.id);
-    res.json({ data: item });
+    const item = await prisma.chartOfAccount.findFirst({ where: { id: req.params.id, deletedAt: null } });
+    if (!item) throw new AppError('NOT_FOUND', 'Account not found', 404);
+    res.json(serializeChartOfAccount(item));
   } catch (err) { next(err); }
 }
 
 export async function createCOA(req: Request, res: Response, next: NextFunction) {
   try {
-    const item = await controller.create(req.body);
-    res.status(201).json({ data: item });
+    const item = await prisma.chartOfAccount.create({
+      data: {
+        name: req.body.name,
+        accountType: req.body.account_type,
+        journalType: req.body.journal_type ?? null,
+      },
+    });
+    res.status(201).json(serializeChartOfAccount(item));
   } catch (err) { next(err); }
 }
 
 export async function updateCOA(req: Request, res: Response, next: NextFunction) {
   try {
-    const item = await controller.update(req.params.id, req.body);
-    res.json({ data: item });
+    const data: any = {};
+    if (req.body.name !== undefined) data.name = req.body.name;
+    if (req.body.account_type !== undefined) data.accountType = req.body.account_type;
+    if (req.body.journal_type !== undefined) data.journalType = req.body.journal_type;
+    const item = await prisma.chartOfAccount.update({ where: { id: req.params.id }, data });
+    res.json(serializeChartOfAccount(item));
   } catch (err) { next(err); }
 }
 
 export async function deleteCOA(req: Request, res: Response, next: NextFunction) {
   try {
-    await controller.softDelete(req.params.id);
+    await prisma.chartOfAccount.update({ where: { id: req.params.id }, data: { deletedAt: new Date() } });
     res.status(204).send();
   } catch (err) { next(err); }
 }

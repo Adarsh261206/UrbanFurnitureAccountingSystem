@@ -26,11 +26,10 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'New User',
-          loginId: 'newuser',
+          login_id: 'newuser',
           email: 'new@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.status).toBe(201);
@@ -45,40 +44,38 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Duplicate User',
-          loginId: 'testadmin',
+          login_id: 'testadmin',
           email: 'other@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe('USER_EXISTS');
+      expect(res.body.error.code).toBe('DUPLICATE_LOGIN_ID');
     });
 
     it('should reject duplicate email', async () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Duplicate Email',
-          loginId: 'uniqueid',
+          login_id: 'uniqueid',
           email: 'testadmin@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('DUPLICATE_EMAIL');
     });
 
     it('should reject invalid email', async () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Bad Email',
-          loginId: 'bademail',
+          login_id: 'bademail',
           email: 'not-an-email',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.status).toBe(400);
@@ -89,25 +86,24 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Short Pass',
-          loginId: 'shortpass',
+          login_id: 'shortpass',
           email: 'short@test.com',
           password: '12345',
-          confirmPassword: '12345',
+          confirm_password: '12345',
         });
 
       expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('WEAK_PASSWORD');
     });
 
     it('should reject mismatched passwords', async () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Mismatch',
-          loginId: 'mismatch',
+          login_id: 'mismatch',
           email: 'mismatch@test.com',
           password: 'Password@123',
-          confirmPassword: 'DifferentPass',
+          confirm_password: 'Different@1',
         });
 
       expect(res.status).toBe(400);
@@ -117,11 +113,10 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Short Login',
-          loginId: 'abc',
+          login_id: 'abc',
           email: 'shortlogin@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.status).toBe(400);
@@ -131,11 +126,10 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Role Test',
-          loginId: 'roletest',
+          login_id: 'roletest',
           email: 'role@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
           role: 'admin',
         });
 
@@ -147,11 +141,10 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'Cookie Test',
-          loginId: 'cookietest',
+          login_id: 'cookietest',
           email: 'cookie@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       const cookies = (res.headers['set-cookie'] as unknown) as string[] | undefined;
@@ -162,11 +155,10 @@ describe('Auth Endpoints', () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          name: 'No Token',
-          loginId: 'notoken',
+          login_id: 'notoken',
           email: 'notoken@test.com',
           password: 'Password@123',
-          confirmPassword: 'Password@123',
+          confirm_password: 'Password@123',
         });
 
       expect(res.body.token).toBeUndefined();
@@ -178,18 +170,18 @@ describe('Auth Endpoints', () => {
     it('should login with valid credentials', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ loginId: 'testadmin', password: 'Admin@123' });
+        .send({ login_id: 'testadmin', password: 'Admin@123' });
 
       expect(res.status).toBe(200);
       expect(res.body.user).toBeDefined();
-      expect(res.body.user.loginId).toBe('testadmin');
+      expect(res.body.user.login_id).toBe('testadmin');
       expect(res.body.user.role).toBe('admin');
     });
 
     it('should reject invalid password', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ loginId: 'testadmin', password: 'wrongpassword' });
+        .send({ login_id: 'testadmin', password: 'wrongpassword' });
 
       expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
@@ -198,7 +190,7 @@ describe('Auth Endpoints', () => {
     it('should reject non-existent user', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ loginId: 'nonexistent', password: 'Password@123' });
+        .send({ login_id: 'nonexistent', password: 'Password@123' });
 
       expect(res.status).toBe(401);
     });
@@ -206,7 +198,7 @@ describe('Auth Endpoints', () => {
     it('should set auth cookie on login', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ loginId: 'testadmin', password: 'Admin@123' });
+        .send({ login_id: 'testadmin', password: 'Admin@123' });
 
       const cookies = (res.headers['set-cookie'] as unknown) as string[];
       expect(cookies).toBeDefined();
@@ -216,7 +208,7 @@ describe('Auth Endpoints', () => {
     it('should NOT return token in body', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ loginId: 'testadmin', password: 'Admin@123' });
+        .send({ login_id: 'testadmin', password: 'Admin@123' });
 
       expect(res.body.token).toBeUndefined();
     });
@@ -256,6 +248,17 @@ describe('Auth Endpoints', () => {
       const cookies = (res.headers['set-cookie'] as unknown) as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('auth_token=;'))).toBe(true);
+    });
+  });
+
+  describe('POST /api/v1/auth/forgot-password', () => {
+    it('should return mock success message', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: 'testadmin@test.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBeDefined();
     });
   });
 });

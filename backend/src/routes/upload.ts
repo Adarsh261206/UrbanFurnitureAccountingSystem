@@ -31,18 +31,27 @@ const router = Router();
 
 router.use(authenticate);
 
-router.post('/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: { code: 'NO_FILE', message: 'No file uploaded', field: null, details: {} } });
-  }
-  res.json({
-    data: {
+router.post('/upload', (req, res) => {
+  upload.single('file')(req, res, (err: any) => {
+    if (err) {
+      const message = err.message || 'File upload failed';
+      const isTypeError = message === 'File type not allowed';
+      const isSizeError = message && message.toLowerCase().includes('file too large');
+      return res.status(400).json({
+        error: {
+          code: isSizeError ? 'FILE_TOO_LARGE' : 'INVALID_FILE_TYPE',
+          message,
+          field: 'file',
+          details: {},
+        },
+      });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: { code: 'NO_FILE', message: 'No file uploaded', field: 'file', details: {} } });
+    }
+    res.json({
       url: `/uploads/${req.file.filename}`,
-      filename: req.file.filename,
-      originalname: req.file.originalname,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
-    },
+    });
   });
 });
 

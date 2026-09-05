@@ -7,7 +7,7 @@ export const authConfig = {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict' as const,
     path: '/api',
-    maxAge: 900,
+    maxAge: 900 * 1000,
   },
   bcryptRounds: 12,
 };

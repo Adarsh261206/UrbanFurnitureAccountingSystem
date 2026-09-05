@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
+import { serializeJournalEntryDetail, serializeJournalEntryRow } from '../utils/serializers';
 
 export async function listJournalEntries(req: Request, res: Response, next: NextFunction) {
   try {
@@ -11,11 +12,11 @@ export async function listJournalEntries(req: Request, res: Response, next: Next
     const where: any = {};
 
     if (req.query.status) where.status = req.query.status;
-    if (req.query.journalId) where.journalId = req.query.journalId;
-    if (req.query.from) where.accountingDate = { gte: new Date(req.query.from as string) };
-    if (req.query.to) {
+    if (req.query.journal_id) where.journalId = req.query.journal_id;
+    if (req.query.date_from) where.accountingDate = { gte: new Date(req.query.date_from as string) };
+    if (req.query.date_to) {
       where.accountingDate = where.accountingDate || {};
-      where.accountingDate.lte = new Date(req.query.to as string);
+      where.accountingDate.lte = new Date(req.query.date_to as string);
     }
 
     const [data, total] = await Promise.all([
@@ -24,12 +25,12 @@ export async function listJournalEntries(req: Request, res: Response, next: Next
         skip,
         take: limit,
         orderBy: { accountingDate: 'desc' },
-        include: { lines: true, journal: true },
+        include: { journal: true },
       }),
       prisma.journalEntry.count({ where }),
     ]);
 
-    res.json({ data, total, page, limit });
+    res.json({ journal_entries: data.map(serializeJournalEntryRow), total, page, limit });
   } catch (err) { next(err); }
 }
 
@@ -37,25 +38,27 @@ export async function getJournalEntry(req: Request, res: Response, next: NextFun
   try {
     const entry = await prisma.journalEntry.findUnique({
       where: { id: req.params.id },
-      include: { lines: { include: { account: true, partner: true } }, journal: true },
+      include: { journal: true, lines: true },
     });
     if (!entry) throw new AppError('NOT_FOUND', 'Journal entry not found', 404);
-    res.json({ data: entry });
+    res.json(serializeJournalEntryDetail(entry));
   } catch (err) { next(err); }
 }
 
 export async function createJournalEntry(req: Request, res: Response, next: NextFunction) {
   try {
-    const { accountingDate, journalId, sourceDocumentType, sourceDocumentId, lines } = req.body;
+    const journalId = req.body.journal_id ?? req.body.journalId;
+    const accountingDate = req.body.accounting_date ?? req.body.accountingDate;
+    const lines = req.body.lines;
 
     if (!lines || lines.length === 0) {
-      throw new AppError('VALIDATION_ERROR', 'Journal entry must have at least one line', 400);
+      throw new AppError('LINES_REQUIRED', 'Journal entry must have at least one line', 400, 'lines');
     }
 
     const totalDebit = lines.reduce((sum: number, l: any) => sum + (parseFloat(l.debit) || 0), 0);
     const totalCredit = lines.reduce((sum: number, l: any) => sum + (parseFloat(l.credit) || 0), 0);
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
-      throw new AppError('UNBALANCED_JOURNAL', 'Total debit must equal total credit', 400);
+      throw new AppError('UNBALANCED_JOURNAL', 'Debit and credit totals do not match', 400, 'lines');
     }
 
     for (const line of lines) {
@@ -74,45 +77,45 @@ export async function createJournalEntry(req: Request, res: Response, next: Next
         entryNumber,
         accountingDate: new Date(accountingDate),
         journalId,
-        sourceDocumentType: sourceDocumentType || null,
-        sourceDocumentId: sourceDocumentId || null,
+        sourceDocumentType: req.body.reference ? 'manual' : null,
+        sourceDocumentId: req.body.reference ? null : null,
         status: 'posted',
         createdBy: req.user!.id,
         lines: {
           create: lines.map((line: any, index: number) => ({
             srNo: index + 1,
-            accountId: line.accountId,
-            partnerId: line.partnerId || null,
+            accountId: line.account_id ?? line.accountId,
+            partnerId: line.partner_id ?? line.partnerId ?? null,
             debit: parseFloat(line.debit) || 0,
             credit: parseFloat(line.credit) || 0,
           })),
         },
       },
-      include: { lines: true },
+      include: { journal: true, lines: true },
     });
 
-    res.status(201).json({ data: entry });
+    res.status(201).json(serializeJournalEntryDetail(entry));
   } catch (err) { next(err); }
 }
 
 export async function postJournalEntry(req: Request, res: Response, next: NextFunction) {
   try {
-    const entry = await prisma.journalEntry.findUnique({ where: { id: req.params.id }, include: { lines: true } });
+    const entry = await prisma.journalEntry.findUnique({ where: { id: req.params.id }, include: { journal: true, lines: true } });
     if (!entry) throw new AppError('NOT_FOUND', 'Journal entry not found', 404);
     if (entry.status === 'posted') throw new AppError('ALREADY_POSTED', 'Journal entry is already posted', 400);
 
     const totalDebit = entry.lines.reduce((sum, l) => sum + Number(l.debit), 0);
     const totalCredit = entry.lines.reduce((sum, l) => sum + Number(l.credit), 0);
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
-      throw new AppError('UNBALANCED_JOURNAL', 'Total debit must equal total credit', 400);
+      throw new AppError('UNBALANCED_JOURNAL', 'Debit and credit totals do not match', 400);
     }
 
     const updated = await prisma.journalEntry.update({
       where: { id: req.params.id },
       data: { status: 'posted' },
-      include: { lines: true },
+      include: { journal: true, lines: true },
     });
 
-    res.json({ data: updated });
+    res.json(serializeJournalEntryDetail(updated));
   } catch (err) { next(err); }
 }

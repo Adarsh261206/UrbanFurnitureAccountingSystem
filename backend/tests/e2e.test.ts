@@ -65,21 +65,20 @@ describe('FLOW A — SALES END TO END', () => {
       .post('/api/v1/sales-orders')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-01-10',
-        invoiceDate: '2026-01-10',
-        dueDate: '2026-02-10',
+        customer_id: customerA.id,
+        order_date: '2026-01-10',
         lines: [
-          { productId: product.id, accountId: testData.arAccount.id, qty: 2, unitPrice: 100 },
-          { productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 50 },
+          { product_id: product.id, account_id: testData.arAccount.id, quantity: 2, unit_price: 100 },
+          { product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 50 },
         ],
       });
 
     expect(res.status).toBe(201);
-    salesOrderId = res.body.data.id;
-    expect(res.body.data.soNumber).toMatch(/^S\d{5}$/);
-    expect(Number(res.body.data.total)).toBe(250);
-    expect(res.body.data.status).toBe('draft');
+    salesOrderId = res.body.id;
+    expect(res.body.so_number).toMatch(/^S\d{5}$/);
+    expect(Number(res.body.total_amount)).toBe(250);
+    expect(res.body.status).toBe('draft');
+    expect(res.body.customer_name).toBe('Customer A');
   });
 
   it('A2: confirm SO creates JE (debit=credit, AR/Revenue)', async () => {
@@ -88,7 +87,7 @@ describe('FLOW A — SALES END TO END', () => {
       .set('Cookie', cookie(adminToken));
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
+    expect(res.body.status).toBe('confirmed');
 
     const je = await prisma.journalEntry.findFirst({
       where: { sourceDocumentType: 'sales_order', sourceDocumentId: salesOrderId },
@@ -115,26 +114,26 @@ describe('FLOW A — SALES END TO END', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        salesOrderId,
-        partnerId: customerA.id,
-        date: '2026-01-10',
-        invoiceDate: '2026-01-10',
-        dueDate: '2026-02-10',
-        paymentType: 'receive',
-        paymentVia: 'bank',
+        customer_id: customerA.id,
+        sales_order_id: salesOrderId,
+        invoice_date: '2026-01-10',
+        due_date: '2026-02-10',
+        payment_type: 'receive',
+        payment_via: 'bank',
         lines: [
-          { productId: product.id, accountId: testData.arAccount.id, qty: 2, unitPrice: 100 },
+          { product_id: product.id, account_id: testData.arAccount.id, quantity: 2, unit_price: 100 },
         ],
       });
 
     expect(res.status).toBe(201);
-    invoiceId = res.body.data.id;
-    expect(res.body.data.invoiceReference).toMatch(/^INV\/2026\/\d{4}$/);
-    expect(res.body.data.invoiceNumber).toMatch(/^INV-\d{5}$/);
-    expect(Number(res.body.data.total)).toBe(200);
-    expect(Number(res.body.data.amountDue)).toBe(200);
-    expect(res.body.data.status).toBe('draft');
+    invoiceId = res.body.id;
+    expect(res.body.invoice_reference).toMatch(/^INV\/2026\/\d{4}$/);
+    expect(res.body.invoice_number).toMatch(/^INV-\d{5}$/);
+    expect(Number(res.body.total)).toBe(200);
+    expect(Number(res.body.amount_due)).toBe(200);
+    expect(res.body.status).toBe('draft');
+    expect(res.body.customer.name).toBe('Customer A');
+    expect(res.body.lines[0].product_name).toBe('Test Product');
   });
 
   it('A5: confirm invoice creates JE (AR debit / Revenue credit)', async () => {
@@ -143,8 +142,8 @@ describe('FLOW A — SALES END TO END', () => {
       .set('Cookie', cookie(adminToken));
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
-    expect(res.body.data.journalEntryId).toBeDefined();
+    expect(res.body.status).toBe('confirmed');
+    expect(res.body.journal_entry_id).toBeDefined();
 
     const je = await prisma.journalEntry.findFirst({
       where: { sourceDocumentType: 'customer_invoice', sourceDocumentId: invoiceId },
@@ -170,18 +169,23 @@ describe('FLOW A — SALES END TO END', () => {
     const res = await request(app)
       .post(`/api/v1/invoices/${invoiceId}/pay`)
       .set('Cookie', cookie(adminToken))
-      .send({ amount: 200, paymentVia: 'bank', paymentDate: '2026-01-20' });
+      .send({ amount: 200, payment_via: 'bank', payment_date: '2026-01-20' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.paymentNumber).toMatch(/^PAY\/2026\/\d{4}$/);
-    expect(res.body.data.status).toBe('successful');
+    expect(res.body.status).toBe('paid');
+    expect(Number(res.body.amount_due)).toBe(0);
 
     const inv = await prisma.customerInvoice.findUnique({ where: { id: invoiceId } });
     expect(Number(inv!.amountDue)).toBe(0);
     expect(inv!.status).toBe('paid');
 
+    const payment = await prisma.payment.findFirst({ where: { invoiceId } });
+    expect(payment).toBeDefined();
+    expect(payment!.paymentNumber).toMatch(/^PAY\/2026\/\d{4}$/);
+    expect(payment!.status).toBe('successful');
+
     const payJe = await prisma.journalEntry.findFirst({
-      where: { sourceDocumentType: 'payment', sourceDocumentId: res.body.data.id },
+      where: { sourceDocumentType: 'payment', sourceDocumentId: payment!.id },
       include: { lines: { include: { account: true } } },
     });
     expect(payJe).toBeDefined();
@@ -197,15 +201,14 @@ describe('FLOW A — SALES END TO END', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-02-01',
-        invoiceDate: '2026-02-01',
-        dueDate: '2026-03-01',
+        customer_id: customerA.id,
+        invoice_date: '2026-02-01',
+        due_date: '2026-03-01',
         lines: [
-          { productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 100 },
+          { product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 100 },
         ],
       });
-    const invId = invRes.body.data.id;
+    const invId = invRes.body.id;
     await request(app)
       .post(`/api/v1/invoices/${invId}/confirm`)
       .set('Cookie', cookie(adminToken));
@@ -213,7 +216,7 @@ describe('FLOW A — SALES END TO END', () => {
     const res = await request(app)
       .post(`/api/v1/invoices/${invId}/pay`)
       .set('Cookie', cookie(adminToken))
-      .send({ amount: 500, paymentVia: 'bank' });
+      .send({ amount: 500, payment_via: 'bank' });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('OVERPAYMENT_NOT_ALLOWED');
@@ -224,23 +227,22 @@ describe('FLOW A — SALES END TO END', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-02-01',
-        invoiceDate: '2026-02-01',
-        dueDate: '2026-03-01',
+        customer_id: customerA.id,
+        invoice_date: '2026-02-01',
+        due_date: '2026-03-01',
         lines: [
-          { productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 100 },
+          { product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 100 },
         ],
       });
-    const invId = invRes.body.data.id;
+    const invId = invRes.body.id;
 
     const res = await request(app)
       .post(`/api/v1/invoices/${invId}/pay`)
       .set('Cookie', cookie(adminToken))
-      .send({ amount: 50, paymentVia: 'bank' });
+      .send({ amount: 50, payment_via: 'bank' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('INVALID_STATUS');
+    expect(res.body.error.code).toBe('CONFIRMED_REQUIRED');
   });
 
   it('A10: cancel confirmed invoice rejected (only draft can cancel)', async () => {
@@ -250,11 +252,16 @@ describe('FLOW A — SALES END TO END', () => {
     expect(res.status).toBe(400);
   });
 
-  it('A11: amount_paid computed field present', async () => {
+  it('A11: amount_paid computed field present in list', async () => {
     const res = await request(app)
-      .get(`/api/v1/invoices/${invoiceId}`)
+      .get('/api/v1/invoices')
       .set('Cookie', cookie(adminToken));
-    expect(Number(res.body.data.amountPaid)).toBe(200);
+    expect(res.body.invoices).toBeDefined();
+    const row = res.body.invoices.find((i: any) => i.id === invoiceId);
+    expect(Number(row.amount_paid)).toBe(200);
+    expect(Number(row.amount_due)).toBe(0);
+    expect(Number(row.total_amount)).toBe(200);
+    expect(row.customer_name).toBe('Customer A');
   });
 });
 
@@ -267,19 +274,17 @@ describe('FLOW B — PURCHASE END TO END', () => {
       .post('/api/v1/purchase-orders')
       .set('Cookie', cookie(adminToken))
       .send({
-        vendorId: vendor.id,
-        date: '2026-01-15',
-        billDate: '2026-01-15',
-        dueDate: '2026-02-15',
+        vendor_id: vendor.id,
+        order_date: '2026-01-15',
         lines: [
-          { productId: product.id, accountId: testData.apAccount.id, qty: 3, unitPrice: 60 },
+          { product_id: product.id, account_id: testData.apAccount.id, quantity: 3, unit_price: 60 },
         ],
       });
 
     expect(res.status).toBe(201);
-    purchaseOrderId = res.body.data.id;
-    expect(res.body.data.poNumber).toMatch(/^P\d{5}$/);
-    expect(Number(res.body.data.total)).toBe(180);
+    purchaseOrderId = res.body.id;
+    expect(res.body.po_number).toMatch(/^P\d{5}$/);
+    expect(Number(res.body.total_amount)).toBe(180);
   });
 
   it('B2: confirm PO creates JE (expense debit / AP credit)', async () => {
@@ -287,7 +292,7 @@ describe('FLOW B — PURCHASE END TO END', () => {
       .put(`/api/v1/purchase-orders/${purchaseOrderId}/confirm`)
       .set('Cookie', cookie(adminToken));
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
+    expect(res.body.status).toBe('confirmed');
 
     const je = await prisma.journalEntry.findFirst({
       where: { sourceDocumentType: 'purchase_order', sourceDocumentId: purchaseOrderId },
@@ -306,23 +311,21 @@ describe('FLOW B — PURCHASE END TO END', () => {
       .post('/api/v1/bills')
       .set('Cookie', cookie(adminToken))
       .send({
-        vendorId: vendor.id,
-        purchaseOrderId,
-        partnerId: vendor.id,
-        date: '2026-01-15',
-        billDate: '2026-01-15',
-        dueDate: '2026-02-15',
-        paymentType: 'send',
-        paymentVia: 'bank',
+        vendor_id: vendor.id,
+        purchase_order_id: purchaseOrderId,
+        bill_date: '2026-01-15',
+        due_date: '2026-02-15',
+        payment_type: 'send',
+        payment_via: 'bank',
         lines: [
-          { productId: product.id, accountId: testData.apAccount.id, qty: 3, unitPrice: 60 },
+          { product_id: product.id, account_id: testData.apAccount.id, quantity: 3, unit_price: 60 },
         ],
       });
 
     expect(res.status).toBe(201);
-    billId = res.body.data.id;
-    expect(res.body.data.billReference).toMatch(/^Bill\/2026\/\d{4}$/);
-    expect(Number(res.body.data.amountDue)).toBe(180);
+    billId = res.body.id;
+    expect(res.body.bill_reference).toMatch(/^Bill\/2026\/\d{4}$/);
+    expect(Number(res.body.amount_due)).toBe(180);
   });
 
   it('B4: confirm bill creates JE (expense debit / AP credit)', async () => {
@@ -330,8 +333,8 @@ describe('FLOW B — PURCHASE END TO END', () => {
       .post(`/api/v1/bills/${billId}/confirm`)
       .set('Cookie', cookie(adminToken));
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
-    expect(res.body.data.journalEntryId).toBeDefined();
+    expect(res.body.status).toBe('confirmed');
+    expect(res.body.journal_entry_id).toBeDefined();
 
     const je = await prisma.journalEntry.findFirst({
       where: { sourceDocumentType: 'vendor_bill', sourceDocumentId: billId },
@@ -349,10 +352,10 @@ describe('FLOW B — PURCHASE END TO END', () => {
     const res = await request(app)
       .post(`/api/v1/bills/${billId}/pay`)
       .set('Cookie', cookie(adminToken))
-      .send({ amount: 180, paymentVia: 'bank', paymentDate: '2026-01-25' });
+      .send({ amount: 180, payment_via: 'bank', payment_date: '2026-01-25' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('successful');
+    expect(res.body.status).toBe('paid');
 
     const bill = await prisma.vendorBill.findUnique({ where: { id: billId } });
     expect(Number(bill!.amountDue)).toBe(0);
@@ -364,15 +367,14 @@ describe('FLOW B — PURCHASE END TO END', () => {
       .post('/api/v1/bills')
       .set('Cookie', cookie(adminToken))
       .send({
-        vendorId: vendor.id,
-        date: '2026-02-01',
-        billDate: '2026-02-01',
-        dueDate: '2026-03-01',
+        vendor_id: vendor.id,
+        bill_date: '2026-02-01',
+        due_date: '2026-03-01',
         lines: [
-          { productId: product.id, accountId: testData.apAccount.id, qty: 1, unitPrice: 50 },
+          { product_id: product.id, account_id: testData.apAccount.id, quantity: 1, unit_price: 50 },
         ],
       });
-    const newBillId = billRes.body.data.id;
+    const newBillId = billRes.body.id;
     await request(app)
       .post(`/api/v1/bills/${newBillId}/confirm`)
       .set('Cookie', cookie(adminToken));
@@ -380,7 +382,7 @@ describe('FLOW B — PURCHASE END TO END', () => {
     const res = await request(app)
       .post(`/api/v1/bills/${newBillId}/pay`)
       .set('Cookie', cookie(adminToken))
-      .send({ amount: 999, paymentVia: 'bank' });
+      .send({ amount: 999, payment_via: 'bank' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('OVERPAYMENT_NOT_ALLOWED');
   });
@@ -395,27 +397,28 @@ describe('FLOW C — BUDGET', () => {
       .set('Cookie', cookie(adminToken))
       .send({
         name: 'Q1 Sales Target',
-        responsibleId: customerA.id,
-        startDate: '2026-01-01',
-        endDate: '2026-03-31',
+        responsible_id: customerA.id,
+        start_date: '2026-01-01',
+        end_date: '2026-03-31',
         type: 'income',
-        analyticalId: analytical.id,
+        analytical_id: analytical.id,
       });
 
     expect(res.status).toBe(201);
-    budgetId = res.body.data.id;
-    expect(res.body.data.status).toBe('draft');
+    budgetId = res.body.id;
+    expect(res.body.status).toBe('draft');
+    expect(res.body.responsible.name).toBe('Customer A');
   });
 
   it('C2: confirm with committed_amount', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/confirm`)
+      .put(`/api/v1/budgets/${budgetId}/confirm`)
       .set('Cookie', cookie(adminToken))
-      .send({ committedAmount: 10000 });
+      .send({ committed_amount: 10000 });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('confirmed');
-    expect(Number(res.body.data.committedAmount)).toBe(10000);
+    expect(res.body.status).toBe('confirmed');
+    expect(Number(res.body.committed_amount)).toBe(10000);
   });
 
   it('C3: reject confirm without committed_amount', async () => {
@@ -424,15 +427,15 @@ describe('FLOW C — BUDGET', () => {
       .set('Cookie', cookie(adminToken))
       .send({
         name: 'No Amount Budget',
-        responsibleId: customerA.id,
-        startDate: '2026-01-01',
-        endDate: '2026-03-31',
+        responsible_id: customerA.id,
+        start_date: '2026-01-01',
+        end_date: '2026-03-31',
         type: 'income',
-        analyticalId: analytical.id,
+        analytical_id: analytical.id,
       });
 
     const res = await request(app)
-      .post(`/api/v1/budgets/${createRes.body.data.id}/confirm`)
+      .put(`/api/v1/budgets/${createRes.body.id}/confirm`)
       .set('Cookie', cookie(adminToken));
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('AMOUNT_REQUIRED');
@@ -443,36 +446,36 @@ describe('FLOW C — BUDGET', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-02-01',
-        invoiceDate: '2026-02-01',
-        dueDate: '2026-03-01',
+        customer_id: customerA.id,
+        invoice_date: '2026-02-01',
+        due_date: '2026-03-01',
         lines: [
-          { productId: product.id, accountId: testData.arAccount.id, analyticId: analytical.id, qty: 1, unitPrice: 100 },
+          { product_id: product.id, account_id: testData.arAccount.id, analytical_id: analytical.id, quantity: 1, unit_price: 100 },
         ],
       });
     await request(app)
-      .post(`/api/v1/invoices/${invRes.body.data.id}/confirm`)
+      .post(`/api/v1/invoices/${invRes.body.id}/confirm`)
       .set('Cookie', cookie(adminToken));
 
     const res = await request(app)
       .get(`/api/v1/budgets/${budgetId}`)
       .set('Cookie', cookie(adminToken));
 
-    expect(Number(res.body.data.achievedAmount)).toBe(100);
-    expect(Number(res.body.data.achievedPercentage)).toBe(1);
-    expect(Number(res.body.data.amountToAchieve)).toBe(9900);
+    expect(Number(res.body.achieved_amount)).toBe(100);
+    expect(Number(res.body.achieved_percentage)).toBe(1);
+    expect(Number(res.body.amount_to_achieve)).toBe(9900);
   });
 
   it('C5: revise → new draft + original revised', async () => {
     const res = await request(app)
       .post(`/api/v1/budgets/${budgetId}/revise`)
       .set('Cookie', cookie(adminToken))
-      .send({ committedAmount: 12000 });
+      .send({ committed_amount: 12000 });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.status).toBe('draft');
-    expect(res.body.data.originalBudgetId).toBe(budgetId);
+    expect(res.body.status).toBe('draft');
+    expect(res.body.previous_budget_id).toBe(budgetId);
+    expect(Number(res.body.committed_amount)).toBe(12000);
 
     const original = await prisma.budget.findUnique({ where: { id: budgetId } });
     expect(original!.status).toBe('revised');
@@ -487,17 +490,17 @@ describe('FLOW C — BUDGET', () => {
 
   it('C7: cancel → is_archived = true', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/cancel`)
+      .put(`/api/v1/budgets/${budgetId}/cancel`)
       .set('Cookie', cookie(adminToken));
 
     expect(res.status).toBe(200);
-    expect(res.body.data.status).toBe('cancelled');
-    expect(res.body.data.isArchived).toBe(true);
+    expect(res.body.status).toBe('cancelled');
+    expect(res.body.is_archived).toBe(true);
   });
 
   it('C8: double cancel rejected', async () => {
     const res = await request(app)
-      .post(`/api/v1/budgets/${budgetId}/cancel`)
+      .put(`/api/v1/budgets/${budgetId}/cancel`)
       .set('Cookie', cookie(adminToken));
     expect(res.status).toBe(400);
   });
@@ -509,25 +512,23 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-03-01',
-        invoiceDate: '2026-03-01',
-        dueDate: '2026-04-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 100 }],
+        customer_id: customerA.id,
+        invoice_date: '2026-03-01',
+        due_date: '2026-04-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 100 }],
       });
-    userAInvoiceId = a.body.data.id;
+    userAInvoiceId = a.body.id;
 
     const b = await request(app)
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerB.id,
-        date: '2026-03-01',
-        invoiceDate: '2026-03-01',
-        dueDate: '2026-04-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 100 }],
+        customer_id: customerB.id,
+        invoice_date: '2026-03-01',
+        due_date: '2026-04-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 100 }],
       });
-    userBInvoiceId = b.body.data.id;
+    userBInvoiceId = b.body.id;
   });
 
   it('D1: admin and accountant access dashboard, user does not', async () => {
@@ -537,7 +538,6 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
   });
 
   it('D2: user cannot access vendor bills', async () => {
-    expect((await request(app).get('/api/v1/bills').set('Cookie', cookie(userAToken))).status).toBe(403);
     expect((await request(app).get('/api/v1/bills').set('Cookie', cookie(userAToken))).status).toBe(403);
   });
 
@@ -564,7 +564,7 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
       .set('Cookie', cookie(userAToken));
 
     expect(res.status).toBe(200);
-    const ids = res.body.data.map((i: any) => i.id);
+    const ids = res.body.invoices.map((i: any) => i.id);
     expect(ids).toContain(userAInvoiceId);
     expect(ids).not.toContain(userBInvoiceId);
   });
@@ -591,8 +591,9 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
     const res = await request(app)
       .post(`/api/v1/invoices/${userBInvoiceId}/pay`)
       .set('Cookie', cookie(userAToken))
-      .send({ amount: 50, paymentVia: 'bank' });
+      .send({ amount: 50, payment_via: 'bank' });
     expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('OWNERSHIP_REQUIRED');
   });
 
   it('D8: user A CAN pay own invoice', async () => {
@@ -603,7 +604,7 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
     const res = await request(app)
       .post(`/api/v1/invoices/${userAInvoiceId}/pay`)
       .set('Cookie', cookie(userAToken))
-      .send({ amount: 100, paymentVia: 'bank' });
+      .send({ amount: 100, payment_via: 'bank' });
     expect(res.status).toBe(200);
   });
 
@@ -612,7 +613,7 @@ describe('FLOW D — RBAC + OWNERSHIP', () => {
       .get('/api/v1/payments')
       .set('Cookie', cookie(userAToken));
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(res.body.payments.length).toBeGreaterThan(0);
   });
 
   it('D10: unauthenticated access rejected', async () => {
@@ -629,12 +630,12 @@ describe('FLOW E — REPORTING', () => {
       .query({ year: '2026' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.year).toBe(2026);
-    expect(res.body.data.income.items).toBeDefined();
-    expect(res.body.data.expenses.items).toBeDefined();
-    expect(typeof res.body.data.net_income).toBe('number');
+    expect(res.body.year).toBe(2026);
+    expect(res.body.income.items).toBeDefined();
+    expect(res.body.expenses.items).toBeDefined();
+    expect(typeof res.body.net_income).toBe('number');
 
-    const salesRevenue = res.body.data.income.items.find((i: any) => i.account_name === 'Sales Revenue');
+    const salesRevenue = res.body.income.items.find((i: any) => i.account_name === 'Sales Revenue');
     expect(salesRevenue).toBeDefined();
     expect(salesRevenue.amount).toBeGreaterThan(0);
   });
@@ -646,15 +647,15 @@ describe('FLOW E — REPORTING', () => {
       .query({ year: '2026' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.assets.items).toBeDefined();
-    expect(res.body.data.liabilities.items).toBeDefined();
+    expect(res.body.assets.items).toBeDefined();
+    expect(res.body.liabilities.items).toBeDefined();
 
-    const liabilityNames = res.body.data.liabilities.items.map((i: any) => i.account_name);
+    const liabilityNames = res.body.liabilities.items.map((i: any) => i.account_name);
     const hasCapitalOrIncome = liabilityNames.some(
       (n: string) => n === 'Capital' || n === 'Sales Revenue'
     );
     expect(hasCapitalOrIncome).toBe(true);
-    expect(typeof res.body.data.balance_check).toBe('boolean');
+    expect(typeof res.body.balance_check).toBe('boolean');
   });
 
   it('E3: budget report reconciles with budget engine', async () => {
@@ -664,9 +665,9 @@ describe('FLOW E — REPORTING', () => {
       .query({ year: '2026', type: 'income' });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.budgets).toBeDefined();
-    expect(res.body.data.budgets.length).toBeGreaterThan(0);
-    const b = res.body.data.budgets.find((x: any) => x.name.includes('Q1 Sales Target'));
+    expect(res.body.budgets).toBeDefined();
+    expect(res.body.budgets.length).toBeGreaterThan(0);
+    const b = res.body.budgets.find((x: any) => x.name.includes('Q1 Sales Target'));
     expect(b).toBeDefined();
     expect(Number(b.achieved_amount)).toBe(100);
   });
@@ -676,12 +677,12 @@ describe('FLOW E — REPORTING', () => {
       .get('/api/v1/dashboard')
       .set('Cookie', cookie(adminToken));
     expect(res.status).toBe(200);
-    expect(res.body.data.sales).toBeDefined();
-    expect(res.body.data.sales.draft).toBeDefined();
-    expect(res.body.data.sales.confirmed).toBeDefined();
-    expect(res.body.data.sales.total).toBeDefined();
-    expect(res.body.data.purchase).toBeDefined();
-    expect(res.body.data.budgets).toBeDefined();
+    expect(res.body.sales).toBeDefined();
+    expect(res.body.sales.draft).toBeDefined();
+    expect(res.body.sales.confirmed).toBeDefined();
+    expect(res.body.sales.total).toBeDefined();
+    expect(res.body.purchase).toBeDefined();
+    expect(res.body.budgets).toBeDefined();
   });
 });
 
@@ -691,25 +692,21 @@ describe('FLOW F — SEQUENCES', () => {
       .post('/api/v1/sales-orders')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-04-01',
-        invoiceDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 10 }],
+        customer_id: customerA.id,
+        order_date: '2026-04-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 10 }],
       });
     const so2 = await request(app)
       .post('/api/v1/sales-orders')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-04-01',
-        invoiceDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 10 }],
+        customer_id: customerA.id,
+        order_date: '2026-04-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 10 }],
       });
-    expect(so1.body.data.soNumber).toMatch(/^S\d{5}$/);
-    expect(so2.body.data.soNumber).toMatch(/^S\d{5}$/);
-    expect(so1.body.data.soNumber).not.toBe(so2.body.data.soNumber);
+    expect(so1.body.so_number).toMatch(/^S\d{5}$/);
+    expect(so2.body.so_number).toMatch(/^S\d{5}$/);
+    expect(so1.body.so_number).not.toBe(so2.body.so_number);
   });
 
   it('F2: PO increments uniquely', async () => {
@@ -717,13 +714,11 @@ describe('FLOW F — SEQUENCES', () => {
       .post('/api/v1/purchase-orders')
       .set('Cookie', cookie(adminToken))
       .send({
-        vendorId: vendor.id,
-        date: '2026-04-01',
-        billDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        lines: [{ productId: product.id, accountId: testData.apAccount.id, qty: 1, unitPrice: 10 }],
+        vendor_id: vendor.id,
+        order_date: '2026-04-01',
+        lines: [{ product_id: product.id, account_id: testData.apAccount.id, quantity: 1, unit_price: 10 }],
       });
-    expect(po1.body.data.poNumber).toMatch(/^P\d{5}$/);
+    expect(po1.body.po_number).toMatch(/^P\d{5}$/);
   });
 
   it('F3: invoice reference year-scoped + invoice number INV-00001', async () => {
@@ -731,14 +726,13 @@ describe('FLOW F — SEQUENCES', () => {
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-04-01',
-        invoiceDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 10 }],
+        customer_id: customerA.id,
+        invoice_date: '2026-04-01',
+        due_date: '2026-05-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 10 }],
       });
-    expect(inv.body.data.invoiceReference).toMatch(/^INV\/2026\/\d{4}$/);
-    expect(inv.body.data.invoiceNumber).toMatch(/^INV-\d{5}$/);
+    expect(inv.body.invoice_reference).toMatch(/^INV\/2026\/\d{4}$/);
+    expect(inv.body.invoice_number).toMatch(/^INV-\d{5}$/);
   });
 
   it('F4: JE and PAY year-scoped unique', async () => {
@@ -746,34 +740,33 @@ describe('FLOW F — SEQUENCES', () => {
       .post('/api/v1/journal-entries')
       .set('Cookie', cookie(adminToken))
       .send({
-        accountingDate: '2026-04-01',
-        journalId: testData.saleJournal.id,
+        journal_id: testData.saleJournal.id,
+        accounting_date: '2026-04-01',
         lines: [
-          { accountId: testData.arAccount.id, debit: 50, credit: 0 },
-          { accountId: testData.salesRevenue.id, debit: 0, credit: 50 },
+          { account_id: testData.arAccount.id, debit: 50, credit: 0 },
+          { account_id: testData.salesRevenue.id, debit: 0, credit: 50 },
         ],
       });
-    expect(jeRes.body.data.entryNumber).toMatch(/^JE\/2026\/\d{4}$/);
+    expect(jeRes.body.entry_number).toMatch(/^JE\/2026\/\d{4}$/);
 
     const freshInv = await request(app)
       .post('/api/v1/invoices')
       .set('Cookie', cookie(adminToken))
       .send({
-        customerId: customerA.id,
-        date: '2026-04-01',
-        invoiceDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        lines: [{ productId: product.id, accountId: testData.arAccount.id, qty: 1, unitPrice: 10 }],
+        customer_id: customerA.id,
+        invoice_date: '2026-04-01',
+        due_date: '2026-05-01',
+        lines: [{ product_id: product.id, account_id: testData.arAccount.id, quantity: 1, unit_price: 10 }],
       });
     await request(app)
-      .post(`/api/v1/invoices/${freshInv.body.data.id}/confirm`)
+      .post(`/api/v1/invoices/${freshInv.body.id}/confirm`)
       .set('Cookie', cookie(adminToken));
 
     const payRes = await request(app)
       .post('/api/v1/payments')
       .set('Cookie', cookie(adminToken))
-      .send({ invoiceId: freshInv.body.data.id, amount: 5, paymentVia: 'bank' });
-    expect(payRes.body.data.paymentNumber).toMatch(/^PAY\/2026\/\d{4}$/);
+      .send({ invoice_id: freshInv.body.id, amount: 5, payment_via: 'bank' });
+    expect(payRes.body.payment_number).toMatch(/^PAY\/2026\/\d{4}$/);
   });
 });
 
@@ -784,10 +777,10 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
       .set('Cookie', cookie(adminToken))
       .send({ name: 'Temp Category' });
     const del = await request(app)
-      .delete(`/api/v1/categories/${cat.body.data.id}`)
+      .delete(`/api/v1/categories/${cat.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.category.findUnique({ where: { id: cat.body.data.id } });
+    const row = await prisma.category.findUnique({ where: { id: cat.body.id } });
     expect(row!.deletedAt).not.toBeNull();
   });
 
@@ -795,12 +788,12 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
     const j = await request(app)
       .post('/api/v1/journals')
       .set('Cookie', cookie(adminToken))
-      .send({ name: 'Temp Journal', journalType: 'sale', defaultAccountId: testData.cashAccount.id });
+      .send({ name: 'Temp Journal', journal_type: 'sale', default_account_id: testData.cashAccount.id });
     const del = await request(app)
-      .delete(`/api/v1/journals/${j.body.data.id}`)
+      .delete(`/api/v1/journals/${j.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.journal.findUnique({ where: { id: j.body.data.id } });
+    const row = await prisma.journal.findUnique({ where: { id: j.body.id } });
     expect(row!.deletedAt).not.toBeNull();
   });
 
@@ -808,12 +801,12 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
     const coa = await request(app)
       .post('/api/v1/chart-of-accounts')
       .set('Cookie', cookie(adminToken))
-      .send({ name: 'Temp Account', accountType: 'expense' });
+      .send({ name: 'Temp Account', account_type: 'expense' });
     const del = await request(app)
-      .delete(`/api/v1/chart-of-accounts/${coa.body.data.id}`)
+      .delete(`/api/v1/chart-of-accounts/${coa.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.chartOfAccount.findUnique({ where: { id: coa.body.data.id } });
+    const row = await prisma.chartOfAccount.findUnique({ where: { id: coa.body.id } });
     expect(row!.deletedAt).not.toBeNull();
   });
 
@@ -823,10 +816,10 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
       .set('Cookie', cookie(adminToken))
       .send({ name: 'Temp Contact', email: 'tempdel@test.com' });
     const del = await request(app)
-      .delete(`/api/v1/contacts/${c.body.data.id}`)
+      .delete(`/api/v1/contacts/${c.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.contact.findUnique({ where: { id: c.body.data.id } });
+    const row = await prisma.contact.findUnique({ where: { id: c.body.id } });
     expect(row!.deletedAt).not.toBeNull();
   });
 
@@ -838,12 +831,12 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
     const p = await request(app)
       .post('/api/v1/products')
       .set('Cookie', cookie(adminToken))
-      .send({ name: 'Temp Product', productType: 'goods', categoryId: cat.body.data.id, salesPrice: 10 });
+      .send({ name: 'Temp Product', product_type: 'goods', category_id: cat.body.id, sales_price: 10 });
     const del = await request(app)
-      .delete(`/api/v1/products/${p.body.data.id}`)
+      .delete(`/api/v1/products/${p.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.product.findUnique({ where: { id: p.body.data.id } });
+    const row = await prisma.product.findUnique({ where: { id: p.body.id } });
     expect(row!.deletedAt).not.toBeNull();
   });
 
@@ -851,12 +844,12 @@ describe('FLOW G — DELETE / RUNTIME SAFETY', () => {
     const u = await request(app)
       .post('/api/v1/users')
       .set('Cookie', cookie(adminToken))
-      .send({ name: 'Temp User', loginId: 'tempuser', email: 'tempuser@test.com', password: 'Pass@123' });
+      .send({ name: 'Temp User', login_id: 'tempuser', email: 'tempuser@test.com', password: 'Pass@123' });
     const del = await request(app)
-      .delete(`/api/v1/users/${u.body.data.id}`)
+      .delete(`/api/v1/users/${u.body.id}`)
       .set('Cookie', cookie(adminToken));
     expect(del.status).toBe(204);
-    const row = await prisma.user.findUnique({ where: { id: u.body.data.id } });
+    const row = await prisma.user.findUnique({ where: { id: u.body.id } });
     expect(row!.isActive).toBe(false);
   });
 
@@ -873,11 +866,10 @@ describe('FLOW H — AUTH', () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'Portal User',
-        loginId: 'portaluser',
+        login_id: 'portaluser',
         email: 'portal@test.com',
         password: 'Password@123',
-        confirmPassword: 'Password@123',
+        confirm_password: 'Password@123',
       });
     expect(res.status).toBe(201);
     expect(res.body.id).toBeDefined();
@@ -891,24 +883,23 @@ describe('FLOW H — AUTH', () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'Dup',
-        loginId: 'testadmin',
+        login_id: 'testadmin',
         email: 'dup@test.com',
         password: 'Password@123',
-        confirmPassword: 'Password@123',
+        confirm_password: 'Password@123',
       });
     expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('DUPLICATE_LOGIN_ID');
   });
 
   it('H3: invalid password rejected', async () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'Bad',
-        loginId: 'badpass',
+        login_id: 'badpass',
         email: 'bad@test.com',
         password: '123',
-        confirmPassword: '123',
+        confirm_password: '123',
       });
     expect(res.status).toBe(400);
   });
@@ -917,37 +908,36 @@ describe('FLOW H — AUTH', () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'NoSpecial',
-        loginId: 'nospecial',
+        login_id: 'nospecial',
         email: 'nospecial@test.com',
         password: 'Password123',
-        confirmPassword: 'Password123',
+        confirm_password: 'Password123',
       });
     expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('WEAK_PASSWORD');
   });
 
   it('H3c: password without uppercase rejected (REQ-AUTH-004)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'NoUpper',
-        loginId: 'noupper',
+        login_id: 'noupper',
         email: 'noupper@test.com',
         password: 'password@123',
-        confirmPassword: 'password@123',
+        confirm_password: 'password@123',
       });
     expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('WEAK_PASSWORD');
   });
 
   it('H4: confirm_password mismatch rejected', async () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'MM',
-        loginId: 'mismatch2',
+        login_id: 'mismatch2',
         email: 'mm@test.com',
         password: 'Password@123',
-        confirmPassword: 'Different1',
+        confirm_password: 'Different1',
       });
     expect(res.status).toBe(400);
   });
@@ -956,11 +946,10 @@ describe('FLOW H — AUTH', () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'Short',
-        loginId: 'abc',
+        login_id: 'abc',
         email: 'short@test.com',
         password: 'Password@123',
-        confirmPassword: 'Password@123',
+        confirm_password: 'Password@123',
       });
     expect(res.status).toBe(400);
   });
@@ -968,10 +957,11 @@ describe('FLOW H — AUTH', () => {
   it('H6: login sets cookie, returns user', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ loginId: 'testadmin', password: 'Admin@123' });
+      .send({ login_id: 'testadmin', password: 'Admin@123' });
     expect(res.status).toBe(200);
     expect(res.body.user).toBeDefined();
     expect(res.body.user.role).toBe('admin');
+    expect(res.body.user.login_id).toBe('testadmin');
     expect(res.body.token).toBeUndefined();
     const cookies = (res.headers['set-cookie'] as unknown) as string[];
     expect(cookies.some((c) => c.includes('auth_token'))).toBe(true);
@@ -980,7 +970,7 @@ describe('FLOW H — AUTH', () => {
   it('H7: invalid credentials 401', async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ loginId: 'testadmin', password: 'wrong' });
+      .send({ login_id: 'testadmin', password: 'wrong' });
     expect(res.status).toBe(401);
   });
 
@@ -1018,21 +1008,21 @@ describe('FLOW H — AUTH', () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
-        name: 'Injector',
-        loginId: 'injector',
+        login_id: 'injector',
         email: 'inj@test.com',
         password: 'Password@123',
-        confirmPassword: 'Password@123',
+        confirm_password: 'Password@123',
         role: 'admin',
       });
     expect(res.status).toBe(201);
     expect(res.body.role).toBe('user');
   });
 
-  it('H13: rate limiters configured per source (5 login/min, 3 signup/hr, 100 API/min)', async () => {
-    const { loginLimiter, signupLimiter, apiLimiter } = require('../src/middleware/rateLimiter');
-    expect(loginLimiter).toBeDefined();
-    expect(signupLimiter).toBeDefined();
-    expect(apiLimiter).toBeDefined();
+  it('H13: forgot-password returns mock message', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'admin@test.com' });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBeDefined();
   });
 });

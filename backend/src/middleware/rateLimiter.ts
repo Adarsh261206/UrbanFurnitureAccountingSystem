@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -51,6 +51,6 @@ export const apiLimiter = isTest ? noopMiddleware : rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: any) => {
-    return req.user?.id || req.ip;
+    return req.user?.id || ipKeyGenerator(req.ip);
   },
 });

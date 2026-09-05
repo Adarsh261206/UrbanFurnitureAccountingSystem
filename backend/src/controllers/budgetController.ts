@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
+import { serializeBudgetDetail, serializeBudgetListRow } from '../utils/serializers';
 
 export async function listBudgets(req: Request, res: Response, next: NextFunction) {
   try {
@@ -11,7 +12,7 @@ export async function listBudgets(req: Request, res: Response, next: NextFunctio
 
     if (req.query.status) where.status = req.query.status;
     if (req.query.type) where.type = req.query.type;
-    if (req.query.analyticalId) where.analyticalId = req.query.analyticalId;
+    if (req.query.analytical_id) where.analyticalId = req.query.analytical_id;
 
     const [data, total] = await Promise.all([
       prisma.budget.findMany({
@@ -19,22 +20,19 @@ export async function listBudgets(req: Request, res: Response, next: NextFunctio
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { responsible: true, analytical: true },
+        include: { responsible: true },
       }),
       prisma.budget.count({ where }),
     ]);
 
-    const dataWithAchievement = await Promise.all(
+    const budgets = await Promise.all(
       data.map(async (budget) => {
         const achievedAmount = await calculateAchievement(budget);
-        const committedAmount = Number(budget.committedAmount) || 0;
-        const amountToAchieve = committedAmount > 0 ? committedAmount - achievedAmount : 0;
-        const achievedPercentage = committedAmount > 0 ? Math.round((achievedAmount / committedAmount) * 100) : 0;
-        return { ...budget, achievedAmount, achievedPercentage, amountToAchieve };
+        return serializeBudgetListRow({ ...budget, achievedAmount });
       })
     );
 
-    res.json({ data: dataWithAchievement, total, page, limit });
+    res.json({ budgets, total, page, limit });
   } catch (err) { next(err); }
 }
 
@@ -47,18 +45,7 @@ export async function getBudget(req: Request, res: Response, next: NextFunction)
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
 
     const achievedAmount = await calculateAchievement(budget);
-    const committedAmount = Number(budget.committedAmount) || 0;
-    const amountToAchieve = committedAmount > 0 ? committedAmount - achievedAmount : 0;
-    const achievedPercentage = committedAmount > 0 ? Math.round((achievedAmount / committedAmount) * 100) : 0;
-
-    res.json({
-      data: {
-        ...budget,
-        achievedAmount,
-        achievedPercentage,
-        amountToAchieve,
-      },
-    });
+    res.json(serializeBudgetDetail({ ...budget, achievedAmount }));
   } catch (err) { next(err); }
 }
 
@@ -107,23 +94,21 @@ async function calculateAchievement(budget: any): Promise<number> {
 
 export async function createBudget(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, responsibleId, startDate, endDate, type, analyticalId, committedAmount } = req.body;
-
     const budget = await prisma.budget.create({
       data: {
-        name,
-        responsibleId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        type,
-        analyticalId,
-        committedAmount: committedAmount ? parseFloat(committedAmount) : null,
+        name: req.body.name,
+        responsibleId: req.body.responsible_id,
+        startDate: new Date(req.body.start_date),
+        endDate: new Date(req.body.end_date),
+        type: req.body.type,
+        analyticalId: req.body.analytical_id,
+        committedAmount: req.body.committed_amount ? parseFloat(req.body.committed_amount) : null,
         status: 'draft',
       },
       include: { responsible: true, analytical: true },
     });
 
-    res.status(201).json({ data: budget });
+    res.status(201).json(serializeBudgetDetail(budget));
   } catch (err) { next(err); }
 }
 
@@ -132,18 +117,19 @@ export async function updateBudget(req: Request, res: Response, next: NextFuncti
     const budget = await prisma.budget.findUnique({ where: { id: req.params.id } });
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
     if (budget.status !== 'draft' && budget.status !== 'revised') {
-      throw new AppError('INVALID_STATUS', 'Only draft or revised budgets can be updated', 400);
+      throw new AppError('DRAFT_REQUIRED', 'Only draft or revised budgets can be updated', 400);
     }
 
-    const { name, responsibleId, startDate, endDate, type, analyticalId, committedAmount } = req.body;
     const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (responsibleId !== undefined) updateData.responsibleId = responsibleId;
-    if (startDate !== undefined) updateData.startDate = new Date(startDate);
-    if (endDate !== undefined) updateData.endDate = new Date(endDate);
-    if (type !== undefined) updateData.type = type;
-    if (analyticalId !== undefined) updateData.analyticalId = analyticalId;
-    if (committedAmount !== undefined) updateData.committedAmount = committedAmount ? parseFloat(committedAmount) : null;
+    if (req.body.name !== undefined) updateData.name = req.body.name;
+    if (req.body.responsible_id !== undefined) updateData.responsibleId = req.body.responsible_id;
+    if (req.body.start_date !== undefined) updateData.startDate = new Date(req.body.start_date);
+    if (req.body.end_date !== undefined) updateData.endDate = new Date(req.body.end_date);
+    if (req.body.type !== undefined) updateData.type = req.body.type;
+    if (req.body.analytical_id !== undefined) updateData.analyticalId = req.body.analytical_id;
+    if (req.body.committed_amount !== undefined) {
+      updateData.committedAmount = req.body.committed_amount ? parseFloat(req.body.committed_amount) : null;
+    }
 
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
@@ -151,7 +137,7 @@ export async function updateBudget(req: Request, res: Response, next: NextFuncti
       include: { responsible: true, analytical: true },
     });
 
-    res.json({ data: updated });
+    res.json(serializeBudgetDetail(updated));
   } catch (err) { next(err); }
 }
 
@@ -159,20 +145,22 @@ export async function confirmBudget(req: Request, res: Response, next: NextFunct
   try {
     const budget = await prisma.budget.findUnique({ where: { id: req.params.id } });
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
-    if (budget.status !== 'draft') throw new AppError('INVALID_STATUS', 'Only draft budgets can be confirmed', 400);
+    if (budget.status !== 'draft') throw new AppError('DRAFT_REQUIRED', 'Only draft budgets can be confirmed', 400);
 
-    const rawAmount = req.body && (req.body.committedAmount !== undefined ? req.body.committedAmount : req.body.committed_amount);
+    const body = req.body ?? {};
+    const rawAmount = body.committed_amount !== undefined ? body.committed_amount : body.committedAmount;
     if (rawAmount === undefined || rawAmount === null || rawAmount === '') {
-      throw new AppError('AMOUNT_REQUIRED', 'Committed amount is required to confirm a budget', 400);
+      throw new AppError('AMOUNT_REQUIRED', 'Committed amount is required to confirm a budget', 400, 'committed_amount');
     }
     const committedAmount = parseFloat(rawAmount);
 
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
       data: { status: 'confirmed', committedAmount },
+      include: { responsible: true, analytical: true },
     });
 
-    res.json({ data: updated });
+    res.json(serializeBudgetDetail(updated));
   } catch (err) { next(err); }
 }
 
@@ -180,9 +168,10 @@ export async function reviseBudget(req: Request, res: Response, next: NextFuncti
   try {
     const budget = await prisma.budget.findUnique({ where: { id: req.params.id } });
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
-    if (budget.status !== 'confirmed') throw new AppError('INVALID_STATUS', 'Only confirmed budgets can be revised', 400);
+    if (budget.status !== 'confirmed') throw new AppError('CONFIRMED_REQUIRED', 'Only confirmed budgets can be revised', 400);
 
-    const rawAmount = req.body && (req.body.committedAmount !== undefined ? req.body.committedAmount : req.body.committed_amount);
+    const body = req.body ?? {};
+    const rawAmount = body.committed_amount !== undefined ? body.committed_amount : body.committedAmount;
     const committedAmount = rawAmount !== undefined && rawAmount !== null && rawAmount !== ''
       ? parseFloat(rawAmount)
       : budget.committedAmount;
@@ -211,7 +200,7 @@ export async function reviseBudget(req: Request, res: Response, next: NextFuncti
       return revised;
     }, { isolationLevel: 'Serializable' });
 
-    res.status(201).json({ data: result });
+    res.status(201).json(serializeBudgetDetail(result));
   } catch (err) { next(err); }
 }
 
@@ -224,9 +213,10 @@ export async function cancelBudget(req: Request, res: Response, next: NextFuncti
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
       data: { status: 'cancelled', isArchived: true },
+      include: { responsible: true, analytical: true },
     });
 
-    res.json({ data: updated });
+    res.json(serializeBudgetDetail(updated));
   } catch (err) { next(err); }
 }
 
@@ -238,8 +228,9 @@ export async function archiveBudget(req: Request, res: Response, next: NextFunct
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
       data: { isArchived: true },
+      include: { responsible: true, analytical: true },
     });
 
-    res.json({ data: updated });
+    res.json(serializeBudgetDetail(updated));
   } catch (err) { next(err); }
 }

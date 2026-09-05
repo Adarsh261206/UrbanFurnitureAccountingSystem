@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
+import { serializeDashboard } from '../utils/serializers';
 
 export async function getDashboard(_req: Request, res: Response, next: NextFunction) {
   try {
@@ -21,13 +22,17 @@ export async function getDashboard(_req: Request, res: Response, next: NextFunct
       prisma.budget.count(),
     ]);
 
-    res.json({
-      data: {
-        sales: { draft: draftSalesOrders, confirmed: confirmedSalesOrders, total: totalSalesOrders },
-        purchase: { draft: draftPurchaseOrders, confirmed: confirmedPurchaseOrders, total: totalPurchaseOrders },
-        budgets: { draft: draftBudgets, confirmed: confirmedBudgets, total: totalBudgets },
-      },
-    });
+    res.json(serializeDashboard({
+      draftSalesOrders,
+      confirmedSalesOrders,
+      totalSalesOrders,
+      draftPurchaseOrders,
+      confirmedPurchaseOrders,
+      totalPurchaseOrders,
+      draftBudgets,
+      confirmedBudgets,
+      totalBudgets,
+    }));
   } catch (err) { next(err); }
 }
 
@@ -49,7 +54,18 @@ export async function getReceivables(_req: Request, res: Response, next: NextFun
 
     const total = receivables.reduce((sum, r) => sum + Number(r.amountDue), 0);
 
-    res.json({ data: { receivables, total } });
+    res.json({
+      receivables: receivables.map((r) => ({
+        id: r.id,
+        invoice_reference: r.invoiceReference,
+        invoice_number: r.invoiceNumber,
+        total: Number(r.total),
+        amount_due: Number(r.amountDue),
+        due_date: r.dueDate,
+        customer: r.customer,
+      })),
+      total,
+    });
   } catch (err) { next(err); }
 }
 
@@ -71,6 +87,17 @@ export async function getPayables(_req: Request, res: Response, next: NextFuncti
 
     const total = payables.reduce((sum, p) => sum + Number(p.amountDue), 0);
 
-    res.json({ data: { payables, total } });
+    res.json({
+      payables: payables.map((p) => ({
+        id: p.id,
+        bill_reference: p.billReference,
+        vendor_bill_no: p.vendorBillNo,
+        total: Number(p.total),
+        amount_due: Number(p.amountDue),
+        due_date: p.dueDate,
+        vendor: p.vendor,
+      })),
+      total,
+    });
   } catch (err) { next(err); }
 }

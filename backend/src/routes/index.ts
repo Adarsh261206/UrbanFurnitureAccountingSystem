@@ -38,11 +38,11 @@ router.post('/categories', authorizeResource('category', 'create'), categoryCrea
 router.put('/categories/:id', authorizeResource('category', 'update'), categoryUpdateValidation, updateCategory);
 router.delete('/categories/:id', authorizeResource('category', 'delete'), deleteCategory);
 
-router.get('/analytics', authorizeResource('analytical', 'read'), listAnalytics);
-router.get('/analytics/:id', authorizeResource('analytical', 'read'), getAnalytical);
-router.post('/analytics', authorizeResource('analytical', 'create'), analyticalCreateValidation, createAnalytical);
-router.put('/analytics/:id', authorizeResource('analytical', 'update'), analyticalUpdateValidation, updateAnalytical);
-router.delete('/analytics/:id', authorizeResource('analytical', 'delete'), deleteAnalytical);
+router.get('/analyticals', authorizeResource('analytical', 'read'), listAnalytics);
+router.get('/analyticals/:id', authorizeResource('analytical', 'read'), getAnalytical);
+router.post('/analyticals', authorizeResource('analytical', 'create'), analyticalCreateValidation, createAnalytical);
+router.put('/analyticals/:id', authorizeResource('analytical', 'update'), analyticalUpdateValidation, updateAnalytical);
+router.delete('/analyticals/:id', authorizeResource('analytical', 'delete'), deleteAnalytical);
 
 router.get('/chart-of-accounts', authorizeResource('coa', 'read'), listCOA);
 router.get('/chart-of-accounts/:id', authorizeResource('coa', 'read'), getCOA);
