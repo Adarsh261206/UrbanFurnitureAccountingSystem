@@ -201,7 +201,7 @@ function CountCard({
           </dd>
         </div>
       </dl>
-      <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition-colors group-hover:text-[#01666b]">
+      <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-primary transition-colors group-hover:text-[#5e3c55]">
         {linkLabel}
         <ArrowRight
           className="size-3.5 transition-transform group-hover:translate-x-0.5"

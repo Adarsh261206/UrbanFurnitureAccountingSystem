@@ -6,10 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Premium accounting SaaS design system.
+ * Odoo-inspired premium accounting SaaS design system.
  *
- * Neutral slate base, single brand accent (teal), semantic status colors,
- * subtle borders over heavy shadows, 8px spacing rhythm, Inter typography.
+ * Odoo palette: Primary #714B67 (plum), Secondary #017E84 (teal),
+ * Gray #8F8F8F. Subtle borders over soft shadows, 8px spacing, Inter.
  */
 
 @theme inline {
@@ -76,14 +76,14 @@
   --card-foreground: #171a1f;
   --popover: #ffffff;
   --popover-foreground: #171a1f;
-  --primary: #017e84;
+  --primary: #714b67;
   --primary-foreground: #ffffff;
-  --secondary: #eef0f3;
-  --secondary-foreground: #171a1f;
+  --secondary: #017e84;
+  --secondary-foreground: #ffffff;
   --muted: #f2f4f6;
-  --muted-foreground: #616a75;
-  --accent: #e9f2f2;
-  --accent-foreground: #015e63;
+  --muted-foreground: #8f8f8f;
+  --accent: #f4eef2;
+  --accent-foreground: #714b67;
   --destructive: #d63e3e;
   --destructive-foreground: #ffffff;
   --success: #157f46;
@@ -94,23 +94,23 @@
   --info-foreground: #ffffff;
   --border: #e3e6ea;
   --input: #d9dde3;
-  --ring: #017e84;
-  --chart-1: #017e84;
-  --chart-2: #1d63c4;
-  --chart-3: #b25e00;
+  --ring: #714b67;
+  --chart-1: #714b67;
+  --chart-2: #017e84;
+  --chart-3: #8f8f8f;
   --chart-4: #157f46;
-  --chart-5: #8b5cf6;
+  --chart-5: #b25e00;
   --sidebar: #ffffff;
   --sidebar-foreground: #171a1f;
-  --sidebar-primary: #017e84;
+  --sidebar-primary: #714b67;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef2f2;
-  --sidebar-accent-foreground: #015e63;
+  --sidebar-accent: #f4eef2;
+  --sidebar-accent-foreground: #714b67;
   --sidebar-border: #e8ebef;
-  --sidebar-ring: #017e84;
-  --navbar: #ffffff;
-  --navbar-foreground: #171a1f;
-  --navbar-muted: #616a75;
+  --sidebar-ring: #714b67;
+  --navbar: #1f2530;
+  --navbar-foreground: #ffffff;
+  --navbar-muted: #8f8f8f;
 }
 
 .dark {
@@ -120,14 +120,14 @@
   --card-foreground: #eef0f3;
   --popover: #1a1c20;
   --popover-foreground: #eef0f3;
-  --primary: #20a4ab;
+  --primary: #9d6a90;
   --primary-foreground: #ffffff;
-  --secondary: #26292e;
-  --secondary-foreground: #eef0f3;
+  --secondary: #017e84;
+  --secondary-foreground: #ffffff;
   --muted: #202328;
   --muted-foreground: #9aa3ad;
-  --accent: #173032;
-  --accent-foreground: #5fd4da;
+  --accent: #2c1e28;
+  --accent-foreground: #cba0be;
   --destructive: #e05d5d;
   --destructive-foreground: #ffffff;
   --success: #3cb371;
@@ -138,20 +138,20 @@
   --info-foreground: #ffffff;
   --border: #2c3036;
   --input: #3a3f46;
-  --ring: #20a4ab;
-  --chart-1: #20a4ab;
-  --chart-2: #5b9bd5;
+  --ring: #9d6a90;
+  --chart-1: #9d6a90;
+  --chart-2: #20a4ab;
   --chart-3: #e08a2e;
   --chart-4: #3cb371;
   --chart-5: #a78bfa;
   --sidebar: #17181b;
   --sidebar-foreground: #eef0f3;
-  --sidebar-primary: #20a4ab;
+  --sidebar-primary: #9d6a90;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1d2b2d;
-  --sidebar-accent-foreground: #5fd4da;
+  --sidebar-accent: #241a20;
+  --sidebar-accent-foreground: #cba0be;
   --sidebar-border: #2c3036;
-  --sidebar-ring: #20a4ab;
+  --sidebar-ring: #9d6a90;
   --navbar: #17181b;
   --navbar-foreground: #eef0f3;
   --navbar-muted: #9aa3ad;

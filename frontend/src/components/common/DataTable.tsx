@@ -74,7 +74,7 @@ export function DataTable<T>({
                     aria-label="Select all rows"
                     checked={allSelected}
                     onChange={toggleAll}
-                    className="size-4 accent-[#017E84]"
+                    className="size-4 accent-[#714B67]"
                   />
                 </TableHead>
               ) : null}
@@ -122,7 +122,7 @@ export function DataTable<T>({
                         checked={isSelected}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => toggleRow(key)}
-                        className="size-4 accent-[#017E84]"
+                        className="size-4 accent-[#714B67]"
                       />
                     </TableCell>
                   ) : null}

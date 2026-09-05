@@ -30,11 +30,11 @@ export function ChartCard({
 }
 
 export const CHART_COLORS = {
-  revenue: "#017E84",
+  revenue: "#714B67",
   expense: "#F59E0B",
-  inflow: "#10B981",
+  inflow: "#017E84",
   outflow: "#EF4444",
   draft: "#94A3B8",
-  confirmed: "#3B82F6",
+  confirmed: "#017E84",
   paid: "#10B981",
 };

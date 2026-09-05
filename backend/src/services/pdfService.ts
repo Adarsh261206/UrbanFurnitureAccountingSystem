@@ -20,11 +20,11 @@ export const PAGE = {
 };
 
 export const COLORS = {
-  brand: '#017E84',
-  brandDark: '#015E63',
+  brand: '#714B67',
+  brandDark: '#5E3C55',
   dark: '#1F2530',
   text: '#212529',
-  muted: '#6C757D',
+  muted: '#8F8F8F',
   lightText: '#FFFFFF',
   border: '#DEE2E6',
   headerBg: '#1F2530',
