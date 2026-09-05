@@ -39,8 +39,18 @@ async function main() {
   ];
   const states = ['MH', 'DL', 'KA', 'TN', 'WB', 'AP', 'GJ', 'RJ', 'UP', 'HR'];
 
+  // PAN: 5 letters + 4 digits + 1 letter = 10 chars. GSTIN: state(2) + PAN(10) + "1ZM" = 15.
+  const panLetters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const genPan = (prefix: string, idx: number): string => {
+    const l1 = panLetters[idx % panLetters.length];
+    const l2 = panLetters[(idx * 7 + 3) % panLetters.length];
+    return `${prefix}${l1}${String(1000 + idx)}${l2}`;
+  };
+
   const customers: string[] = [];
   for (let i = 0; i < customerNames.length; i++) {
+    const state = pick(states);
+    const pan = genPan('AABC', i);
     const c = await prisma.contact.create({
       data: {
         name: customerNames[i],
@@ -48,18 +58,20 @@ async function main() {
         phone: `98${String(70000000 + i * 137).slice(0, 8)}`,
         street: `${rnd(1, 500)}, ${pick(['MG Road', 'Park Street', 'Lake View', 'Station Rd', 'Market Lane', 'Green Park', 'Rose Avenue', 'Hill Top'])}`,
         city: pick(cities),
-        state: pick(states),
+        state,
         country: 'India',
         pincode: String(rnd(100001, 700001)),
         contactType: 'customer',
-        gstin: `07AABC${String(i + 1).padStart(4, '0')}${String(1000 + i).slice(0, 3)}R1ZM`,
-        pan: `AABC${String(1000 + i)}P`,
+        gstin: `${state}${pan}1ZM`,
+        pan,
       },
     });
     customers.push(c.id);
   }
   const vendors: string[] = [];
   for (let i = 0; i < vendorNames.length; i++) {
+    const state = pick(states);
+    const pan = genPan('AAAC', i);
     const v = await prisma.contact.create({
       data: {
         name: vendorNames[i],
@@ -67,12 +79,12 @@ async function main() {
         phone: `99${String(50000000 + i * 211).slice(0, 8)}`,
         street: `${rnd(1, 300)}, Industrial Area`,
         city: pick(cities),
-        state: pick(states),
+        state,
         country: 'India',
         pincode: String(rnd(100001, 700001)),
         contactType: 'vendor',
-        gstin: `27AAAC${String(i + 1).padStart(4, '0')}${String(2000 + i).slice(0, 3)}R1ZK`,
-        pan: `AAAC${String(2000 + i)}P`,
+        gstin: `${state}${pan}1ZM`,
+        pan,
       },
     });
     vendors.push(v.id);
