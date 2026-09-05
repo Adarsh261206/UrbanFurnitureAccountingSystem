@@ -3,9 +3,10 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import path from 'path';
-import { authConfig } from './config/auth';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
+import { xssSanitizer } from './middleware/xss';
+import { securityHeaders } from './middleware/security';
 
 import authRoutes from './routes/auth';
 import masterRoutes from './routes/index';
@@ -23,12 +24,18 @@ import uploadRoutes from './routes/upload';
 const app = express();
 
 app.use(helmet());
+app.use(securityHeaders);
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(xssSanitizer);
 app.use('/api', apiLimiter);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
