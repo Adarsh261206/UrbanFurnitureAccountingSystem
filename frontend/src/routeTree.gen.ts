@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppAnalyticalsIndexRouteImport } from './routes/_app.analyticals.index'
@@ -36,6 +37,7 @@ import { Route as AppInvoicesNewRouteImport } from './routes/_app.invoices.new'
 import { Route as AppJournalEntriesIndexRouteImport } from './routes/_app.journal-entries.index'
 import { Route as AppJournalEntriesNewRouteImport } from './routes/_app.journal-entries.new'
 import { Route as AppJournalsIndexRouteImport } from './routes/_app.journals.index'
+import { Route as AppJournalsNewRouteImport } from './routes/_app.journals.new'
 import { Route as AppPaymentsIndexRouteImport } from './routes/_app.payments.index'
 import { Route as AppProductsIndexRouteImport } from './routes/_app.products.index'
 import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
@@ -73,6 +75,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -190,6 +197,11 @@ const AppJournalsIndexRoute = AppJournalsIndexRouteImport.update({
   path: '/journals/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppJournalsNewRoute = AppJournalsNewRouteImport.update({
+  id: '/journals/new',
+  path: '/journals/new',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPaymentsIndexRoute = AppPaymentsIndexRouteImport.update({
   id: '/payments/',
   path: '/payments/',
@@ -290,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
@@ -303,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/contacts/new': typeof AppContactsNewRoute
   '/invoices/new': typeof AppInvoicesNewRoute
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
+  '/journals/new': typeof AppJournalsNewRoute
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
   '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
@@ -337,6 +351,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
@@ -350,6 +365,7 @@ export interface FileRoutesByTo {
   '/contacts/new': typeof AppContactsNewRoute
   '/invoices/new': typeof AppInvoicesNewRoute
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
+  '/journals/new': typeof AppJournalsNewRoute
   '/products/$id': typeof AppProductsIdRoute
   '/products/new': typeof AppProductsNewRoute
   '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
@@ -386,6 +402,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/analyticals/$id': typeof AppAnalyticalsIdRoute
@@ -399,6 +416,7 @@ export interface FileRoutesById {
   '/_app/contacts/new': typeof AppContactsNewRoute
   '/_app/invoices/new': typeof AppInvoicesNewRoute
   '/_app/journal-entries/new': typeof AppJournalEntriesNewRoute
+  '/_app/journals/new': typeof AppJournalsNewRoute
   '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/products/new': typeof AppProductsNewRoute
   '/_app/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
@@ -435,6 +453,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/dashboard'
     | '/analyticals/$id'
@@ -448,6 +467,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/invoices/new'
     | '/journal-entries/new'
+    | '/journals/new'
     | '/products/$id'
     | '/products/new'
     | '/purchase-orders/$id'
@@ -482,6 +502,7 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/dashboard'
     | '/analyticals/$id'
@@ -495,6 +516,7 @@ export interface FileRouteTypes {
     | '/contacts/new'
     | '/invoices/new'
     | '/journal-entries/new'
+    | '/journals/new'
     | '/products/$id'
     | '/products/new'
     | '/purchase-orders/$id'
@@ -530,6 +552,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/forgot-password'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/_app/dashboard'
     | '/_app/analyticals/$id'
@@ -543,6 +566,7 @@ export interface FileRouteTypes {
     | '/_app/contacts/new'
     | '/_app/invoices/new'
     | '/_app/journal-entries/new'
+    | '/_app/journals/new'
     | '/_app/products/$id'
     | '/_app/products/new'
     | '/_app/purchase-orders/$id'
@@ -579,6 +603,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
 }
 
@@ -610,6 +635,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -773,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/journals/new': {
+      id: '/_app/journals/new'
+      path: '/journals/new'
+      fullPath: '/journals/new'
+      preLoaderRoute: typeof AppJournalsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/payments/': {
       id: '/_app/payments/'
       path: '/payments'
@@ -922,6 +961,7 @@ interface AppRouteChildren {
   AppContactsNewRoute: typeof AppContactsNewRoute
   AppInvoicesNewRoute: typeof AppInvoicesNewRoute
   AppJournalEntriesNewRoute: typeof AppJournalEntriesNewRoute
+  AppJournalsNewRoute: typeof AppJournalsNewRoute
   AppProductsIdRoute: typeof AppProductsIdRoute
   AppProductsNewRoute: typeof AppProductsNewRoute
   AppPurchaseOrdersIdRoute: typeof AppPurchaseOrdersIdRoute
@@ -966,6 +1006,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContactsNewRoute: AppContactsNewRoute,
   AppInvoicesNewRoute: AppInvoicesNewRoute,
   AppJournalEntriesNewRoute: AppJournalEntriesNewRoute,
+  AppJournalsNewRoute: AppJournalsNewRoute,
   AppProductsIdRoute: AppProductsIdRoute,
   AppProductsNewRoute: AppProductsNewRoute,
   AppPurchaseOrdersIdRoute: AppPurchaseOrdersIdRoute,
@@ -1004,6 +1045,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport

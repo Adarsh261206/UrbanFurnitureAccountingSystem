@@ -14,6 +14,7 @@ import {
   ErrorBanner,
 } from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
+import { ImageUpload } from "@/components/common/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -293,15 +294,11 @@ function Page() {
               />
             </Field>
             <Field
-              label="Primary image URL"
+              label="Primary image"
               htmlFor="image_url"
               error={fieldErrors["image_url"] ?? null}
             >
-              <Input
-                id="image_url"
-                value={form.image_url}
-                onChange={(e) => setField("image_url", e.target.value)}
-              />
+              <ImageUpload value={form.image_url} onChange={(url) => setField("image_url", url)} />
             </Field>
             <Field
               label="Active"
@@ -413,7 +410,7 @@ function Page() {
             <Input
               value={newImageUrl}
               onChange={(e) => setNewImageUrl(e.target.value)}
-              placeholder="Image URL to add…"
+              placeholder="Or paste an image URL…"
               aria-label="New image URL"
               className="max-w-sm"
             />
@@ -424,8 +421,9 @@ function Page() {
               disabled={!newImageUrl.trim() || addImage.isPending}
               onClick={() => addImage.mutate(newImageUrl.trim())}
             >
-              <Plus className="size-3.5" /> Add
+              <Plus className="size-3.5" /> Add URL
             </Button>
+            <ImageUpload value="" onChange={(url) => addImage.mutate(url)} label="Upload" />
           </div>
         </FormSection>
 

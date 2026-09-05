@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import prisma from '../config/database';
 import { authConfig } from '../config/auth';
 import { AppError } from '../utils/errors';
 import { serializeUser } from '../utils/serializers';
+import { sendResetPasswordEmail, appUrl } from '../services/mailService';
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
@@ -31,6 +33,8 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
         email,
         passwordHash,
         role: 'user',
+        isActive: false,
+        approvalStatus: 'pending',
       },
     });
 
@@ -50,6 +54,22 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     });
     if (!user) {
       throw new AppError('INVALID_CREDENTIALS', 'Invalid Login Id or Password', 401, 'login_id');
+    }
+    if (user.approvalStatus === 'pending') {
+      throw new AppError(
+        'ACCOUNT_PENDING_APPROVAL',
+        'Your account is pending admin approval. Please try again later.',
+        403,
+        'login_id',
+      );
+    }
+    if (user.approvalStatus === 'rejected') {
+      throw new AppError(
+        'ACCOUNT_REJECTED',
+        'Your account request was not approved. Contact the administrator.',
+        403,
+        'login_id',
+      );
     }
     if (!user.isActive) {
       throw new AppError('ACCOUNT_DISABLED', 'Account has been disabled', 403, 'login_id');
@@ -92,9 +112,56 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export async function forgotPassword(_req: Request, res: Response, next: NextFunction) {
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
   try {
-    // Mock per 22_AUTHENTICATION_AND_SESSION §12: no actual email is sent.
+    const email = req.body.email;
+    const user = email
+      ? await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } })
+      : null;
+
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetTokenHash: tokenHash,
+          resetTokenExpiry: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      const resetUrl = `${appUrl()}/reset-password?token=${token}`;
+      await sendResetPasswordEmail(user.email, user.name, resetUrl);
+    }
+    // Always return the same message — never leak which emails exist.
     res.json({ message: 'If the email exists, a reset link has been sent' });
+  } catch (err) { next(err); }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const token = req.body.token;
+    const password = req.body.password;
+    if (!token || !password) {
+      throw new AppError('VALIDATION', 'Token and password are required', 400);
+    }
+    if (typeof password !== 'string' || password.length < 8) {
+      throw new AppError('WEAK_PASSWORD', 'Password must be at least 8 characters', 400, 'password');
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await prisma.user.findFirst({
+      where: { resetTokenHash: tokenHash, resetTokenExpiry: { gt: new Date() } },
+    });
+    if (!user) {
+      throw new AppError('INVALID_TOKEN', 'Reset link is invalid or has expired', 400, 'token');
+    }
+
+    const passwordHash = await bcrypt.hash(password, authConfig.bcryptRounds);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, resetTokenHash: null, resetTokenExpiry: null },
+    });
+
+    res.json({ message: 'Password has been reset. You can now sign in.' });
   } catch (err) { next(err); }
 }

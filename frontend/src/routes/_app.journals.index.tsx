@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, type Column } from "@/components/common/DataTable";
+import { Button } from "@/components/ui/button";
 import { journalsService, accountsService } from "@/services/masterDataService";
 import type { Journal } from "@/types/api";
 
@@ -24,6 +26,7 @@ export const Route = createFileRoute("/_app/journals/")({
 });
 
 function Page() {
+  const navigate = useNavigate();
   const journalsQuery = useQuery({ queryKey: ["journals"], queryFn: () => journalsService.list() });
   const accountsQuery = useQuery({
     queryKey: ["chart-of-accounts"],
@@ -56,6 +59,11 @@ function Page() {
         title="Journals"
         crumbs={[{ label: "Account" }, { label: "Journals" }]}
         description="Journals used to record accounting entries."
+        actions={
+          <Button onClick={() => navigate({ to: "/journals/new" })}>
+            <Plus className="size-4" /> New journal
+          </Button>
+        }
       />
 
       {journalsQuery.isLoading ? (

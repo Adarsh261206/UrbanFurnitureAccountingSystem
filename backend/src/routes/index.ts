@@ -8,7 +8,7 @@ import { listCategories, getCategory, createCategory, updateCategory, deleteCate
 import { listAnalytics, getAnalytical, createAnalytical, updateAnalytical, deleteAnalytical } from '../controllers/analyticalController';
 import { listCOA, getCOA, createCOA, updateCOA, deleteCOA } from '../controllers/coaController';
 import { listJournals, getJournal, createJournal, updateJournal, deleteJournal } from '../controllers/journalController';
-import { listUsers, getUser, createUser, updateUser, deleteUser } from '../controllers/userController';
+import { listUsers, getUser, createUser, updateUser, deleteUser, approveUser, rejectUser } from '../controllers/userController';
 import { contactCreateValidation, contactUpdateValidation } from '../validators/masterValidators';
 import { productCreateValidation, productUpdateValidation } from '../validators/masterValidators';
 import { brandCreateValidation, brandUpdateValidation } from '../validators/masterValidators';
@@ -72,6 +72,8 @@ router.get('/users', authorizeResource('user', 'read'), listUsers);
 router.get('/users/:id', authorizeResource('user', 'read'), getUser);
 router.post('/users', authorizeResource('user', 'create'), userCreateValidation, createUser);
 router.put('/users/:id', authorizeResource('user', 'update'), userUpdateValidation, updateUser);
+router.post('/users/:id/approve', authorizeResource('user', 'update'), approveUser);
+router.post('/users/:id/reject', authorizeResource('user', 'update'), rejectUser);
 router.delete('/users/:id', authorizeResource('user', 'delete'), deleteUser);
 
 export default router;

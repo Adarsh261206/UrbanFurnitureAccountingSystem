@@ -12,6 +12,7 @@ import {
 } from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/common/ImageUpload";
 import {
   Select,
   SelectContent,
@@ -163,11 +164,10 @@ function Page() {
                 onChange={(e) => setField("phone", e.target.value)}
               />
             </Field>
-            <Field label="Image URL" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
-              <Input
-                id="image_url"
-                value={form.image_url}
-                onChange={(e) => setField("image_url", e.target.value)}
+            <Field label="Photo" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
+              <ImageUpload
+                value={form.image_url ?? ""}
+                onChange={(url) => setField("image_url", url)}
               />
             </Field>
             <Field

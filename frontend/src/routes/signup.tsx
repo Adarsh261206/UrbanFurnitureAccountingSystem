@@ -43,6 +43,7 @@ function SignupPage() {
   });
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
 
   function set(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,10 +55,10 @@ function SignupPage() {
     setSubmitting(true);
     setError(null);
     try {
-      // Signup does not create a session (22 §4) — send the user to /login.
+      // Signup does not create a session (22 §4) — the account must be
+      // approved by an administrator before the user can sign in.
       await authService.signup(form);
-      toast.success("Account created. Please sign in.");
-      await navigate({ to: "/login", replace: true });
+      setDone(true);
     } catch (err) {
       setError(err);
       setSubmitting(false);
@@ -77,63 +78,80 @@ function SignupPage() {
         </span>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="login_id">Login ID</Label>
-          <Input
-            id="login_id"
-            autoComplete="username"
-            required
-            value={form.login_id}
-            onChange={(e) => set("login_id", e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={form.email}
-            onChange={(e) => set("email", e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={form.password}
-            onChange={(e) => set("password", e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm_password">Confirm password</Label>
-          <Input
-            id="confirm_password"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={form.confirm_password}
-            onChange={(e) => set("confirm_password", e.target.value)}
-          />
-        </div>
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {errorMessage(error)}
+      {done ? (
+        <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-center">
+          <p className="text-2xl">🎉</p>
+          <h2 className="text-base font-bold text-foreground">Request received!</h2>
+          <p className="text-sm text-muted-foreground">
+            Your account is <strong>pending administrator approval</strong>. Once approved you will
+            receive an email and will be able to sign in.
           </p>
-        ) : null}
-        <Button type="submit" className="h-9 w-full text-sm" disabled={submitting}>
-          {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          Create
-        </Button>
-      </form>
+          <Link
+            to="/login"
+            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-[#5e3c55]"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="login_id">Login ID</Label>
+            <Input
+              id="login_id"
+              autoComplete="username"
+              required
+              value={form.login_id}
+              onChange={(e) => set("login_id", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={form.password}
+              onChange={(e) => set("password", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="confirm_password">Confirm password</Label>
+            <Input
+              id="confirm_password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={form.confirm_password}
+              onChange={(e) => set("confirm_password", e.target.value)}
+            />
+          </div>
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {errorMessage(error)}
+            </p>
+          ) : null}
+          <Button type="submit" className="h-9 w-full text-sm" disabled={submitting}>
+            {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+            Create
+          </Button>
+        </form>
+      )}
     </AuthLayout>
   );
 }

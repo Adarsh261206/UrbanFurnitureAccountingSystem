@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, Search } from "lucide-react";
+import { Check, Plus, Search, X } from "lucide-react";
+import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usersService } from "@/services/masterDataService";
 import type { User } from "@/types/api";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/users/")({
   head: () => ({
@@ -30,8 +32,24 @@ export const Route = createFileRoute("/_app/users/")({
 
 const LIMIT = 20;
 
+function ApprovalBadge({ status }: { status: User["approval_status"] }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        status === "pending" && "bg-amber-500/10 text-amber-600",
+        status === "approved" && "bg-emerald-500/10 text-emerald-600",
+        status === "rejected" && "bg-red-500/10 text-red-600",
+      )}
+    >
+      {status ?? "approved"}
+    </span>
+  );
+}
+
 function Page() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -49,6 +67,24 @@ function Page() {
     queryFn: () => usersService.list({ page, limit: LIMIT, search: debounced || undefined }),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => usersService.approve(id),
+    onSuccess: () => {
+      toast.success("User approved — email sent");
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) => usersService.reject(id),
+    onSuccess: () => {
+      toast.success("User rejected");
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const columns: Column<User>[] = [
     {
       key: "name",
@@ -58,6 +94,44 @@ function Page() {
     { key: "login_id", header: "Login ID", cell: (r) => r.login_id },
     { key: "email", header: "Email", cell: (r) => r.email },
     { key: "role", header: "Role", cell: (r) => <StatusBadge status={r.role} /> },
+    {
+      key: "approval_status",
+      header: "Approval",
+      cell: (r) => <ApprovalBadge status={r.approval_status ?? "approved"} />,
+    },
+    {
+      key: "actions",
+      header: "",
+      cell: (r) =>
+        r.approval_status === "pending" ? (
+          <span className="flex items-center justify-end gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-emerald-600 hover:text-emerald-700"
+              disabled={approveMutation.isPending}
+              onClick={(e) => {
+                e.stopPropagation();
+                approveMutation.mutate(r.id);
+              }}
+            >
+              <Check className="size-3.5" /> Approve
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:text-red-700"
+              disabled={rejectMutation.isPending}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm(`Reject account "${r.login_id}"?`)) rejectMutation.mutate(r.id);
+              }}
+            >
+              <X className="size-3.5" /> Reject
+            </Button>
+          </span>
+        ) : null,
+    },
   ];
 
   return (

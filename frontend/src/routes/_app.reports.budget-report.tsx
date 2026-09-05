@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -79,6 +80,10 @@ function Page() {
           title="No budgets found"
           description="No budgets match the selected year and type."
         />
+      ) : null}
+
+      {query.data && query.data.budgets.length > 0 ? (
+        <BudgetPieCharts budgets={query.data.budgets} />
       ) : null}
 
       {query.data && query.data.budgets.length > 0 && view === "kanban" ? (
@@ -193,5 +198,128 @@ function Page() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+const PIE_COLORS = ["#714B67", "#017E84", "#8F8F8F", "#D97B6C", "#C9A24B", "#7A9E7E"];
+
+function BudgetPieCharts({
+  budgets,
+}: {
+  budgets: {
+    name: string;
+    type: BudgetType;
+    committed_amount: number;
+    achieved_amount: number;
+    status: string;
+  }[];
+}) {
+  const byType = ["income", "expense"]
+    .map((t) => ({
+      name: t === "income" ? "Income" : "Expense",
+      value: budgets.filter((b) => b.type === t).reduce((s, b) => s + (b.committed_amount ?? 0), 0),
+    }))
+    .filter((d) => d.value > 0);
+
+  const byStatus = ["draft", "confirmed", "revised", "cancelled"]
+    .map((s, i) => ({
+      name: s.charAt(0).toUpperCase() + s.slice(1),
+      value: budgets.filter((b) => b.status === s).length,
+      color: PIE_COLORS[i % PIE_COLORS.length],
+    }))
+    .filter((d) => d.value > 0);
+
+  const byName = budgets
+    .map((b, i) => ({
+      name: b.name,
+      value: b.committed_amount ?? 0,
+      color: PIE_COLORS[i % PIE_COLORS.length],
+    }))
+    .filter((d) => d.value > 0)
+    .slice(0, 6);
+
+  const fmt = (v: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(v);
+
+  return (
+    <section aria-label="Budget charts" className="grid gap-4 lg:grid-cols-3">
+      <div className="rounded-lg border bg-card p-5 shadow-sm">
+        <h2 className="mb-1 text-sm font-semibold text-foreground">Income vs Expense</h2>
+        <p className="mb-2 text-xs text-muted-foreground">Committed amounts by type</p>
+        {byType.length > 0 ? (
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={byType}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={45}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  strokeWidth={2}
+                >
+                  {byType.map((d, i) => (
+                    <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="py-10 text-center text-sm text-muted-foreground">No committed budgets</p>
+        )}
+      </div>
+
+      <div className="rounded-lg border bg-card p-5 shadow-sm">
+        <h2 className="mb-1 text-sm font-semibold text-foreground">Budget Status</h2>
+        <p className="mb-2 text-xs text-muted-foreground">Count by status</p>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={byStatus}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={45}
+                outerRadius={80}
+                paddingAngle={3}
+                strokeWidth={2}
+              >
+                {byStatus.map((d) => (
+                  <Cell key={d.name} fill={d.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-5 shadow-sm">
+        <h2 className="mb-1 text-sm font-semibold text-foreground">Top Budgets by Amount</h2>
+        <p className="mb-2 text-xs text-muted-foreground">Largest committed budgets</p>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={byName} dataKey="value" nameKey="name" outerRadius={80} strokeWidth={2}>
+                {byName.map((d) => (
+                  <Cell key={d.name} fill={d.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </section>
   );
 }

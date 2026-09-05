@@ -31,4 +31,8 @@ export const authService = {
 
   /** POST /auth/forgot-password → 200 { message }. */
   forgotPassword: (email: string) => http.post<MessageResponse>("/auth/forgot-password", { email }),
+
+  /** POST /auth/reset-password → 200 { message }. */
+  resetPassword: (token: string, password: string, confirm_password: string) =>
+    http.post<MessageResponse>("/auth/reset-password", { token, password, confirm_password }),
 };

@@ -26,6 +26,8 @@ export function serializeUser(u: any): any {
     login_id: u.loginId,
     email: u.email,
     role: u.role,
+    is_active: u.isActive,
+    approval_status: u.approvalStatus ?? 'approved',
     created_at: u.createdAt ? iso(u.createdAt) : undefined,
   };
 }

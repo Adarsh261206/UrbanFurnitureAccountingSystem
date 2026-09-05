@@ -32,6 +32,8 @@ export const usersService = {
   list: (params: { page?: number; limit?: number; search?: string } = {}) =>
     http.get<UserList>("/users", { params }),
   create: (body: CreateUserRequest) => http.post<User>("/users", body),
+  approve: (id: string) => http.post<User>(`/users/${id}/approve`),
+  reject: (id: string) => http.post<User>(`/users/${id}/reject`),
 };
 
 /** PART B3 — Contacts. */
@@ -149,8 +151,14 @@ export const accountsService = {
 };
 
 /** PART B3 — Journals. */
+export interface JournalInput {
+  name: string;
+  journal_type: "sale" | "purchase" | "bank" | "cash";
+  default_account_id: string;
+}
 export const journalsService = {
   list: () => http.get<Journal[]>("/journals"),
+  create: (body: JournalInput) => http.post<Journal>("/journals", body),
 };
 
 /** PART B4 — Journal entries. SUM(debit) must equal SUM(credit). */

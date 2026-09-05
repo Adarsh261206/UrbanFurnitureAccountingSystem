@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/common/ImageUpload";
 import {
   Select,
   SelectContent,
@@ -259,15 +260,11 @@ function Page() {
               />
             </Field>
             <Field
-              label="Primary image URL"
+              label="Primary image"
               htmlFor="image_url"
               error={fieldErrors["image_url"] ?? null}
             >
-              <Input
-                id="image_url"
-                value={form.image_url}
-                onChange={(e) => setField("image_url", e.target.value)}
-              />
+              <ImageUpload value={form.image_url} onChange={(url) => setField("image_url", url)} />
             </Field>
             <Field
               label="Active"

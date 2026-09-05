@@ -4,6 +4,7 @@ import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { authConfig } from '../config/auth';
 import { serializeUser } from '../utils/serializers';
+import { sendApprovalEmail, sendRejectionEmail } from '../services/mailService';
 
 export async function listUsers(req: Request, res: Response, next: NextFunction) {
   try {
@@ -78,5 +79,41 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
   try {
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     res.status(204).send();
+  } catch (err) { next(err); }
+}
+
+export async function approveUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
+    if (user.approvalStatus === 'approved') {
+      throw new AppError('ALREADY_APPROVED', 'User is already approved', 400);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { approvalStatus: 'approved', isActive: true },
+    });
+
+    await sendApprovalEmail(updated.email, updated.name);
+    res.json(serializeUser(updated));
+  } catch (err) { next(err); }
+}
+
+export async function rejectUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
+    if (user.approvalStatus === 'rejected') {
+      throw new AppError('ALREADY_REJECTED', 'User is already rejected', 400);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { approvalStatus: 'rejected', isActive: false },
+    });
+
+    await sendRejectionEmail(updated.email, updated.name);
+    res.json(serializeUser(updated));
   } catch (err) { next(err); }
 }

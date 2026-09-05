@@ -17,6 +17,8 @@ export type PaymentVia = "bank" | "cash";
 export type PaymentStatus = "draft" | "confirmed" | "successful";
 export type OrderStatus = "draft" | "confirmed" | "cancelled";
 export type JournalEntryStatus = "draft" | "posted" | "cancelled";
+export type JournalType = "sale" | "purchase" | "bank" | "cash";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 // ---------- Auth ----------
 export interface User {
@@ -25,6 +27,8 @@ export interface User {
   login_id: string;
   email: string;
   role: Role;
+  is_active?: boolean;
+  approval_status?: ApprovalStatus;
   created_at?: string;
 }
 /** A8 — login returns a NESTED user object. */

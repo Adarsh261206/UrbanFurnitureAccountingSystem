@@ -15,6 +15,12 @@ enum user_role {
   user
 }
 
+enum approval_status {
+  pending
+  approved
+  rejected
+}
+
 enum product_type {
   goods
   service
@@ -96,15 +102,18 @@ enum po_status {
 // ==================== TABLES ====================
 
 model User {
-  id            String    @id @default(uuid()) @db.Uuid
-  name          String?   @db.VarChar(255)
-  loginId       String    @unique @map("login_id") @db.VarChar(12)
-  email         String    @unique @map("email") @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.VarChar(255)
-  role          user_role @default(user)
-  isActive      Boolean   @default(true) @map("is_active")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+  id               String          @id @default(uuid()) @db.Uuid
+  name             String?         @db.VarChar(255)
+  loginId          String          @unique @map("login_id") @db.VarChar(12)
+  email            String          @unique @map("email") @db.VarChar(255)
+  passwordHash     String          @map("password_hash") @db.VarChar(255)
+  role             user_role       @default(user)
+  isActive         Boolean         @default(true) @map("is_active")
+  approvalStatus   approval_status @default(approved) @map("approval_status")
+  resetTokenHash   String?         @map("reset_token_hash") @db.VarChar(255)
+  resetTokenExpiry DateTime?       @map("reset_token_expiry") @db.Timestamptz()
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime        @default(now()) @map("updated_at") @db.Timestamptz()
 
   createdInvoices  CustomerInvoice[]
   createdBills     VendorBill[]
