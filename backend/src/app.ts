@@ -49,7 +49,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(xssSanitizer);
 app.use('/api', apiLimiter);
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+// Uploaded images are loaded cross-origin by the frontend (localhost:5173).
+// The global security middleware sets CORP: same-origin, which would block
+// every <img> served from /uploads. Override to same-site for this route
+// only — same-site still blocks arbitrary external sites, so the rest of
+// the app keeps the strict same-origin policy.
+app.use(
+  '/uploads',
+  (_req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    next();
+  },
+  express.static(path.join(__dirname, '..', 'uploads')),
+);
 
 app.get('/api/v1/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
