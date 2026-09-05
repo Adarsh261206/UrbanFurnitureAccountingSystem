@@ -107,6 +107,7 @@ function Page() {
             analytical_id: l.budget_analytic_id ?? "",
             quantity: l.qty,
             unit_price: l.unit_price,
+            tax_rate: l.tax_rate ?? 18,
           }))
         : [newLine()],
     );
@@ -138,6 +139,9 @@ function Page() {
           ...(l.analytical_id ? { analytical_id: l.analytical_id } : {}),
           quantity: Number(l.quantity),
           unit_price: Number(l.unit_price),
+          ...(l.tax_rate !== undefined && Number(l.tax_rate) > 0
+            ? { tax_rate: Number(l.tax_rate) }
+            : {}),
         })),
       };
       return invoicesService.create(body);

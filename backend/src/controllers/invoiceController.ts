@@ -80,11 +80,18 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
 
     const invoiceReference = await generateSequence('INV');
     const invoiceNumber = await generateSequence('INVOICE_NUMBER');
-    const total = lines.reduce((sum: number, l: any) => {
+    const subtotal = lines.reduce((sum: number, l: any) => {
       const qty = parseFloat(l.quantity ?? l.qty);
       const price = parseFloat(l.unit_price ?? l.unitPrice);
       return sum + qty * price;
     }, 0);
+    const taxAmount = lines.reduce((sum: number, l: any) => {
+      const qty = parseFloat(l.quantity ?? l.qty);
+      const price = parseFloat(l.unit_price ?? l.unitPrice);
+      const rate = parseFloat(l.tax_rate ?? l.taxRate ?? 0);
+      return sum + qty * price * (rate / 100);
+    }, 0);
+    const total = subtotal + taxAmount;
 
     const invoice = await prisma.customerInvoice.create({
       data: {
@@ -98,8 +105,11 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
         paymentType: req.body.payment_type ?? 'receive',
         partnerId: req.body.partner_id ?? customerId,
         paymentVia: req.body.payment_via ?? 'bank',
+        subtotal,
+        taxAmount,
         total,
         amountDue: total,
+        notes: req.body.notes ?? null,
         status: 'draft',
         createdBy: req.user!.id,
         invoiceLines: {
@@ -110,6 +120,7 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
             budgetAnalyticId: line.analytical_id ?? line.analyticId ?? line.budget_analytic_id ?? null,
             qty: parseFloat(line.quantity ?? line.qty),
             unitPrice: parseFloat(line.unit_price ?? line.unitPrice),
+            taxRate: parseFloat(line.tax_rate ?? line.taxRate ?? 0),
             total: parseFloat(line.quantity ?? line.qty) * parseFloat(line.unit_price ?? line.unitPrice),
           })),
         },
@@ -134,17 +145,27 @@ export async function updateInvoice(req: Request, res: Response, next: NextFunct
     if (req.body.payment_type !== undefined) updateData.paymentType = req.body.payment_type;
     if (req.body.partner_id !== undefined) updateData.partnerId = req.body.partner_id;
     if (req.body.payment_via !== undefined) updateData.paymentVia = req.body.payment_via;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
 
     if (req.body.lines !== undefined) {
       const lines = req.body.lines;
       if (!Array.isArray(lines) || lines.length === 0) {
         throw new AppError('LINES_REQUIRED', 'Invoice must have at least one line', 400, 'lines');
       }
-      const total = lines.reduce((sum: number, l: any) => {
+      const subtotal = lines.reduce((sum: number, l: any) => {
         const qty = parseFloat(l.quantity ?? l.qty);
         const price = parseFloat(l.unit_price ?? l.unitPrice);
         return sum + qty * price;
       }, 0);
+      const taxAmount = lines.reduce((sum: number, l: any) => {
+        const qty = parseFloat(l.quantity ?? l.qty);
+        const price = parseFloat(l.unit_price ?? l.unitPrice);
+        const rate = parseFloat(l.tax_rate ?? l.taxRate ?? 0);
+        return sum + qty * price * (rate / 100);
+      }, 0);
+      const total = subtotal + taxAmount;
+      updateData.subtotal = subtotal;
+      updateData.taxAmount = taxAmount;
       updateData.total = total;
       updateData.amountDue = total;
       await prisma.customerInvoiceLine.deleteMany({ where: { invoiceId: req.params.id } });
@@ -157,6 +178,7 @@ export async function updateInvoice(req: Request, res: Response, next: NextFunct
           budgetAnalyticId: line.analytical_id ?? line.analyticId ?? line.budget_analytic_id ?? null,
           qty: parseFloat(line.quantity ?? line.qty),
           unitPrice: parseFloat(line.unit_price ?? line.unitPrice),
+          taxRate: parseFloat(line.tax_rate ?? line.taxRate ?? 0),
           total: parseFloat(line.quantity ?? line.qty) * parseFloat(line.unit_price ?? line.unitPrice),
         })),
       });
@@ -361,19 +383,23 @@ export async function printInvoice(req: Request, res: Response, next: NextFuncti
     const buffer = await generateInvoicePdf({
       document_no: invoice.invoiceNumber,
       reference: invoice.invoiceReference ?? null,
-      party: invoice.customer ? { name: invoice.customer.name } : null,
+      party: invoice.customer ? { name: invoice.customer.name, gstin: invoice.customer.gstin ?? null } : null,
       document_date: invoice.invoiceDate.toISOString(),
       due_date: invoice.dueDate ? invoice.dueDate.toISOString() : null,
       payment_type: invoice.paymentType ?? null,
       payment_via: invoice.paymentVia ?? null,
       status: invoice.status,
+      subtotal: Number(invoice.subtotal),
+      tax_amount: Number(invoice.taxAmount),
       total: Number(invoice.total),
       amount_due: Number(invoice.amountDue),
+      notes: invoice.notes ?? null,
       lines: invoice.invoiceLines.map((l) => ({
         sr_no: l.srNo,
         product_name: l.product?.name ?? null,
         qty: Number(l.qty),
         unit_price: Number(l.unitPrice),
+        tax_rate: Number(l.taxRate),
         total: Number(l.total),
       })),
     });

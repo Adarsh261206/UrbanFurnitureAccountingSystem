@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { authorizeResource } from '../middleware/rbac';
 import { listContacts, getContact, createContact, updateContact, deleteContact } from '../controllers/contactController';
-import { listProducts, getProduct, createProduct, updateProduct, deleteProduct } from '../controllers/productController';
+import { listProducts, getProduct, createProduct, updateProduct, deleteProduct, bulkDeleteProducts, bulkToggleProducts, addProductImage, removeProductImage } from '../controllers/productController';
+import { listBrands, getBrand, createBrand, updateBrand, deleteBrand } from '../controllers/brandController';
 import { listCategories, getCategory, createCategory, updateCategory, deleteCategory } from '../controllers/categoryController';
 import { listAnalytics, getAnalytical, createAnalytical, updateAnalytical, deleteAnalytical } from '../controllers/analyticalController';
 import { listCOA, getCOA, createCOA, updateCOA, deleteCOA } from '../controllers/coaController';
@@ -10,6 +11,7 @@ import { listJournals, getJournal, createJournal, updateJournal, deleteJournal }
 import { listUsers, getUser, createUser, updateUser, deleteUser } from '../controllers/userController';
 import { contactCreateValidation, contactUpdateValidation } from '../validators/masterValidators';
 import { productCreateValidation, productUpdateValidation } from '../validators/masterValidators';
+import { brandCreateValidation, brandUpdateValidation } from '../validators/masterValidators';
 import { categoryCreateValidation, categoryUpdateValidation } from '../validators/masterValidators';
 import { analyticalCreateValidation, analyticalUpdateValidation } from '../validators/masterValidators';
 import { coaCreateValidation, coaUpdateValidation } from '../validators/masterValidators';
@@ -31,6 +33,16 @@ router.get('/products/:id', authorizeResource('product', 'read'), getProduct);
 router.post('/products', authorizeResource('product', 'create'), productCreateValidation, createProduct);
 router.put('/products/:id', authorizeResource('product', 'update'), productUpdateValidation, updateProduct);
 router.delete('/products/:id', authorizeResource('product', 'delete'), deleteProduct);
+router.post('/products/bulk/delete', authorizeResource('product', 'delete'), bulkDeleteProducts);
+router.post('/products/bulk/toggle', authorizeResource('product', 'update'), bulkToggleProducts);
+router.post('/products/:id/images', authorizeResource('product', 'update'), addProductImage);
+router.delete('/products/:id/images/:imageId', authorizeResource('product', 'update'), removeProductImage);
+
+router.get('/brands', authorizeResource('product', 'read'), listBrands);
+router.get('/brands/:id', authorizeResource('product', 'read'), getBrand);
+router.post('/brands', authorizeResource('product', 'create'), brandCreateValidation, createBrand);
+router.put('/brands/:id', authorizeResource('product', 'update'), brandUpdateValidation, updateBrand);
+router.delete('/brands/:id', authorizeResource('product', 'delete'), deleteBrand);
 
 router.get('/categories', authorizeResource('category', 'read'), listCategories);
 router.get('/categories/:id', authorizeResource('category', 'read'), getCategory);

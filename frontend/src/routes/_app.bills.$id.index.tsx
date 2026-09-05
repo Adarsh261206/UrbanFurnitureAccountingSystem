@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Download, X } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, ErrorState } from "@/components/common/States";
@@ -55,6 +55,8 @@ function Page() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const billQuery = useQuery({
     queryKey: ["bill", id],
@@ -108,18 +110,30 @@ function Page() {
   });
 
   const printMutation = useMutation({
-    // A17 FLAG — print/send endpoints must exist on the backend.
     mutationFn: () => billsService.print(id),
-    onSuccess: (blob, _v, _c) => {
+    onSuccess: (blob) => {
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `bill-${bill?.bill_reference ?? id}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      setPreviewUrl(url);
+      setPreviewOpen(true);
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
+
+  function closePreview() {
+    setPreviewOpen(false);
+    if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  }
+
+  function handleDownload() {
+    if (!previewUrl || !billQuery.data) return;
+    const a = document.createElement("a");
+    a.href = previewUrl;
+    a.download = `bill-${billQuery.data.bill_reference ?? id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
   if (billQuery.isLoading) return <LoadingState label="Loading bill" />;
   if (billQuery.isError)
@@ -152,7 +166,7 @@ function Page() {
       <PageHeader
         title={`Bill ${bill.bill_reference}`}
         crumbs={[{ label: "Purchase" }, { label: "Purchase Bill", to: "/bills" }]}
-        description={`Vendor: ${bill.vendor.name}`}
+        description={`Vendor: ${bill.vendor?.name ?? "—"}`}
         actions={
           <>
             <Button variant="outline" onClick={() => navigate({ to: "/bills" })}>
@@ -245,11 +259,20 @@ function Page() {
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
           <p className="mt-1 text-lg font-semibold">{money(bill.total)}</p>
+          {bill.tax_amount ? (
+            <p className="text-[11px] text-muted-foreground">incl. {money(bill.tax_amount)} tax</p>
+          ) : null}
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Amount due</p>
           <p className="mt-1 text-lg font-semibold text-primary">{money(bill.amount_due)}</p>
         </div>
+        {bill.vendor?.gstin ? (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Vendor GSTIN</p>
+            <p className="mt-1 text-sm font-medium">{bill.vendor.gstin}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
@@ -260,6 +283,7 @@ function Page() {
               <th className="px-4 py-3 text-left">Product</th>
               <th className="px-4 py-3 text-right">Qty</th>
               <th className="px-4 py-3 text-right">Unit price</th>
+              <th className="px-4 py-3 text-right">Tax</th>
               <th className="px-4 py-3 text-right">Total</th>
             </tr>
           </thead>
@@ -270,6 +294,9 @@ function Page() {
                 <td className="px-4 py-3">{line.product_name ?? line.product_id}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(line.unit_price)}</td>
+                <td className="px-4 py-3 text-right tabular-nums">
+                  {line.tax_rate ? `${line.tax_rate}%` : "—"}
+                </td>
                 <td className="px-4 py-3 text-right font-medium tabular-nums">
                   {money(line.total)}
                 </td>
@@ -278,7 +305,7 @@ function Page() {
           </tbody>
           <tfoot>
             <tr className="border-t border-border bg-muted/30">
-              <td colSpan={4} className="px-4 py-3 text-right font-semibold">
+              <td colSpan={5} className="px-4 py-3 text-right font-semibold">
                 Total
               </td>
               <td className="px-4 py-3 text-right font-semibold">{money(bill.total)}</td>
@@ -329,6 +356,34 @@ function Page() {
         pending={cancelMutation.isPending}
         onConfirm={() => cancelMutation.mutate()}
       />
+
+      <Dialog open={previewOpen} onOpenChange={(o) => (o ? undefined : closePreview())}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader className="flex-row items-center justify-between">
+            <DialogTitle>Print preview</DialogTitle>
+            <Button variant="ghost" size="sm" onClick={closePreview}>
+              <X className="size-4" />
+            </Button>
+          </DialogHeader>
+          {previewUrl ? (
+            <>
+              <iframe
+                src={previewUrl}
+                title="Bill preview"
+                className="h-[65vh] w-full rounded-md border border-border bg-white"
+              />
+              <DialogFooter>
+                <Button variant="outline" onClick={closePreview}>
+                  Close
+                </Button>
+                <Button onClick={handleDownload}>
+                  <Download className="mr-1 size-4" /> Download PDF
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent>

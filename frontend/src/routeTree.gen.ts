@@ -20,6 +20,8 @@ import { Route as AppAnalyticalsIdRouteImport } from './routes/_app.analyticals.
 import { Route as AppAnalyticalsNewRouteImport } from './routes/_app.analyticals.new'
 import { Route as AppBillsIndexRouteImport } from './routes/_app.bills.index'
 import { Route as AppBillsNewRouteImport } from './routes/_app.bills.new'
+import { Route as AppBrandsIndexRouteImport } from './routes/_app.brands.index'
+import { Route as AppBrandsNewRouteImport } from './routes/_app.brands.new'
 import { Route as AppBudgetsIndexRouteImport } from './routes/_app.budgets.index'
 import { Route as AppBudgetsIdRouteImport } from './routes/_app.budgets.$id'
 import { Route as AppBudgetsNewRouteImport } from './routes/_app.budgets.new'
@@ -106,6 +108,16 @@ const AppBillsIndexRoute = AppBillsIndexRouteImport.update({
 const AppBillsNewRoute = AppBillsNewRouteImport.update({
   id: '/bills/new',
   path: '/bills/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBrandsIndexRoute = AppBrandsIndexRouteImport.update({
+  id: '/brands/',
+  path: '/brands/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBrandsNewRoute = AppBrandsNewRouteImport.update({
+  id: '/brands/new',
+  path: '/brands/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBudgetsIndexRoute = AppBudgetsIndexRouteImport.update({
@@ -283,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/analyticals/new': typeof AppAnalyticalsNewRoute
   '/bills/new': typeof AppBillsNewRoute
+  '/brands/new': typeof AppBrandsNewRoute
   '/budgets/$id': typeof AppBudgetsIdRoute
   '/budgets/new': typeof AppBudgetsNewRoute
   '/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
@@ -302,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/users/new': typeof AppUsersNewRoute
   '/analyticals/': typeof AppAnalyticalsIndexRoute
   '/bills/': typeof AppBillsIndexRoute
+  '/brands/': typeof AppBrandsIndexRoute
   '/budgets/': typeof AppBudgetsIndexRoute
   '/categories/': typeof AppCategoriesIndexRoute
   '/chart-of-accounts/': typeof AppChartOfAccountsIndexRoute
@@ -328,6 +342,7 @@ export interface FileRoutesByTo {
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/analyticals/new': typeof AppAnalyticalsNewRoute
   '/bills/new': typeof AppBillsNewRoute
+  '/brands/new': typeof AppBrandsNewRoute
   '/budgets/$id': typeof AppBudgetsIdRoute
   '/budgets/new': typeof AppBudgetsNewRoute
   '/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
@@ -347,6 +362,7 @@ export interface FileRoutesByTo {
   '/users/new': typeof AppUsersNewRoute
   '/analyticals': typeof AppAnalyticalsIndexRoute
   '/bills': typeof AppBillsIndexRoute
+  '/brands': typeof AppBrandsIndexRoute
   '/budgets': typeof AppBudgetsIndexRoute
   '/categories': typeof AppCategoriesIndexRoute
   '/chart-of-accounts': typeof AppChartOfAccountsIndexRoute
@@ -375,6 +391,7 @@ export interface FileRoutesById {
   '/_app/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/_app/analyticals/new': typeof AppAnalyticalsNewRoute
   '/_app/bills/new': typeof AppBillsNewRoute
+  '/_app/brands/new': typeof AppBrandsNewRoute
   '/_app/budgets/$id': typeof AppBudgetsIdRoute
   '/_app/budgets/new': typeof AppBudgetsNewRoute
   '/_app/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
@@ -394,6 +411,7 @@ export interface FileRoutesById {
   '/_app/users/new': typeof AppUsersNewRoute
   '/_app/analyticals/': typeof AppAnalyticalsIndexRoute
   '/_app/bills/': typeof AppBillsIndexRoute
+  '/_app/brands/': typeof AppBrandsIndexRoute
   '/_app/budgets/': typeof AppBudgetsIndexRoute
   '/_app/categories/': typeof AppCategoriesIndexRoute
   '/_app/chart-of-accounts/': typeof AppChartOfAccountsIndexRoute
@@ -422,6 +440,7 @@ export interface FileRouteTypes {
     | '/analyticals/$id'
     | '/analyticals/new'
     | '/bills/new'
+    | '/brands/new'
     | '/budgets/$id'
     | '/budgets/new'
     | '/chart-of-accounts/new'
@@ -441,6 +460,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/analyticals/'
     | '/bills/'
+    | '/brands/'
     | '/budgets/'
     | '/categories/'
     | '/chart-of-accounts/'
@@ -467,6 +487,7 @@ export interface FileRouteTypes {
     | '/analyticals/$id'
     | '/analyticals/new'
     | '/bills/new'
+    | '/brands/new'
     | '/budgets/$id'
     | '/budgets/new'
     | '/chart-of-accounts/new'
@@ -486,6 +507,7 @@ export interface FileRouteTypes {
     | '/users/new'
     | '/analyticals'
     | '/bills'
+    | '/brands'
     | '/budgets'
     | '/categories'
     | '/chart-of-accounts'
@@ -513,6 +535,7 @@ export interface FileRouteTypes {
     | '/_app/analyticals/$id'
     | '/_app/analyticals/new'
     | '/_app/bills/new'
+    | '/_app/brands/new'
     | '/_app/budgets/$id'
     | '/_app/budgets/new'
     | '/_app/chart-of-accounts/new'
@@ -532,6 +555,7 @@ export interface FileRouteTypes {
     | '/_app/users/new'
     | '/_app/analyticals/'
     | '/_app/bills/'
+    | '/_app/brands/'
     | '/_app/budgets/'
     | '/_app/categories/'
     | '/_app/chart-of-accounts/'
@@ -635,6 +659,20 @@ declare module '@tanstack/react-router' {
       path: '/bills/new'
       fullPath: '/bills/new'
       preLoaderRoute: typeof AppBillsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/brands/': {
+      id: '/_app/brands/'
+      path: '/brands'
+      fullPath: '/brands/'
+      preLoaderRoute: typeof AppBrandsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/brands/new': {
+      id: '/_app/brands/new'
+      path: '/brands/new'
+      fullPath: '/brands/new'
+      preLoaderRoute: typeof AppBrandsNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/budgets/': {
@@ -876,6 +914,7 @@ interface AppRouteChildren {
   AppAnalyticalsIdRoute: typeof AppAnalyticalsIdRoute
   AppAnalyticalsNewRoute: typeof AppAnalyticalsNewRoute
   AppBillsNewRoute: typeof AppBillsNewRoute
+  AppBrandsNewRoute: typeof AppBrandsNewRoute
   AppBudgetsIdRoute: typeof AppBudgetsIdRoute
   AppBudgetsNewRoute: typeof AppBudgetsNewRoute
   AppChartOfAccountsNewRoute: typeof AppChartOfAccountsNewRoute
@@ -895,6 +934,7 @@ interface AppRouteChildren {
   AppUsersNewRoute: typeof AppUsersNewRoute
   AppAnalyticalsIndexRoute: typeof AppAnalyticalsIndexRoute
   AppBillsIndexRoute: typeof AppBillsIndexRoute
+  AppBrandsIndexRoute: typeof AppBrandsIndexRoute
   AppBudgetsIndexRoute: typeof AppBudgetsIndexRoute
   AppCategoriesIndexRoute: typeof AppCategoriesIndexRoute
   AppChartOfAccountsIndexRoute: typeof AppChartOfAccountsIndexRoute
@@ -918,6 +958,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticalsIdRoute: AppAnalyticalsIdRoute,
   AppAnalyticalsNewRoute: AppAnalyticalsNewRoute,
   AppBillsNewRoute: AppBillsNewRoute,
+  AppBrandsNewRoute: AppBrandsNewRoute,
   AppBudgetsIdRoute: AppBudgetsIdRoute,
   AppBudgetsNewRoute: AppBudgetsNewRoute,
   AppChartOfAccountsNewRoute: AppChartOfAccountsNewRoute,
@@ -937,6 +978,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppUsersNewRoute: AppUsersNewRoute,
   AppAnalyticalsIndexRoute: AppAnalyticalsIndexRoute,
   AppBillsIndexRoute: AppBillsIndexRoute,
+  AppBrandsIndexRoute: AppBrandsIndexRoute,
   AppBudgetsIndexRoute: AppBudgetsIndexRoute,
   AppCategoriesIndexRoute: AppCategoriesIndexRoute,
   AppChartOfAccountsIndexRoute: AppChartOfAccountsIndexRoute,

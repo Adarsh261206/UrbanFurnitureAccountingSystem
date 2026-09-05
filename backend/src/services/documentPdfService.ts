@@ -1,21 +1,26 @@
 import { PdfDoc, buildPdf, money, PAGE, COLORS, type PdfColumn } from './pdfService';
+import { generateBarcodePng } from './barcodeService';
 
 interface DocumentModel {
   document_no: string;
   reference: string | null;
-  party: { name: string } | null;
+  party: { name: string; gstin?: string | null } | null;
   document_date: string;
   due_date: string | null;
   payment_type: string | null;
   payment_via: string | null;
   status: string;
+  subtotal: number;
+  tax_amount: number;
   total: number;
   amount_due: number;
+  notes?: string | null;
   lines: {
     sr_no: number;
     product_name: string | null;
     qty: number;
     unit_price: number;
+    tax_rate: number;
     total: number;
   }[];
 }
@@ -93,7 +98,7 @@ function drawDocumentHeader(pdf: PdfDoc, docType: 'INVOICE' | 'BILL', document: 
 }
 
 function buildDocumentPdf(docType: 'INVOICE' | 'BILL', doc: DocumentModel, _generatedAt: Date): Promise<Buffer> {
-  return buildPdf((pdf) => {
+  return buildPdf(async (pdf) => {
     drawDocumentHeader(pdf, docType, doc);
 
     const partyLabel = docType === 'INVOICE' ? 'Bill To' : 'Vendor';
@@ -108,6 +113,12 @@ function buildDocumentPdf(docType: 'INVOICE' | 'BILL', doc: DocumentModel, _gene
       { label: 'Status', value: doc.status.replace(/_/g, ' ').toUpperCase() },
     ]);
 
+    if (doc.party?.gstin) {
+      pdf.section(`${docType === 'INVOICE' ? 'Customer' : 'Vendor'} GSTIN`);
+      pdf.bodyText(doc.party.gstin);
+      pdf.space(8);
+    }
+
     pdf.section('Line Items');
     pdf.table(
       DOC_COLUMNS,
@@ -116,18 +127,60 @@ function buildDocumentPdf(docType: 'INVOICE' | 'BILL', doc: DocumentModel, _gene
       })),
     );
 
-    pdf.summary([
-      { label: 'Total', value: money(doc.total), total: true },
-      {
-        label: 'Amount Due',
-        value: money(doc.amount_due),
-        highlight: true,
-      },
-      {
-        label: 'Payment',
-        value: `${(doc.payment_type ?? '—').toUpperCase()} / ${(doc.payment_via ?? '—').toUpperCase()}`,
-      },
-    ]);
+    if (doc.tax_amount > 0) {
+      pdf.summary([
+        { label: 'Subtotal', value: money(doc.subtotal) },
+        { label: 'Tax (GST)', value: money(doc.tax_amount) },
+        { label: 'Total', value: money(doc.total), total: true },
+        {
+          label: 'Amount Due',
+          value: money(doc.amount_due),
+          highlight: true,
+        },
+        {
+          label: 'Payment',
+          value: `${(doc.payment_type ?? '—').toUpperCase()} / ${(doc.payment_via ?? '—').toUpperCase()}`,
+        },
+      ]);
+    } else {
+      pdf.summary([
+        { label: 'Total', value: money(doc.total), total: true },
+        {
+          label: 'Amount Due',
+          value: money(doc.amount_due),
+          highlight: true,
+        },
+        {
+          label: 'Payment',
+          value: `${(doc.payment_type ?? '—').toUpperCase()} / ${(doc.payment_via ?? '—').toUpperCase()}`,
+        },
+      ]);
+    }
+
+    if (doc.notes) {
+      pdf.space(10);
+      pdf.section('Notes');
+      pdf.bodyText(doc.notes);
+    }
+
+    // Barcode strip at the bottom of the last page content area
+    pdf.space(14);
+    const { doc: d } = pdf;
+    const barcodeText = `${docType === 'INVOICE' ? 'INV' : 'BILL'}:${doc.document_no}`;
+    try {
+      const barcodePng = await generateBarcodePng(barcodeText);
+      pdf.ensureSpace(70);
+      d.image(barcodePng, PAGE.margin, pdf.y, { width: 180, height: 48 });
+      d.font('Helvetica').fontSize(7).fillColor(COLORS.muted).text(
+        `Scan to verify — ${barcodeText}`,
+        PAGE.margin + 8,
+        pdf.y + 52,
+        { lineBreak: false },
+      );
+      pdf.y += 66;
+    } catch {
+      // Barcode generation should never break the PDF
+    }
   });
 }
 

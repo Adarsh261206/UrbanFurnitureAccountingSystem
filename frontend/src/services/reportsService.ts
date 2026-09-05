@@ -4,6 +4,7 @@ import type {
   BudgetReport,
   BudgetType,
   DashboardData,
+  DashboardSummary,
   PaymentList,
   ProfitAndLossReport,
 } from "@/types/api";
@@ -23,6 +24,8 @@ export const paymentsService = {
 /** PART B9 — Dashboard (A3): server-side counts, never client aggregation. */
 export const dashboardService = {
   get: () => http.get<DashboardData>("/dashboard"),
+  /** Chart data: revenue/expense trends, cash flow, invoice status, top customers. */
+  summary: () => http.get<DashboardSummary>("/dashboard/summary"),
 };
 
 /** PART B9 — Reports (26_REPORTING_SPEC). All values come from the backend. */

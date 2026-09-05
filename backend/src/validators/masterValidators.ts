@@ -11,6 +11,9 @@ export const contactCreateValidation = [
   body('state').optional().trim(),
   body('country').optional().trim(),
   body('pincode').optional().trim(),
+  body('contact_type').optional().isIn(['customer', 'vendor', 'both']).withMessage('Invalid contact type'),
+  body('gstin').optional().trim(),
+  body('pan').optional().trim(),
   validate,
 ];
 
@@ -24,6 +27,9 @@ export const contactUpdateValidation = [
   body('state').optional().trim(),
   body('country').optional().trim(),
   body('pincode').optional().trim(),
+  body('contact_type').optional().isIn(['customer', 'vendor', 'both']).withMessage('Invalid contact type'),
+  body('gstin').optional().trim(),
+  body('pan').optional().trim(),
   validate,
 ];
 
@@ -35,6 +41,13 @@ export const productCreateValidation = [
   body('sales_price').optional().isFloat({ min: 0 }).withMessage('Sales price must be non-negative'),
   body('cost').optional().isFloat({ min: 0 }).withMessage('Cost must be non-negative'),
   body('image_url').optional().trim(),
+  body('sku').optional().trim(),
+  body('barcode').optional().trim(),
+  body('hsn_code').optional().trim(),
+  body('description').optional().trim(),
+  body('brand_id').optional().isUUID().withMessage('Valid brand ID is required'),
+  body('brand_name').optional().trim().notEmpty().withMessage('Brand name cannot be empty'),
+  body('is_active').optional().isBoolean().withMessage('is_active must be boolean'),
   validate,
 ];
 
@@ -45,6 +58,22 @@ export const productUpdateValidation = [
   body('sales_price').optional().isFloat({ min: 0 }).withMessage('Sales price must be non-negative'),
   body('cost').optional().isFloat({ min: 0 }).withMessage('Cost must be non-negative'),
   body('image_url').optional().trim(),
+  body('sku').optional().trim(),
+  body('barcode').optional().trim(),
+  body('hsn_code').optional().trim(),
+  body('description').optional().trim(),
+  body('brand_id').optional().isUUID().withMessage('Valid brand ID is required'),
+  body('is_active').optional().isBoolean().withMessage('is_active must be boolean'),
+  validate,
+];
+
+export const brandCreateValidation = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  validate,
+];
+
+export const brandUpdateValidation = [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
   validate,
 ];
 

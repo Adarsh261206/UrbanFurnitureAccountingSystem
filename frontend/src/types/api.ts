@@ -6,6 +6,7 @@
 // ---------- Enums (A23) ----------
 export type Role = "admin" | "accountant" | "user";
 export type ProductType = "goods" | "service" | "combo";
+export type ContactType = "customer" | "vendor" | "both";
 export type AccountType =
   "asset" | "liability" | "bank" | "capital" | "cash" | "income" | "expense";
 export type BudgetType = "income" | "expense";
@@ -48,21 +49,43 @@ export interface Contact {
   state: string | null;
   country: string | null;
   pincode: string | null;
+  contact_type: ContactType;
+  gstin?: string | null;
+  pan?: string | null;
   created_at: string;
 }
 export interface Category {
   id: string;
   name: string;
 }
+export interface Brand {
+  id: string;
+  name: string;
+  product_count?: number;
+  created_at?: string;
+}
+export interface ProductImage {
+  id: string;
+  image_url: string;
+  sort_order: number;
+}
 export interface Product {
   id: string;
   name: string;
   category_id: string;
   category_name: string;
+  brand_id: string | null;
+  brand_name: string | null;
   product_type: ProductType;
+  sku: string | null;
+  barcode: string | null;
+  hsn_code: string | null;
+  description: string | null;
+  is_active: boolean;
   sales_price: number;
   cost: number;
   image_url?: string | null;
+  images?: ProductImage[];
   created_at: string;
 }
 export interface Analytical {
@@ -161,6 +184,8 @@ export interface DocumentLine {
   budget_analytic_id: string | null;
   qty: number;
   unit_price: number;
+  tax_rate?: number;
+  tax_amount?: number;
   total: number;
 }
 export interface SalesOrderDetail extends SalesOrderRow {
@@ -192,15 +217,18 @@ export interface InvoiceDetail {
   invoice_reference: string;
   invoice_number: string;
   sales_order_id: string | null;
-  customer: { id: string; name: string };
+  customer: { id: string; name: string; gstin?: string | null } | null;
   date: string;
   invoice_date: string;
   due_date: string;
   payment_type: PaymentType;
   partner: { id: string; name: string } | null;
   payment_via: PaymentVia;
+  subtotal: number;
+  tax_amount: number;
   total: number;
   amount_due: number;
+  notes: string | null;
   status: InvoiceStatus;
   journal_entry_id: string | null;
   lines: DocumentLine[];
@@ -238,15 +266,18 @@ export interface BillDetail {
   bill_reference: string;
   vendor_bill_no?: string | null;
   purchase_order_id: string | null;
-  vendor: { id: string; name: string };
+  vendor: { id: string; name: string; gstin?: string | null } | null;
   date: string;
   bill_date: string;
   due_date: string;
   payment_type: PaymentType;
   partner: { id: string; name: string } | null;
   payment_via: PaymentVia;
+  subtotal: number;
+  tax_amount: number;
   total: number;
   amount_due: number;
+  notes: string | null;
   status: InvoiceStatus;
   journal_entry_id: string | null;
   lines: DocumentLine[];
@@ -282,6 +313,24 @@ export interface DashboardData {
   sales: DashboardCounts;
   purchase: DashboardCounts;
   budgets: DashboardCounts;
+}
+export interface DashboardSummary {
+  kpis: {
+    revenue: number;
+    revenue_change_pct: number | null;
+    expense: number;
+    expense_change_pct: number | null;
+    profit: number;
+    profit_change_pct: number | null;
+    receivable: number;
+    payable: number;
+    revenue_ytd: number;
+    expense_ytd: number;
+  };
+  monthly_revenue_expense: { month: string; revenue: number; expense: number }[];
+  cash_flow: { month: string; inflow: number; outflow: number }[];
+  invoice_status: { status: string; count: number }[];
+  top_customers: { name: string; outstanding: number }[];
 }
 
 // ---------- Reports (26_REPORTING_SPEC) ----------
@@ -325,6 +374,7 @@ export interface Paginated {
 }
 export type ContactList = Paginated & { contacts: Contact[] };
 export type ProductList = Paginated & { products: Product[] };
+export type BrandList = Paginated & { brands: Brand[] };
 export type InvoiceList = Paginated & { invoices: InvoiceListRow[] };
 export type BillList = Paginated & { bills: BillListRow[] };
 export type SalesOrderList = Paginated & { sales_orders: SalesOrderRow[] };

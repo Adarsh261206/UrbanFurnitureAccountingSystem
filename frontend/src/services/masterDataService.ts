@@ -2,10 +2,13 @@ import { http } from "@/lib/api/client";
 import type {
   AccountType,
   Analytical,
+  Brand,
+  BrandList,
   Category,
   ChartOfAccount,
   Contact,
   ContactList,
+  ContactType,
   Journal,
   JournalEntryDetail,
   JournalEntryList,
@@ -42,6 +45,9 @@ export interface ContactInput {
   country?: string;
   pincode?: string;
   image_url?: string;
+  contact_type?: ContactType;
+  gstin?: string;
+  pan?: string;
 }
 export const contactsService = {
   list: (
@@ -51,6 +57,7 @@ export const contactsService = {
       search?: string;
       sort?: string;
       order?: "asc" | "desc";
+      contact_type?: ContactType;
     } = {},
   ) => http.get<ContactList>("/contacts", { params }),
   get: (id: string) => http.get<Contact>(`/contacts/${id}`),
@@ -64,16 +71,52 @@ export interface ProductInput {
   product_type: Product["product_type"];
   category_id: string;
   category_name?: string;
+  brand_id?: string;
+  brand_name?: string;
+  sku?: string;
+  barcode?: string;
+  hsn_code?: string;
+  description?: string;
+  is_active?: boolean;
   sales_price: number;
   cost: number;
   image_url?: string;
 }
 export const productsService = {
-  list: (params: { page?: number; limit?: number; search?: string; category_id?: string } = {}) =>
-    http.get<ProductList>("/products", { params }),
+  list: (
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      category_id?: string;
+      brand_id?: string;
+      is_active?: string;
+    } = {},
+  ) => http.get<ProductList>("/products", { params }),
   get: (id: string) => http.get<Product>(`/products/${id}`),
   create: (body: ProductInput) => http.post<Product>("/products", body),
   update: (id: string, body: Partial<ProductInput>) => http.put<Product>(`/products/${id}`, body),
+  bulkDelete: (ids: string[]) => http.post<{ deleted: number }>("/products/bulk/delete", { ids }),
+  bulkToggle: (ids: string[], is_active: boolean) =>
+    http.post<{ updated: number }>("/products/bulk/toggle", { ids, is_active }),
+  addImage: (id: string, image_url: string) =>
+    http.post<{ id: string; image_url: string; sort_order: number }>(`/products/${id}/images`, {
+      image_url,
+    }),
+  removeImage: (id: string, imageId: string) => http.delete(`/products/${id}/images/${imageId}`),
+};
+
+/** PART B3 — Brands. */
+export interface BrandInput {
+  name: string;
+}
+export const brandsService = {
+  list: (params: { page?: number; limit?: number; search?: string } = {}) =>
+    http.get<BrandList>("/brands", { params }),
+  get: (id: string) => http.get<Brand>(`/brands/${id}`),
+  create: (body: BrandInput) => http.post<Brand>("/brands", body),
+  update: (id: string, body: Partial<BrandInput>) => http.put<Brand>(`/brands/${id}`, body),
+  delete: (id: string) => http.delete(`/brands/${id}`),
 };
 
 /** PART B3 — Categories. */

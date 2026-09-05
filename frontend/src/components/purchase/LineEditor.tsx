@@ -17,10 +17,18 @@ export interface EditableLine {
   analytical_id: string;
   quantity: string;
   unit_price: string;
+  tax_rate?: string;
 }
 
 export function emptyLine(): EditableLine {
-  return { product_id: "", account_id: "", analytical_id: "", quantity: "1", unit_price: "" };
+  return {
+    product_id: "",
+    account_id: "",
+    analytical_id: "",
+    quantity: "1",
+    unit_price: "",
+    tax_rate: "18",
+  };
 }
 
 /** Shared purchase-side line editor (PO / Bill). A7 field names on submit. */
@@ -63,6 +71,7 @@ export function LineEditor({
               <th className="px-3 py-2 text-left">Analytical</th>
               <th className="px-3 py-2 text-right">Qty</th>
               <th className="px-3 py-2 text-right">Unit price</th>
+              <th className="px-3 py-2 text-right">Tax %</th>
               <th className="px-3 py-2 text-right">Line total</th>
               <th className="px-3 py-2" />
             </tr>
@@ -148,6 +157,17 @@ export function LineEditor({
                     value={line.unit_price}
                     onChange={(e) => updateLine(index, { unit_price: e.target.value })}
                     className="h-9 w-28 text-right"
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={line.tax_rate ?? ""}
+                    onChange={(e) => updateLine(index, { tax_rate: e.target.value })}
+                    className="h-9 w-16 text-right"
                   />
                 </td>
                 <td className="px-3 py-2 text-right font-medium tabular-nums">

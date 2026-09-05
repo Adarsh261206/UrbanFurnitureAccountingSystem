@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { CheckCircle2, Circle, FileText, Send as SendIcon } from "lucide-react";
+import { CheckCircle2, Circle, Download, FileText, Send as SendIcon, X } from "lucide-react";
 import { RequireAuth } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/States";
@@ -55,6 +55,8 @@ function Page() {
   const [sendOpen, setSendOpen] = useState(false);
   const [sendForm, setSendForm] = useState({ email_to: "", subject: "", body: "" });
   const [printing, setPrinting] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["invoices", id],
@@ -112,18 +114,29 @@ function Page() {
     try {
       const blob = await invoicesService.print(id);
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${query.data.invoice_reference}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      setPreviewUrl(url);
+      setPreviewOpen(true);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
       setPrinting(false);
     }
+  }
+
+  function closePreview() {
+    setPreviewOpen(false);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  }
+
+  function handleDownload() {
+    if (!previewUrl || !query.data) return;
+    const link = document.createElement("a");
+    link.href = previewUrl;
+    link.download = `invoice-${query.data.invoice_reference}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   if (query.isLoading) return <LoadingState label="Loading invoice" />;
@@ -203,6 +216,11 @@ function Page() {
                 <h2 className="mt-1 text-base font-bold text-foreground">
                   {invoice.customer?.name ?? "—"}
                 </h2>
+                {invoice.customer?.gstin ? (
+                  <p className="mt-0.5 text-[13px] text-muted-foreground">
+                    GSTIN: {invoice.customer.gstin}
+                  </p>
+                ) : null}
                 {invoice.invoice_reference ? (
                   <p className="mt-0.5 text-[13px] text-muted-foreground">
                     {invoice.invoice_reference}
@@ -285,6 +303,9 @@ function Page() {
                     Unit price
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Tax
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Total
                   </th>
                 </tr>
@@ -296,6 +317,9 @@ function Page() {
                     <td className="px-4 py-3">{line.product_name ?? line.product_id}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{line.qty}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{money(line.unit_price)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {line.tax_rate ? `${line.tax_rate}%` : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
                       {money(line.total)}
                     </td>
@@ -353,8 +377,24 @@ function Page() {
             <h2 className="text-sm font-semibold text-foreground">Summary</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Total</dt>
-                <dd className="font-medium tabular-nums text-foreground">{money(invoice.total)}</dd>
+                <dt className="text-muted-foreground">Subtotal</dt>
+                <dd className="font-medium tabular-nums text-foreground">
+                  {money(invoice.subtotal ?? invoice.total)}
+                </dd>
+              </div>
+              {invoice.tax_amount ? (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Tax (GST)</dt>
+                  <dd className="font-medium tabular-nums text-foreground">
+                    {money(invoice.tax_amount)}
+                  </dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between border-t border-border pt-2">
+                <dt className="font-medium text-foreground">Total</dt>
+                <dd className="font-semibold tabular-nums text-foreground">
+                  {money(invoice.total)}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Amount due</dt>
@@ -362,6 +402,12 @@ function Page() {
                   {money(invoice.amount_due)}
                 </dd>
               </div>
+              {invoice.notes ? (
+                <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">Notes: </span>
+                  {invoice.notes}
+                </div>
+              ) : null}
             </dl>
           </div>
         </div>
@@ -377,6 +423,34 @@ function Page() {
         pending={cancelMutation.isPending}
         onConfirm={() => cancelMutation.mutate()}
       />
+
+      <Dialog open={previewOpen} onOpenChange={(o) => (o ? undefined : closePreview())}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader className="flex-row items-center justify-between">
+            <DialogTitle>Print preview</DialogTitle>
+            <Button variant="ghost" size="sm" onClick={closePreview}>
+              <X className="size-4" />
+            </Button>
+          </DialogHeader>
+          {previewUrl ? (
+            <>
+              <iframe
+                src={previewUrl}
+                title="Invoice preview"
+                className="h-[65vh] w-full rounded-md border border-border bg-white"
+              />
+              <DialogFooter>
+                <Button variant="outline" onClick={closePreview}>
+                  Close
+                </Button>
+                <Button onClick={handleDownload}>
+                  <Download className="mr-1 size-4" /> Download PDF
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent>

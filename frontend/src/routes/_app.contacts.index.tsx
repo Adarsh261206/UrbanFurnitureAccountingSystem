@@ -9,9 +9,17 @@ import { DataTable, TablePagination, type Column } from "@/components/common/Dat
 import { KanbanCard, KanbanGrid, ViewToggle, type ViewMode } from "@/components/common/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { contactsService } from "@/services/masterDataService";
 import { date as fmtDate } from "@/lib/format";
-import type { Contact } from "@/types/api";
+import type { Contact, ContactType } from "@/types/api";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/contacts/")({
   head: () => ({
@@ -30,12 +38,33 @@ export const Route = createFileRoute("/_app/contacts/")({
 });
 
 const LIMIT = 20;
+const ALL_TYPES = "__all__";
+
+const TYPE_STYLES: Record<ContactType, string> = {
+  customer: "bg-blue-500/10 text-blue-600",
+  vendor: "bg-emerald-500/10 text-emerald-600",
+  both: "bg-violet-500/10 text-violet-600",
+};
+
+function TypeBadge({ type }: { type: ContactType }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        TYPE_STYLES[type],
+      )}
+    >
+      {type}
+    </span>
+  );
+}
 
 function Page() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [view, setView] = useState<ViewMode>("list");
 
   useMemo(() => {
@@ -47,20 +76,31 @@ function Page() {
   }, [search]);
 
   const query = useQuery({
-    queryKey: ["contacts", page, debounced],
+    queryKey: ["contacts", page, debounced, typeFilter],
     queryFn: () =>
-      contactsService.list({ page, limit: LIMIT, ...(debounced ? { search: debounced } : {}) }),
+      contactsService.list({
+        page,
+        limit: LIMIT,
+        ...(debounced ? { search: debounced } : {}),
+        ...(typeFilter === ALL_TYPES ? {} : { contact_type: typeFilter as ContactType }),
+      }),
   });
 
   const columns: Column<Contact>[] = [
     {
       key: "name",
       header: "Name",
-      cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
+      cell: (r) => (
+        <span className="flex items-center gap-2">
+          <span className="font-medium text-foreground">{r.name}</span>
+          <TypeBadge type={r.contact_type} />
+        </span>
+      ),
     },
     { key: "email", header: "Email", cell: (r) => r.email },
     { key: "phone", header: "Phone", cell: (r) => r.phone ?? "—" },
     { key: "city", header: "City", cell: (r) => r.city ?? "—" },
+    { key: "gstin", header: "GSTIN", cell: (r) => r.gstin ?? "—" },
     { key: "created_at", header: "Created", cell: (r) => fmtDate(r.created_at) },
   ];
 
@@ -88,7 +128,26 @@ function Page() {
             aria-label="Search contacts"
           />
         </div>
-        <ViewToggle value={view} onChange={setView} label="Contacts view mode" />
+        <div className="flex items-center gap-3">
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => {
+              setTypeFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[180px]" aria-label="Filter by contact type">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_TYPES}>All types</SelectItem>
+              <SelectItem value="customer">Customers</SelectItem>
+              <SelectItem value="vendor">Vendors</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
+            </SelectContent>
+          </Select>
+          <ViewToggle value={view} onChange={setView} label="Contacts view mode" />
+        </div>
       </div>
 
       {query.isLoading ? (
@@ -133,6 +192,9 @@ function Page() {
                       </span>
                     </span>
                   </div>
+                  <div className="mt-2">
+                    <TypeBadge type={c.contact_type} />
+                  </div>
                   <dl className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex justify-between gap-3">
                       <dt>Phone</dt>
@@ -143,8 +205,8 @@ function Page() {
                       <dd className="text-foreground">{c.city ?? "—"}</dd>
                     </div>
                     <div className="flex justify-between gap-3">
-                      <dt>Created</dt>
-                      <dd className="text-foreground">{fmtDate(c.created_at)}</dd>
+                      <dt>GSTIN</dt>
+                      <dd className="text-foreground">{c.gstin ?? "—"}</dd>
                     </div>
                   </dl>
                 </KanbanCard>
@@ -162,10 +224,12 @@ function Page() {
         <EmptyState
           title="No contacts found"
           description={
-            debounced ? "Try a different search term." : "Create your first contact to get started."
+            debounced || typeFilter !== ALL_TYPES
+              ? "Try a different search or filter."
+              : "Create your first contact to get started."
           }
           action={
-            !debounced ? (
+            !debounced && typeFilter === ALL_TYPES ? (
               <Button onClick={() => navigate({ to: "/contacts/new" })}>
                 <Plus className="size-4" /> New contact
               </Button>

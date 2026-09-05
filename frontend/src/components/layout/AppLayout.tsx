@@ -15,6 +15,7 @@ import {
   Search,
   Settings,
   ShoppingCart,
+  Tag,
   Users,
   Wallet,
   X,
@@ -128,6 +129,7 @@ const TABS: { group: string; items: NavItem[] }[] = [
     items: [
       { label: "Contacts", to: "/contacts", icon: Building2, roles: ["admin", "accountant"] },
       { label: "Products", to: "/products", icon: Package, roles: ["admin", "accountant"] },
+      { label: "Brands", to: "/brands", icon: Tag, roles: ["admin", "accountant"] },
       { label: "Categories", to: "/categories", icon: Package, roles: ["admin", "accountant"] },
     ],
   },

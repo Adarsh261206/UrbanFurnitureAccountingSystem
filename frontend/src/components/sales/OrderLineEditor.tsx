@@ -12,7 +12,7 @@ import { Field } from "@/components/common/FormLayout";
 import { money } from "@/lib/format";
 import type { OrderLineInput, Product, ChartOfAccount, Analytical } from "@/types/api";
 
-export type DraftLine = OrderLineInput & { _key: string };
+export type DraftLine = OrderLineInput & { _key: string; tax_rate?: number };
 
 export function newLine(): DraftLine {
   return {
@@ -22,11 +22,16 @@ export function newLine(): DraftLine {
     analytical_id: "",
     quantity: 1,
     unit_price: 0,
+    tax_rate: 18,
   };
 }
 
 export function lineTotal(line: DraftLine): number {
   return (Number(line.quantity) || 0) * (Number(line.unit_price) || 0);
+}
+
+export function lineTaxAmount(line: DraftLine): number {
+  return lineTotal(line) * ((Number(line.tax_rate) || 0) / 100);
 }
 
 /**
@@ -56,6 +61,8 @@ export function OrderLineEditor({
   };
 
   const total = lines.reduce((sum, l) => sum + lineTotal(l), 0);
+  const taxTotal = lines.reduce((sum, l) => sum + lineTaxAmount(l), 0);
+  const showTax = lines.some((l) => Number(l.tax_rate) > 0);
 
   return (
     <div className="space-y-3">
@@ -80,7 +87,7 @@ export function OrderLineEditor({
               </Select>
             </Field>
           </div>
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-2">
             <Field label="Account" htmlFor={`account-${l._key}`}>
               <Select
                 value={l.account_id}
@@ -133,8 +140,8 @@ export function OrderLineEditor({
               />
             </Field>
           </div>
-          <div className="sm:col-span-2">
-            <Field label="Unit price" htmlFor={`price-${l._key}`}>
+          <div className="sm:col-span-1">
+            <Field label="Price" htmlFor={`price-${l._key}`}>
               <Input
                 id={`price-${l._key}`}
                 type="number"
@@ -145,8 +152,28 @@ export function OrderLineEditor({
               />
             </Field>
           </div>
-          <div className="flex items-center justify-between gap-2 sm:col-span-1">
-            <span className="text-xs text-muted-foreground">{money(lineTotal(l))}</span>
+          <div className="sm:col-span-1">
+            <Field label="Tax %" htmlFor={`tax-${l._key}`}>
+              <Input
+                id={`tax-${l._key}`}
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={l.tax_rate ?? 0}
+                onChange={(e) => updateLine(l._key, { tax_rate: Number(e.target.value) })}
+              />
+            </Field>
+          </div>
+          <div className="flex items-center justify-between gap-2 sm:col-span-2">
+            <span className="text-xs text-muted-foreground">
+              {money(lineTotal(l))}
+              {Number(l.tax_rate) > 0 ? (
+                <span className="block text-[11px] text-amber-600">
+                  +{money(lineTaxAmount(l))} tax
+                </span>
+              ) : null}
+            </span>
             <Button
               type="button"
               variant="ghost"
@@ -169,7 +196,14 @@ export function OrderLineEditor({
         >
           <Plus className="mr-1 size-4" /> Add line
         </Button>
-        <p className="text-sm font-medium text-foreground">Estimated total: {money(total)}</p>
+        <p className="text-sm font-medium text-foreground">
+          Estimated total: {money(total + taxTotal)}
+          {showTax ? (
+            <span className="block text-xs font-normal text-muted-foreground">
+              {money(total)} + {money(taxTotal)} GST
+            </span>
+          ) : null}
+        </p>
       </div>
     </div>
   );

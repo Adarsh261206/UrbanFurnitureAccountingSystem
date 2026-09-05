@@ -132,6 +132,28 @@ export class PdfDoc {
     return true;
   }
 
+  /** Adds vertical space (with page-break protection). */
+  space(height: number): void {
+    this.y += height;
+    if (this.y > this.pageBottom) {
+      this.addPage();
+    }
+  }
+
+  /** Paragraph-style body text with wrapping. */
+  bodyText(text: string, opts: { size?: number; width?: number } = {}): void {
+    const size = opts.size ?? 9.5;
+    const width = opts.width ?? PAGE.contentWidth;
+    const h = wrappedHeight(this.doc, text, width, size);
+    this.ensureSpace(h + 4);
+    this.doc
+      .font(FONT)
+      .fontSize(size)
+      .fillColor(COLORS.text)
+      .text(text, PAGE.margin, this.y, { width, lineGap: 2 });
+    this.y += h + 4;
+  }
+
   /** Section heading with a rule underneath. */
   section(title: string, opts: { size?: number; spaceBefore?: number } = {}): void {
     const size = opts.size ?? 13;
@@ -315,8 +337,8 @@ export class PdfDoc {
   }
 }
 
-/** Generate a PDF into a Buffer (promisified). */
-export function buildPdf(generator: (pdf: PdfDoc) => void): Promise<Buffer> {
+/** Generate a PDF into a Buffer (promisified). Supports async generators. */
+export function buildPdf(generator: (pdf: PdfDoc) => void | Promise<void>): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const pdf = new PdfDoc();
     const { doc } = pdf;
@@ -324,13 +346,15 @@ export function buildPdf(generator: (pdf: PdfDoc) => void): Promise<Buffer> {
     doc.on('data', (c: Buffer) => chunks.push(c));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
-    try {
-      generator(pdf);
-      pdf.footer();
-      doc.end();
-    } catch (err) {
-      reject(err);
-    }
+    (async () => {
+      try {
+        await generator(pdf);
+        pdf.footer();
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    })();
   });
 }
 

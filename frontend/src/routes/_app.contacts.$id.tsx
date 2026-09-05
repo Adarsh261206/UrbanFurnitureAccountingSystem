@@ -17,7 +17,14 @@ import { contactsService, type ContactInput } from "@/services/masterDataService
 import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { date as fmtDate } from "@/lib/format";
 import { toast } from "sonner";
-import type { Contact } from "@/types/api";
+import type { Contact, ContactType } from "@/types/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/contacts/$id")({
   head: () => ({
@@ -35,6 +42,8 @@ export const Route = createFileRoute("/_app/contacts/$id")({
   ),
 });
 
+const CONTACT_TYPES: ContactType[] = ["customer", "vendor", "both"];
+
 function toInput(c: Contact): ContactInput {
   return {
     name: c.name ?? "",
@@ -46,6 +55,9 @@ function toInput(c: Contact): ContactInput {
     country: c.country ?? "",
     pincode: c.pincode ?? "",
     image_url: c.image_url ?? "",
+    contact_type: c.contact_type,
+    gstin: c.gstin ?? "",
+    pan: c.pan ?? "",
   };
 }
 
@@ -94,6 +106,14 @@ function Page() {
     if (!form["email"].trim()) errors["email"] = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form["email"].trim()))
       errors["email"] = "Enter a valid email";
+    if (form.gstin && form.gstin.trim() && !/^[0-9A-Z]{15}$/.test(form.gstin.trim().toUpperCase()))
+      errors["gstin"] = "GSTIN must be 15 characters";
+    if (
+      form.pan &&
+      form.pan.trim() &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(form.pan.trim().toUpperCase())
+    )
+      errors["pan"] = "PAN must be 10 characters (e.g. ABCDE1234F)";
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     mutation.mutate(form);
@@ -148,6 +168,43 @@ function Page() {
                 id="image_url"
                 value={form.image_url}
                 onChange={(e) => setField("image_url", e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Contact type"
+              htmlFor="contact_type"
+              error={fieldErrors["contact_type"] ?? null}
+            >
+              <Select
+                value={form.contact_type}
+                onValueChange={(v) => setField("contact_type", v as ContactType)}
+              >
+                <SelectTrigger id="contact_type" aria-label="Contact type">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_TYPES.map((t) => (
+                    <SelectItem key={t} value={t} className="capitalize">
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="GSTIN" htmlFor="gstin" error={fieldErrors["gstin"] ?? null}>
+              <Input
+                id="gstin"
+                value={form.gstin}
+                onChange={(e) => setField("gstin", e.target.value)}
+                placeholder="e.g. 07AABCU9603R1ZM"
+              />
+            </Field>
+            <Field label="PAN" htmlFor="pan" error={fieldErrors["pan"] ?? null}>
+              <Input
+                id="pan"
+                value={form.pan}
+                onChange={(e) => setField("pan", e.target.value)}
+                placeholder="e.g. AABCU9603R"
               />
             </Field>
             <Field label="Street" htmlFor="street" error={fieldErrors["street"] ?? null}>

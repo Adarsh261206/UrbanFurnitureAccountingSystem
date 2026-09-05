@@ -59,11 +59,18 @@ export async function createBill(req: Request, res: Response, next: NextFunction
     }
 
     const billReference = await generateSequence('BILL');
-    const total = lines.reduce((sum: number, l: any) => {
+    const subtotal = lines.reduce((sum: number, l: any) => {
       const qty = parseFloat(l.quantity ?? l.qty);
       const price = parseFloat(l.unit_price ?? l.unitPrice);
       return sum + qty * price;
     }, 0);
+    const taxAmount = lines.reduce((sum: number, l: any) => {
+      const qty = parseFloat(l.quantity ?? l.qty);
+      const price = parseFloat(l.unit_price ?? l.unitPrice);
+      const rate = parseFloat(l.tax_rate ?? l.taxRate ?? 0);
+      return sum + qty * price * (rate / 100);
+    }, 0);
+    const total = subtotal + taxAmount;
 
     const bill = await prisma.vendorBill.create({
       data: {
@@ -77,8 +84,11 @@ export async function createBill(req: Request, res: Response, next: NextFunction
         paymentType: req.body.payment_type ?? 'send',
         partnerId: req.body.partner_id ?? vendorId,
         paymentVia: req.body.payment_via ?? 'bank',
+        subtotal,
+        taxAmount,
         total,
         amountDue: total,
+        notes: req.body.notes ?? null,
         status: 'draft',
         createdBy: req.user!.id,
         billLines: {
@@ -89,6 +99,7 @@ export async function createBill(req: Request, res: Response, next: NextFunction
             budgetAnalyticId: line.analytical_id ?? line.analyticId ?? line.budget_analytic_id ?? null,
             qty: parseFloat(line.quantity ?? line.qty),
             unitPrice: parseFloat(line.unit_price ?? line.unitPrice),
+            taxRate: parseFloat(line.tax_rate ?? line.taxRate ?? 0),
             total: parseFloat(line.quantity ?? line.qty) * parseFloat(line.unit_price ?? line.unitPrice),
           })),
         },
@@ -114,17 +125,27 @@ export async function updateBill(req: Request, res: Response, next: NextFunction
     if (req.body.partner_id !== undefined) updateData.partnerId = req.body.partner_id;
     if (req.body.payment_via !== undefined) updateData.paymentVia = req.body.payment_via;
     if (req.body.vendor_bill_no !== undefined) updateData.vendorBillNo = req.body.vendor_bill_no;
+    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
 
     if (req.body.lines !== undefined) {
       const lines = req.body.lines;
       if (!Array.isArray(lines) || lines.length === 0) {
         throw new AppError('LINES_REQUIRED', 'Bill must have at least one line', 400, 'lines');
       }
-      const total = lines.reduce((sum: number, l: any) => {
+      const subtotal = lines.reduce((sum: number, l: any) => {
         const qty = parseFloat(l.quantity ?? l.qty);
         const price = parseFloat(l.unit_price ?? l.unitPrice);
         return sum + qty * price;
       }, 0);
+      const taxAmount = lines.reduce((sum: number, l: any) => {
+        const qty = parseFloat(l.quantity ?? l.qty);
+        const price = parseFloat(l.unit_price ?? l.unitPrice);
+        const rate = parseFloat(l.tax_rate ?? l.taxRate ?? 0);
+        return sum + qty * price * (rate / 100);
+      }, 0);
+      const total = subtotal + taxAmount;
+      updateData.subtotal = subtotal;
+      updateData.taxAmount = taxAmount;
       updateData.total = total;
       updateData.amountDue = total;
       await prisma.vendorBillLine.deleteMany({ where: { vendorBillId: req.params.id } });
@@ -137,6 +158,7 @@ export async function updateBill(req: Request, res: Response, next: NextFunction
           budgetAnalyticId: line.analytical_id ?? line.analyticId ?? line.budget_analytic_id ?? null,
           qty: parseFloat(line.quantity ?? line.qty),
           unitPrice: parseFloat(line.unit_price ?? line.unitPrice),
+          taxRate: parseFloat(line.tax_rate ?? line.taxRate ?? 0),
           total: parseFloat(line.quantity ?? line.qty) * parseFloat(line.unit_price ?? line.unitPrice),
         })),
       });
@@ -334,19 +356,23 @@ export async function printBill(req: Request, res: Response, next: NextFunction)
     const buffer = await generateBillPdf({
       document_no: bill.billReference,
       reference: bill.vendorBillNo ?? null,
-      party: bill.vendor ? { name: bill.vendor.name } : null,
+      party: bill.vendor ? { name: bill.vendor.name, gstin: bill.vendor.gstin ?? null } : null,
       document_date: bill.billDate.toISOString(),
       due_date: bill.dueDate ? bill.dueDate.toISOString() : null,
       payment_type: bill.paymentType ?? null,
       payment_via: bill.paymentVia ?? null,
       status: bill.status,
+      subtotal: Number(bill.subtotal),
+      tax_amount: Number(bill.taxAmount),
       total: Number(bill.total),
       amount_due: Number(bill.amountDue),
+      notes: bill.notes ?? null,
       lines: bill.billLines.map((l) => ({
         sr_no: l.srNo,
         product_name: l.product?.name ?? null,
         qty: Number(l.qty),
         unit_price: Number(l.unitPrice),
+        tax_rate: Number(l.taxRate),
         total: Number(l.total),
       })),
     });

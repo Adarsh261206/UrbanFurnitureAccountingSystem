@@ -51,6 +51,9 @@ async function main() {
         state: pick(states),
         country: 'India',
         pincode: String(rnd(100001, 700001)),
+        contactType: 'customer',
+        gstin: `07AABC${String(i + 1).padStart(4, '0')}${String(1000 + i).slice(0, 3)}R1ZM`,
+        pan: `AABC${String(1000 + i)}P`,
       },
     });
     customers.push(c.id);
@@ -67,6 +70,9 @@ async function main() {
         state: pick(states),
         country: 'India',
         pincode: String(rnd(100001, 700001)),
+        contactType: 'vendor',
+        gstin: `27AAAC${String(i + 1).padStart(4, '0')}${String(2000 + i).slice(0, 3)}R1ZK`,
+        pan: `AAAC${String(2000 + i)}P`,
       },
     });
     vendors.push(v.id);
@@ -103,6 +109,16 @@ async function main() {
     const cat = await prisma.category.create({ data: { name: cd.name } });
     categories.push({ id: cat.id, name: cd.name });
   }
+
+  // ================= BRANDS =================
+  const brandNames = ['Godrej Interio', 'Nilkamal', 'WoodenStreet', 'Wakefit', 'Durian', 'Spacewood', 'Featherlite', 'Royal Oak', 'Hometown', 'Urban Ladder'];
+  const brands: { id: string; name: string }[] = [];
+  for (const bn of brandNames) {
+    const b = await prisma.brand.create({ data: { name: bn } });
+    brands.push({ id: b.id, name: bn });
+  }
+  console.log(`Brands: ${brands.length} seeded`);
+
   const products: { id: string; name: string; categoryId: string }[] = [];
   let pIdx = 0;
   for (const cat of categories) {
@@ -110,8 +126,20 @@ async function main() {
       const cd = categoryData.find((x) => x.name === cat.name)!;
       const sales = rnd(cd.base, cd.max);
       const cost = Math.round(sales * (0.55 + Math.random() * 0.2));
+      const brand = pick(brands);
       const p = await prisma.product.create({
-        data: { name: `${pn}`, productType: 'goods', categoryId: cat.id, salesPrice: sales, cost },
+        data: {
+          name: `${pn}`,
+          productType: 'goods',
+          categoryId: cat.id,
+          brandId: brand.id,
+          sku: `SKU-${String(pIdx + 1).padStart(4, '0')}`,
+          barcode: `890${String(10000000000 + pIdx * 7919).slice(0, 9)}`,
+          hsnCode: '9403',
+          description: `${brand.name} ${pn} — premium furniture piece for home and office.`,
+          salesPrice: sales,
+          cost,
+        },
       });
       products.push({ id: p.id, name: p.name, categoryId: cat.id });
       pIdx++;

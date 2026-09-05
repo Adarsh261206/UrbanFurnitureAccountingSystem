@@ -42,6 +42,9 @@ export function serializeContact(c: any): any {
     state: c.state ?? null,
     country: c.country ?? null,
     pincode: c.pincode ?? null,
+    contact_type: c.contactType ?? 'both',
+    gstin: c.gstin ?? null,
+    pan: c.pan ?? null,
     created_at: iso(c.createdAt),
   };
 }
@@ -56,11 +59,32 @@ export function serializeProduct(p: any): any {
     name: p.name,
     category_id: p.categoryId,
     category_name: p.category?.name ?? null,
+    brand_id: p.brandId ?? null,
+    brand_name: p.brand?.name ?? null,
     product_type: p.productType,
+    sku: p.sku ?? null,
+    barcode: p.barcode ?? null,
+    hsn_code: p.hsnCode ?? null,
+    description: p.description ?? null,
+    is_active: p.isActive ?? true,
     sales_price: num(p.salesPrice),
     cost: num(p.cost),
     image_url: p.imageUrl ?? null,
+    images: (p.images ?? []).map((i: any) => ({
+      id: i.id,
+      image_url: i.imageUrl,
+      sort_order: i.sortOrder,
+    })),
     created_at: iso(p.createdAt),
+  };
+}
+
+export function serializeBrand(b: any): any {
+  return {
+    id: b.id,
+    name: b.name,
+    product_count: b._count?.products ?? undefined,
+    created_at: iso(b.createdAt),
   };
 }
 
@@ -190,6 +214,8 @@ export function serializeInvoiceLine(l: any): any {
     budget_analytic_id: l.budgetAnalyticId ?? null,
     qty: num(l.qty),
     unit_price: num(l.unitPrice),
+    tax_rate: num(l.taxRate),
+    tax_amount: num(l.qty) * num(l.unitPrice) * (num(l.taxRate) / 100),
     total: num(l.total),
   };
 }
@@ -219,15 +245,18 @@ export function serializeInvoiceDetail(i: any): any {
     invoice_reference: i.invoiceReference,
     invoice_number: i.invoiceNumber,
     sales_order_id: i.salesOrderId ?? null,
-    customer: i.customer ? { id: i.customer.id, name: i.customer.name } : null,
+    customer: i.customer ? { id: i.customer.id, name: i.customer.name, gstin: i.customer.gstin ?? null } : null,
     date: dateOnly(i.date),
     invoice_date: dateOnly(i.invoiceDate),
     due_date: dateOnly(i.dueDate),
     payment_type: i.paymentType,
     partner: i.partner ? { id: i.partner.id, name: i.partner.name } : null,
     payment_via: i.paymentVia,
+    subtotal: num(i.subtotal),
+    tax_amount: num(i.taxAmount),
     total: num(i.total),
     amount_due: num(i.amountDue),
+    notes: i.notes ?? null,
     status: i.status,
     journal_entry_id: i.journalEntryId ?? null,
     lines: (i.invoiceLines ?? i.lines ?? []).map(serializeInvoiceLine),
@@ -245,6 +274,8 @@ export function serializeBillLine(l: any): any {
     budget_analytic_id: l.budgetAnalyticId ?? null,
     qty: num(l.qty),
     unit_price: num(l.unitPrice),
+    tax_rate: num(l.taxRate),
+    tax_amount: num(l.qty) * num(l.unitPrice) * (num(l.taxRate) / 100),
     total: num(l.total),
   };
 }
@@ -273,15 +304,18 @@ export function serializeBillDetail(b: any): any {
     bill_reference: b.billReference,
     vendor_bill_no: b.vendorBillNo ?? null,
     purchase_order_id: b.purchaseOrderId ?? null,
-    vendor: b.vendor ? { id: b.vendor.id, name: b.vendor.name } : null,
+    vendor: b.vendor ? { id: b.vendor.id, name: b.vendor.name, gstin: b.vendor.gstin ?? null } : null,
     date: dateOnly(b.date),
     bill_date: dateOnly(b.billDate),
     due_date: dateOnly(b.dueDate),
     payment_type: b.paymentType,
     partner: b.partner ? { id: b.partner.id, name: b.partner.name } : null,
     payment_via: b.paymentVia,
+    subtotal: num(b.subtotal),
+    tax_amount: num(b.taxAmount),
     total: num(b.total),
     amount_due: num(b.amountDue),
+    notes: b.notes ?? null,
     status: b.status,
     journal_entry_id: b.journalEntryId ?? null,
     lines: (b.billLines ?? b.lines ?? []).map(serializeBillLine),

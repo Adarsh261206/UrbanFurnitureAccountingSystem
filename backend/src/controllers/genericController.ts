@@ -20,7 +20,7 @@ export class GenericController {
     const page = Math.max(1, parseInt(query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(query.limit) || 20));
     const skip = (page - 1) * limit;
-    const where: any = { deletedAt: null };
+    const where: any = { deletedAt: null, ...(query.where ?? {}) };
 
     if (query.search) {
       const searchFields = Object.keys(this.model.fields || {}).filter(

@@ -21,6 +21,8 @@ export interface Column<T> {
 /**
  * Premium data table: white surface, uppercase column headers, compact rows,
  * hover state, clickable rows. Numbers are right-aligned by the column def.
+ * When `selectedKeys`/`onSelectionChange` are provided, a checkbox column
+ * enables bulk selection (row click still navigates).
  */
 export function DataTable<T>({
   columns,
@@ -28,13 +30,36 @@ export function DataTable<T>({
   rowKey,
   onRowClick,
   caption,
+  selectedKeys,
+  onSelectionChange,
 }: {
   columns: Column<T>[];
   rows: T[];
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
   caption?: string;
+  selectedKeys?: Set<string>;
+  onSelectionChange?: (keys: Set<string>) => void;
 }) {
+  const selectable = Boolean(onSelectionChange);
+  const allSelected = rows.length > 0 && rows.every((r) => selectedKeys?.has(rowKey(r)));
+
+  function toggleRow(key: string) {
+    if (!onSelectionChange || !selectedKeys) return;
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectionChange(next);
+  }
+
+  function toggleAll() {
+    if (!onSelectionChange || !selectedKeys) return;
+    const next = new Set(selectedKeys);
+    if (allSelected) rows.forEach((r) => next.delete(rowKey(r)));
+    else rows.forEach((r) => next.add(rowKey(r)));
+    onSelectionChange(next);
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
       <div className="overflow-x-auto">
@@ -42,6 +67,17 @@ export function DataTable<T>({
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
+              {selectable ? (
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all rows"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="size-4 accent-[#017E84]"
+                  />
+                </TableHead>
+              ) : null}
               {columns.map((c) => (
                 <TableHead
                   key={c.key}
@@ -53,36 +89,54 @@ export function DataTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow
-                key={rowKey(row)}
-                tabIndex={onRowClick ? 0 : undefined}
-                role={onRowClick ? "button" : undefined}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                onKeyDown={
-                  onRowClick
-                    ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onRowClick(row);
+            {rows.map((row) => {
+              const key = rowKey(row);
+              const isSelected = selectedKeys?.has(key);
+              return (
+                <TableRow
+                  key={key}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? "button" : undefined}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onRowClick(row);
+                          }
                         }
-                      }
-                    : undefined
-                }
-                className={cn(
-                  onRowClick && "cursor-pointer focus-visible:outline-none focus-visible:bg-muted",
-                )}
-              >
-                {columns.map((c) => (
-                  <TableCell
-                    key={c.key}
-                    className={cn(c.align === "right" && "text-right tabular-nums", c.className)}
-                  >
-                    {c.cell(row)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+                      : undefined
+                  }
+                  className={cn(
+                    onRowClick &&
+                      "cursor-pointer focus-visible:outline-none focus-visible:bg-muted",
+                    isSelected && "bg-primary/5",
+                  )}
+                >
+                  {selectable ? (
+                    <TableCell className="w-10">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select row ${key}`}
+                        checked={isSelected}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => toggleRow(key)}
+                        className="size-4 accent-[#017E84]"
+                      />
+                    </TableCell>
+                  ) : null}
+                  {columns.map((c) => (
+                    <TableCell
+                      key={c.key}
+                      className={cn(c.align === "right" && "text-right tabular-nums", c.className)}
+                    >
+                      {c.cell(row)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

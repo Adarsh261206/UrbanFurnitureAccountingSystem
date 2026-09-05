@@ -12,6 +12,7 @@ import {
 } from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  brandsService,
   categoriesService,
   productsService,
   type ProductInput,
@@ -27,6 +29,7 @@ import {
 import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
 import type { ProductType } from "@/types/api";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/products/new")({
   head: () => ({
@@ -53,6 +56,12 @@ interface FormState {
   name: string;
   product_type: ProductType | "";
   category_id: string;
+  brand_id: string;
+  sku: string;
+  barcode: string;
+  hsn_code: string;
+  description: string;
+  is_active: boolean;
   sales_price: string;
   cost: string;
   image_url: string;
@@ -62,6 +71,12 @@ const EMPTY: FormState = {
   name: "",
   product_type: "",
   category_id: "",
+  brand_id: "",
+  sku: "",
+  barcode: "",
+  hsn_code: "",
+  description: "",
+  is_active: true,
   sales_price: "",
   cost: "",
   image_url: "",
@@ -78,6 +93,11 @@ function Page() {
     queryFn: () => categoriesService.list(),
   });
 
+  const brandsQuery = useQuery({
+    queryKey: ["brands"],
+    queryFn: () => brandsService.list({ limit: 200 }),
+  });
+
   const mutation = useMutation({
     mutationFn: () => {
       const body: ProductInput = {
@@ -86,7 +106,13 @@ function Page() {
         category_id: form["category_id"],
         sales_price: Number(form["sales_price"]),
         cost: Number(form["cost"]),
-        ...(form.image_url ? { image_url: form.image_url.trim() } : {}),
+        is_active: form.is_active,
+        ...(form.brand_id ? { brand_id: form.brand_id } : {}),
+        ...(form.sku.trim() ? { sku: form.sku.trim() } : {}),
+        ...(form.barcode.trim() ? { barcode: form.barcode.trim() } : {}),
+        ...(form.hsn_code.trim() ? { hsn_code: form.hsn_code.trim() } : {}),
+        ...(form.description.trim() ? { description: form.description.trim() } : {}),
+        ...(form.image_url.trim() ? { image_url: form.image_url.trim() } : {}),
       };
       return productsService.create(body);
     },
@@ -123,6 +149,10 @@ function Page() {
       errors["sales_price"] = "Enter a valid sales price";
     if (!form["cost"].trim() || Number.isNaN(Number(form["cost"])) || Number(form["cost"]) < 0)
       errors["cost"] = "Enter a valid cost";
+    if (form.barcode.trim() && !/^[\dA-Za-z-]{6,64}$/.test(form.barcode.trim()))
+      errors["barcode"] = "Barcode must be 6-64 alphanumeric characters";
+    if (form.hsn_code.trim() && !/^\d{2,8}$/.test(form.hsn_code.trim()))
+      errors["hsn_code"] = "HSN must be 2-8 digits";
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -190,13 +220,104 @@ function Page() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Image URL" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
+            <Field label="Brand" htmlFor="brand_id" error={fieldErrors["brand_id"] ?? null}>
+              <Select value={form.brand_id} onValueChange={(v) => setField("brand_id", v)}>
+                <SelectTrigger id="brand_id" aria-label="Brand">
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(brandsQuery.data?.brands ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="SKU" htmlFor="sku" error={fieldErrors["sku"] ?? null}>
+              <Input
+                id="sku"
+                value={form.sku}
+                onChange={(e) => setField("sku", e.target.value)}
+                placeholder="e.g. SOF-3S-001"
+              />
+            </Field>
+            <Field label="Barcode" htmlFor="barcode" error={fieldErrors["barcode"] ?? null}>
+              <Input
+                id="barcode"
+                value={form.barcode}
+                onChange={(e) => setField("barcode", e.target.value)}
+                placeholder="e.g. 8901234567890"
+              />
+            </Field>
+            <Field label="HSN/SAC code" htmlFor="hsn_code" error={fieldErrors["hsn_code"] ?? null}>
+              <Input
+                id="hsn_code"
+                value={form.hsn_code}
+                onChange={(e) => setField("hsn_code", e.target.value)}
+                placeholder="e.g. 9403"
+              />
+            </Field>
+            <Field
+              label="Primary image URL"
+              htmlFor="image_url"
+              error={fieldErrors["image_url"] ?? null}
+            >
               <Input
                 id="image_url"
                 value={form.image_url}
                 onChange={(e) => setField("image_url", e.target.value)}
               />
             </Field>
+            <Field
+              label="Active"
+              htmlFor="is_active"
+              hint="Inactive products stay hidden from new orders"
+            >
+              <label className="flex items-center gap-2 text-[13px]">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.is_active}
+                  onClick={() => setField("is_active", !form.is_active)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
+                    form.is_active ? "bg-primary" : "bg-input",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block size-4 transform rounded-full bg-white shadow transition-transform",
+                      form.is_active ? "translate-x-6" : "translate-x-1",
+                    )}
+                  />
+                </button>
+                <span className="text-muted-foreground">
+                  {form.is_active ? "Active" : "Inactive"}
+                </span>
+              </label>
+            </Field>
+          </FormGrid>
+        </FormSection>
+
+        <FormSection title="Description">
+          <Field
+            label="Description"
+            htmlFor="description"
+            error={fieldErrors["description"] ?? null}
+          >
+            <Textarea
+              id="description"
+              value={form.description}
+              onChange={(e) => setField("description", e.target.value)}
+              rows={4}
+              placeholder="Material, dimensions, finish, warranty details…"
+            />
+          </Field>
+        </FormSection>
+
+        <FormSection title="Pricing">
+          <FormGrid>
             <Field
               label="Sales price"
               htmlFor="sales_price"
@@ -225,15 +346,16 @@ function Page() {
               />
             </Field>
           </FormGrid>
-          <FormActions>
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/products" })}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Creating…" : "Create product"}
-            </Button>
-          </FormActions>
         </FormSection>
+
+        <FormActions>
+          <Button type="button" variant="outline" onClick={() => navigate({ to: "/products" })}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? "Creating…" : "Create product"}
+          </Button>
+        </FormActions>
       </form>
     </div>
   );

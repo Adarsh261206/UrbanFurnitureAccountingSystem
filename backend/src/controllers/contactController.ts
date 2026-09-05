@@ -8,7 +8,10 @@ const controller = new GenericController(prisma, 'contact');
 
 export async function listContacts(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await controller.list(req.query);
+    const query: any = { ...req.query };
+    const where: any = { deletedAt: null };
+    if (query.contact_type) where.contactType = query.contact_type;
+    const result = await controller.list({ ...query, where });
     res.json({ contacts: result.data.map(serializeContact), total: result.total, page: result.page, limit: result.limit });
   } catch (err) { next(err); }
 }
@@ -32,6 +35,9 @@ export async function createContact(req: Request, res: Response, next: NextFunct
       state: req.body.state ?? null,
       country: req.body.country ?? null,
       pincode: req.body.pincode ?? null,
+      contactType: req.body.contact_type ?? 'both',
+      gstin: req.body.gstin ?? null,
+      pan: req.body.pan ?? null,
     };
     const item = await controller.create(data);
     res.status(201).json(serializeContact(item));
@@ -50,6 +56,9 @@ export async function updateContact(req: Request, res: Response, next: NextFunct
     if (req.body.state !== undefined) data.state = req.body.state;
     if (req.body.country !== undefined) data.country = req.body.country;
     if (req.body.pincode !== undefined) data.pincode = req.body.pincode;
+    if (req.body.contact_type !== undefined) data.contactType = req.body.contact_type;
+    if (req.body.gstin !== undefined) data.gstin = req.body.gstin;
+    if (req.body.pan !== undefined) data.pan = req.body.pan;
     const item = await controller.update(req.params.id, data);
     res.json(serializeContact(item));
   } catch (err) { next(err); }
