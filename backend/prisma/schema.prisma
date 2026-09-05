@@ -137,9 +137,11 @@ model Contact {
 }
 
 model Category {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @unique @db.VarChar(255)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime    @default(now()) @map("updated_at") @db.Timestamptz()
+  deletedAt DateTime?   @map("deleted_at") @db.Timestamptz()
 
   products Product[]
 
@@ -223,6 +225,7 @@ model ChartOfAccount {
   journalType String?      @map("journal_type") @db.VarChar(50)
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt   DateTime     @default(now()) @map("updated_at") @db.Timestamptz()
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz()
 
   journals             Journal[]
   journalEntryLines    JournalEntryLine[]
@@ -241,6 +244,8 @@ model Journal {
   journalType     journal_type @map("journal_type")
   defaultAccountId String      @map("default_account_id") @db.Uuid
   createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime     @default(now()) @map("updated_at") @db.Timestamptz()
+  deletedAt       DateTime?    @map("deleted_at") @db.Timestamptz()
 
   defaultAccount ChartOfAccount  @relation(fields: [defaultAccountId], references: [id])
   journalEntries JournalEntry[]
@@ -514,4 +519,16 @@ model Payment {
   @@index([vendorBillId], map: "idx_pay_bill")
   @@index([status], map: "idx_pay_status")
   @@map("payments")
+}
+
+model Sequence {
+  id        String  @id @default(uuid()) @db.Uuid
+  name      String  @db.VarChar(50)
+  prefix    String  @db.VarChar(20)
+  value     Int     @default(0)
+  yearScope Boolean @default(false) @map("year_scope")
+  year      Int?    @map("year")
+
+  @@unique([name, year])
+  @@map("sequences")
 }

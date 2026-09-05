@@ -7,7 +7,7 @@ import { AppError } from '../utils/errors';
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, loginId, email, password, role } = req.body;
+    const { name, loginId, email, password } = req.body;
 
     const existingUser = await prisma.user.findFirst({
       where: { OR: [{ loginId }, { email }] },
@@ -23,19 +23,18 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
         loginId,
         email,
         passwordHash,
-        role: role || 'user',
+        role: 'user',
       },
       select: { id: true, name: true, loginId: true, email: true, role: true, isActive: true, createdAt: true },
     });
 
-    const token = jwt.sign(
-      { sub: user.id, role: user.role, email: user.email },
-      authConfig.jwtSecret,
-      { expiresIn: 86400 }
-    );
-
-    res.cookie(authConfig.cookieName, token, authConfig.cookieOptions);
-    res.status(201).json({ user });
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      login_id: user.loginId,
+      email: user.email,
+      role: user.role,
+    });
   } catch (err) {
     next(err);
   }
@@ -63,7 +62,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const token = jwt.sign(
       { sub: user.id, role: user.role, email: user.email },
       authConfig.jwtSecret,
-      { expiresIn: 86400 }
+      { expiresIn: authConfig.jwtExpiry }
     );
 
     res.cookie(authConfig.cookieName, token, authConfig.cookieOptions);
@@ -97,7 +96,13 @@ export async function me(req: Request, res: Response, next: NextFunction) {
     if (!user) {
       throw new AppError('USER_NOT_FOUND', 'User not found', 404);
     }
-    res.json({ user });
+    res.json({
+      id: user.id,
+      name: user.name,
+      login_id: user.loginId,
+      email: user.email,
+      role: user.role,
+    });
   } catch (err) {
     next(err);
   }

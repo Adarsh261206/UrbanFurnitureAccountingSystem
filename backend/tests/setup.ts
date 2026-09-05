@@ -25,6 +25,8 @@ export async function cleanupTestDB() {
   await prisma.contact.deleteMany();
   await prisma.journal.deleteMany();
   await prisma.chartOfAccount.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.sequence.deleteMany();
 }
 
 export async function seedTestDB() {
@@ -32,101 +34,68 @@ export async function seedTestDB() {
   const accountantHash = await bcrypt.hash('Accountant@123', 12);
   const userHash = await bcrypt.hash('User@123', 12);
 
-  const admin = await prisma.user.upsert({
-    where: { loginId: 'testadmin' },
-    update: {},
-    create: { name: 'Test Admin', loginId: 'testadmin', email: 'testadmin@test.com', passwordHash, role: 'admin' },
+  const admin = await prisma.user.create({
+    data: { name: 'Test Admin', loginId: 'testadmin', email: 'testadmin@test.com', passwordHash, role: 'admin' },
   });
 
-  const accountant = await prisma.user.upsert({
-    where: { loginId: 'testaccountant' },
-    update: {},
-    create: { name: 'Test Accountant', loginId: 'testaccountant', email: 'testaccountant@test.com', passwordHash: accountantHash, role: 'accountant' },
+  const accountant = await prisma.user.create({
+    data: { name: 'Test Accountant', loginId: 'testacc', email: 'testaccountant@test.com', passwordHash: accountantHash, role: 'accountant' },
   });
 
-  const user = await prisma.user.upsert({
-    where: { loginId: 'testuser' },
-    update: {},
-    create: { name: 'Test User', loginId: 'testuser', email: 'testuser@test.com', passwordHash: userHash, role: 'user' },
+  const user = await prisma.user.create({
+    data: { name: 'Test User', loginId: 'testuser', email: 'testuser@test.com', passwordHash: userHash, role: 'user' },
   });
 
-  const cashAccount = await prisma.chartOfAccount.upsert({
-    where: { name: 'Cash' },
-    update: {},
-    create: { name: 'Cash', accountType: 'cash' },
+  const cashAccount = await prisma.chartOfAccount.create({
+    data: { name: 'Cash', accountType: 'cash' },
   });
 
-  const bankAccount = await prisma.chartOfAccount.upsert({
-    where: { name: 'Bank' },
-    update: {},
-    create: { name: 'Bank', accountType: 'bank' },
+  const bankAccount = await prisma.chartOfAccount.create({
+    data: { name: 'Bank', accountType: 'bank' },
   });
 
-  const arAccount = await prisma.chartOfAccount.upsert({
-    where: { name: 'Accounts Receivable' },
-    update: {},
-    create: { name: 'Accounts Receivable', accountType: 'asset' },
+  const arAccount = await prisma.chartOfAccount.create({
+    data: { name: 'Accounts Receivable', accountType: 'asset' },
   });
 
-  const apAccount = await prisma.chartOfAccount.upsert({
-    where: { name: 'Accounts Payable' },
-    update: {},
-    create: { name: 'Accounts Payable', accountType: 'liability' },
+  const apAccount = await prisma.chartOfAccount.create({
+    data: { name: 'Accounts Payable', accountType: 'liability' },
   });
 
-  const salesRevenue = await prisma.chartOfAccount.upsert({
-    where: { name: 'Sales Revenue' },
-    update: {},
-    create: { name: 'Sales Revenue', accountType: 'income' },
+  const salesRevenue = await prisma.chartOfAccount.create({
+    data: { name: 'Sales Revenue', accountType: 'income' },
   });
 
-  const purchaseExpense = await prisma.chartOfAccount.upsert({
-    where: { name: 'Purchase Expense' },
-    update: {},
-    create: { name: 'Purchase Expense', accountType: 'expense' },
+  const purchaseExpense = await prisma.chartOfAccount.create({
+    data: { name: 'Purchase Expense', accountType: 'expense' },
   });
 
-  const capitalAccount = await prisma.chartOfAccount.upsert({
-    where: { name: 'Capital' },
-    update: {},
-    create: { name: 'Capital', accountType: 'capital' },
+  const capitalAccount = await prisma.chartOfAccount.create({
+    data: { name: 'Capital', accountType: 'capital' },
   });
 
-  const saleJournal = await prisma.journal.upsert({
-    where: { name: 'Sale Journal' },
-    update: {},
-    create: { name: 'Sale Journal', journalType: 'sale', defaultAccountId: cashAccount.id },
+  const saleJournal = await prisma.journal.create({
+    data: { name: 'Sale Journal', journalType: 'sale', defaultAccountId: cashAccount.id },
   });
 
-  const purchaseJournal = await prisma.journal.upsert({
-    where: { name: 'Purchase Journal' },
-    update: {},
-    create: { name: 'Purchase Journal', journalType: 'purchase', defaultAccountId: cashAccount.id },
+  const purchaseJournal = await prisma.journal.create({
+    data: { name: 'Purchase Journal', journalType: 'purchase', defaultAccountId: cashAccount.id },
   });
 
-  const bankJournal = await prisma.journal.upsert({
-    where: { name: 'Bank Journal' },
-    update: {},
-    create: { name: 'Bank Journal', journalType: 'bank', defaultAccountId: bankAccount.id },
+  const bankJournal = await prisma.journal.create({
+    data: { name: 'Bank Journal', journalType: 'bank', defaultAccountId: bankAccount.id },
   });
 
-  const cashJournal = await prisma.journal.upsert({
-    where: { name: 'Cash Journal' },
-    update: {},
-    create: { name: 'Cash Journal', journalType: 'cash', defaultAccountId: cashAccount.id },
+  const cashJournal = await prisma.journal.create({
+    data: { name: 'Cash Journal', journalType: 'cash', defaultAccountId: cashAccount.id },
   });
 
-  const category = await prisma.category.upsert({
-    where: { name: 'Test Category' },
-    update: {},
-    create: { name: 'Test Category' },
+  const category = await prisma.category.create({
+    data: { name: 'Test Category' },
   });
 
-  const product = await prisma.product.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0000-000000000001',
+  const product = await prisma.product.create({
+    data: {
       name: 'Test Product',
       productType: 'goods',
       categoryId: category.id,
@@ -135,23 +104,16 @@ export async function seedTestDB() {
     },
   });
 
-  const customer = await prisma.contact.upsert({
-    where: { email: 'customer@test.com' },
-    update: {},
-    create: { name: 'Test Customer', email: 'customer@test.com', phone: '1234567890' },
+  const customer = await prisma.contact.create({
+    data: { name: 'Test Customer', email: 'customer@test.com', phone: '1234567890' },
   });
 
-  const vendor = await prisma.contact.upsert({
-    where: { email: 'vendor@test.com' },
-    update: {},
-    create: { name: 'Test Vendor', email: 'vendor@test.com', phone: '0987654321' },
+  const vendor = await prisma.contact.create({
+    data: { name: 'Test Vendor', email: 'vendor@test.com', phone: '0987654321' },
   });
 
-  const analytical = await prisma.analytical.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0000-000000000001',
+  const analytical = await prisma.analytical.create({
+    data: {
       name: 'Test Analytical',
       responsibleId: customer.id,
       startDate: new Date('2025-01-01'),
@@ -160,6 +122,21 @@ export async function seedTestDB() {
       analyticAccount: 'ANA-001',
     },
   });
+
+  const sequences = [
+    { name: 'so_number', prefix: 'S', yearScope: false },
+    { name: 'po_number', prefix: 'P', yearScope: false },
+    { name: 'invoice_reference', prefix: 'INV', yearScope: true },
+    { name: 'bill_reference', prefix: 'Bill', yearScope: true },
+    { name: 'je_entry_number', prefix: 'JE', yearScope: true },
+    { name: 'payment_number', prefix: 'PAY', yearScope: true },
+  ];
+
+  for (const seq of sequences) {
+    await prisma.sequence.create({
+      data: { name: seq.name, prefix: seq.prefix, value: 0, yearScope: seq.yearScope },
+    });
+  }
 
   return {
     admin,
@@ -185,7 +162,7 @@ export async function seedTestDB() {
 }
 
 export function generateToken(user: { id: string; role: string; email: string }): string {
-  return jwt.sign({ sub: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: 86400 });
+  return jwt.sign({ sub: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: 900 });
 }
 
 export { prisma };

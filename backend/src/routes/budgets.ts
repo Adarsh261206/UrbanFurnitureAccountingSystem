@@ -12,8 +12,10 @@ router.get('/', authorizeResource('budget', 'read'), listBudgets);
 router.get('/:id', authorizeResource('budget', 'read'), getBudget);
 router.post('/', authorizeResource('budget', 'create'), budgetCreateValidation, createBudget);
 router.put('/:id', authorizeResource('budget', 'update'), budgetUpdateValidation, updateBudget);
+router.put('/:id/confirm', authorizeResource('budget', 'confirm'), confirmBudget);
 router.post('/:id/confirm', authorizeResource('budget', 'confirm'), confirmBudget);
 router.post('/:id/revise', authorizeResource('budget', 'revise'), reviseBudget);
+router.put('/:id/cancel', authorizeResource('budget', 'cancel'), cancelBudget);
 router.post('/:id/cancel', authorizeResource('budget', 'cancel'), cancelBudget);
 router.post('/:id/archive', authorizeResource('budget', 'update'), archiveBudget);
 

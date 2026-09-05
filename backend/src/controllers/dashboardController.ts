@@ -1,55 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
-import { AppError } from '../utils/errors';
 
 export async function getDashboard(_req: Request, res: Response, next: NextFunction) {
   try {
-    const [
-      totalContacts,
-      totalProducts,
-      totalCustomers,
-      totalVendors,
-      pendingInvoices,
-      pendingBills,
-      draftSalesOrders,
-      draftPurchaseOrders,
-      draftBudgets,
-    ] = await Promise.all([
-      prisma.contact.count({ where: { deletedAt: null } }),
-      prisma.product.count({ where: { deletedAt: null } }),
-      prisma.customerInvoice.count({ where: { status: 'confirmed' } }),
-      prisma.vendorBill.count({ where: { status: 'confirmed' } }),
-      prisma.customerInvoice.findMany({
-        where: { status: 'confirmed', amountDue: { gt: 0 } },
-        select: { id: true, invoiceReference: true, amountDue: true, customer: { select: { name: true } } },
-        take: 10,
-      }),
-      prisma.vendorBill.findMany({
-        where: { status: 'confirmed', amountDue: { gt: 0 } },
-        select: { id: true, billReference: true, amountDue: true, vendor: { select: { name: true } } },
-        take: 10,
-      }),
+    const [draftSalesOrders, confirmedSalesOrders, totalSalesOrders] = await Promise.all([
       prisma.salesOrder.count({ where: { status: 'draft' } }),
-      prisma.purchaseOrder.count({ where: { status: 'draft' } }),
-      prisma.budget.count({ where: { status: 'draft' } }),
+      prisma.salesOrder.count({ where: { status: 'confirmed' } }),
+      prisma.salesOrder.count(),
     ]);
 
-    const totalPendingReceivables = pendingInvoices.reduce((sum, inv) => sum + Number(inv.amountDue), 0);
-    const totalPendingPayables = pendingBills.reduce((sum, bill) => sum + Number(bill.amountDue), 0);
+    const [draftPurchaseOrders, confirmedPurchaseOrders, totalPurchaseOrders] = await Promise.all([
+      prisma.purchaseOrder.count({ where: { status: 'draft' } }),
+      prisma.purchaseOrder.count({ where: { status: 'confirmed' } }),
+      prisma.purchaseOrder.count(),
+    ]);
+
+    const [draftBudgets, confirmedBudgets, totalBudgets] = await Promise.all([
+      prisma.budget.count({ where: { status: 'draft' } }),
+      prisma.budget.count({ where: { status: 'confirmed' } }),
+      prisma.budget.count(),
+    ]);
 
     res.json({
       data: {
-        contacts: totalContacts,
-        products: totalProducts,
-        openInvoices: totalCustomers,
-        openBills: totalVendors,
-        pendingInvoices,
-        pendingBills,
-        totalPendingReceivables,
-        totalPendingPayables,
-        draftSalesOrders,
-        draftPurchaseOrders,
-        draftBudgets,
+        sales: { draft: draftSalesOrders, confirmed: confirmedSalesOrders, total: totalSalesOrders },
+        purchase: { draft: draftPurchaseOrders, confirmed: confirmedPurchaseOrders, total: totalPurchaseOrders },
+        budgets: { draft: draftBudgets, confirmed: confirmedBudgets, total: totalBudgets },
       },
     });
   } catch (err) { next(err); }

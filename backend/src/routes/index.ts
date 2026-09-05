@@ -7,14 +7,14 @@ import { listCategories, getCategory, createCategory, updateCategory, deleteCate
 import { listAnalytics, getAnalytical, createAnalytical, updateAnalytical, deleteAnalytical } from '../controllers/analyticalController';
 import { listCOA, getCOA, createCOA, updateCOA, deleteCOA } from '../controllers/coaController';
 import { listJournals, getJournal, createJournal, updateJournal, deleteJournal } from '../controllers/journalController';
-import { listUsers, getUser, updateUser, deleteUser } from '../controllers/userController';
+import { listUsers, getUser, createUser, updateUser, deleteUser } from '../controllers/userController';
 import { contactCreateValidation, contactUpdateValidation } from '../validators/masterValidators';
 import { productCreateValidation, productUpdateValidation } from '../validators/masterValidators';
 import { categoryCreateValidation, categoryUpdateValidation } from '../validators/masterValidators';
 import { analyticalCreateValidation, analyticalUpdateValidation } from '../validators/masterValidators';
 import { coaCreateValidation, coaUpdateValidation } from '../validators/masterValidators';
 import { journalCreateValidation, journalUpdateValidation } from '../validators/masterValidators';
-import { userUpdateValidation } from '../validators/masterValidators';
+import { userCreateValidation, userUpdateValidation } from '../validators/masterValidators';
 
 const router = Router();
 
@@ -58,6 +58,7 @@ router.delete('/journals/:id', authorizeResource('journal', 'delete'), deleteJou
 
 router.get('/users', authorizeResource('user', 'read'), listUsers);
 router.get('/users/:id', authorizeResource('user', 'read'), getUser);
+router.post('/users', authorizeResource('user', 'create'), userCreateValidation, createUser);
 router.put('/users/:id', authorizeResource('user', 'update'), userUpdateValidation, updateUser);
 router.delete('/users/:id', authorizeResource('user', 'delete'), deleteUser);
 

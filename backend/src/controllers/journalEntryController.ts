@@ -52,6 +52,21 @@ export async function createJournalEntry(req: Request, res: Response, next: Next
       throw new AppError('VALIDATION_ERROR', 'Journal entry must have at least one line', 400);
     }
 
+    const totalDebit = lines.reduce((sum: number, l: any) => sum + (parseFloat(l.debit) || 0), 0);
+    const totalCredit = lines.reduce((sum: number, l: any) => sum + (parseFloat(l.credit) || 0), 0);
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      throw new AppError('UNBALANCED_JOURNAL', 'Total debit must equal total credit', 400);
+    }
+
+    for (const line of lines) {
+      if (parseFloat(line.debit) < 0 || parseFloat(line.credit) < 0) {
+        throw new AppError('NEGATIVE_AMOUNT', 'Debit and credit must be non-negative', 400);
+      }
+      if ((parseFloat(line.debit) || 0) <= 0 && (parseFloat(line.credit) || 0) <= 0) {
+        throw new AppError('ZERO_AMOUNT', 'Each line must have a non-zero debit or credit', 400);
+      }
+    }
+
     const entryNumber = await generateSequence('JE');
 
     const entry = await prisma.journalEntry.create({
@@ -61,7 +76,7 @@ export async function createJournalEntry(req: Request, res: Response, next: Next
         journalId,
         sourceDocumentType: sourceDocumentType || null,
         sourceDocumentId: sourceDocumentId || null,
-        status: 'draft',
+        status: 'posted',
         createdBy: req.user!.id,
         lines: {
           create: lines.map((line: any, index: number) => ({
@@ -89,7 +104,7 @@ export async function postJournalEntry(req: Request, res: Response, next: NextFu
     const totalDebit = entry.lines.reduce((sum, l) => sum + Number(l.debit), 0);
     const totalCredit = entry.lines.reduce((sum, l) => sum + Number(l.credit), 0);
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
-      throw new AppError('IMBALANCED_ENTRY', 'Total debit must equal total credit', 400);
+      throw new AppError('UNBALANCED_JOURNAL', 'Total debit must equal total credit', 400);
     }
 
     const updated = await prisma.journalEntry.update({

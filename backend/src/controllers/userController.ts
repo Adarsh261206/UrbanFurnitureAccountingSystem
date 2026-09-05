@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
+import { authConfig } from '../config/auth';
 
 const userSelect = {
   id: true,
@@ -33,6 +35,33 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: userSelect });
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
     res.json({ data: user });
+  } catch (err) { next(err); }
+}
+
+export async function createUser(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { name, loginId, email, password, role } = req.body;
+
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ loginId }, { email }] },
+    });
+    if (existingUser) {
+      throw new AppError('USER_EXISTS', 'User with this login ID or email already exists', 409, 'loginId');
+    }
+
+    const passwordHash = await bcrypt.hash(password, authConfig.bcryptRounds);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        loginId,
+        email,
+        passwordHash,
+        role: role || 'user',
+      },
+      select: userSelect,
+    });
+
+    res.status(201).json({ data: user });
   } catch (err) { next(err); }
 }
 

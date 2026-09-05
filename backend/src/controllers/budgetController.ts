@@ -24,7 +24,17 @@ export async function listBudgets(req: Request, res: Response, next: NextFunctio
       prisma.budget.count({ where }),
     ]);
 
-    res.json({ data, total, page, limit });
+    const dataWithAchievement = await Promise.all(
+      data.map(async (budget) => {
+        const achievedAmount = await calculateAchievement(budget);
+        const committedAmount = Number(budget.committedAmount) || 0;
+        const amountToAchieve = committedAmount > 0 ? committedAmount - achievedAmount : 0;
+        const achievedPercentage = committedAmount > 0 ? Math.round((achievedAmount / committedAmount) * 100) : 0;
+        return { ...budget, achievedAmount, achievedPercentage, amountToAchieve };
+      })
+    );
+
+    res.json({ data: dataWithAchievement, total, page, limit });
   } catch (err) { next(err); }
 }
 
@@ -62,7 +72,7 @@ async function calculateAchievement(budget: any): Promise<number> {
     const invoices = await prisma.customerInvoice.findMany({
       where: {
         status: { in: ['confirmed', 'paid'] },
-        date: { gte: startDate, lte: endDate },
+        invoiceDate: { gte: startDate, lte: endDate },
         invoiceLines: {
           some: { budgetAnalyticId: analyticalId },
         },
@@ -79,7 +89,7 @@ async function calculateAchievement(budget: any): Promise<number> {
     const bills = await prisma.vendorBill.findMany({
       where: {
         status: { in: ['confirmed', 'paid'] },
-        date: { gte: startDate, lte: endDate },
+        billDate: { gte: startDate, lte: endDate },
         billLines: {
           some: { budgetAnalyticId: analyticalId },
         },
@@ -151,9 +161,15 @@ export async function confirmBudget(req: Request, res: Response, next: NextFunct
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
     if (budget.status !== 'draft') throw new AppError('INVALID_STATUS', 'Only draft budgets can be confirmed', 400);
 
+    const rawAmount = req.body && (req.body.committedAmount !== undefined ? req.body.committedAmount : req.body.committed_amount);
+    if (rawAmount === undefined || rawAmount === null || rawAmount === '') {
+      throw new AppError('AMOUNT_REQUIRED', 'Committed amount is required to confirm a budget', 400);
+    }
+    const committedAmount = parseFloat(rawAmount);
+
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
-      data: { status: 'confirmed' },
+      data: { status: 'confirmed', committedAmount },
     });
 
     res.json({ data: updated });
@@ -166,22 +182,36 @@ export async function reviseBudget(req: Request, res: Response, next: NextFuncti
     if (!budget) throw new AppError('NOT_FOUND', 'Budget not found', 404);
     if (budget.status !== 'confirmed') throw new AppError('INVALID_STATUS', 'Only confirmed budgets can be revised', 400);
 
-    const revised = await prisma.budget.create({
-      data: {
-        name: `${budget.name} (Revised)`,
-        responsibleId: budget.responsibleId,
-        startDate: budget.startDate,
-        endDate: budget.endDate,
-        type: budget.type,
-        analyticalId: budget.analyticalId,
-        committedAmount: req.body.committedAmount ? parseFloat(req.body.committedAmount) : budget.committedAmount,
-        status: 'revised',
-        originalBudgetId: budget.id,
-      },
-      include: { responsible: true, analytical: true },
-    });
+    const rawAmount = req.body && (req.body.committedAmount !== undefined ? req.body.committedAmount : req.body.committed_amount);
+    const committedAmount = rawAmount !== undefined && rawAmount !== null && rawAmount !== ''
+      ? parseFloat(rawAmount)
+      : budget.committedAmount;
 
-    res.status(201).json({ data: revised });
+    const result = await prisma.$transaction(async (tx) => {
+      const revised = await tx.budget.create({
+        data: {
+          name: `${budget.name} (Revised)`,
+          responsibleId: budget.responsibleId,
+          startDate: budget.startDate,
+          endDate: budget.endDate,
+          type: budget.type,
+          analyticalId: budget.analyticalId,
+          committedAmount,
+          status: 'draft',
+          originalBudgetId: budget.id,
+        },
+        include: { responsible: true, analytical: true },
+      });
+
+      await tx.budget.update({
+        where: { id: budget.id },
+        data: { status: 'revised' },
+      });
+
+      return revised;
+    }, { isolationLevel: 'Serializable' });
+
+    res.status(201).json({ data: result });
   } catch (err) { next(err); }
 }
 
@@ -193,7 +223,7 @@ export async function cancelBudget(req: Request, res: Response, next: NextFuncti
 
     const updated = await prisma.budget.update({
       where: { id: req.params.id },
-      data: { status: 'cancelled' },
+      data: { status: 'cancelled', isArchived: true },
     });
 
     res.json({ data: updated });

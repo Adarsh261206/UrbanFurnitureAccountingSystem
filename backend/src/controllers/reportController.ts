@@ -3,8 +3,21 @@ import prisma from '../config/database';
 
 export async function getProfitAndLoss(req: Request, res: Response, next: NextFunction) {
   try {
-    const fromDate = req.query.from ? new Date(req.query.from as string) : new Date(new Date().getFullYear(), 0, 1);
-    const toDate = req.query.to ? new Date(req.query.to as string) : new Date();
+    let fromDate: Date;
+    let toDate: Date;
+
+    if (req.query.year) {
+      const year = parseInt(req.query.year as string);
+      fromDate = new Date(year, 0, 1);
+      toDate = new Date(year, 11, 31, 23, 59, 59);
+    } else if (req.query.from && req.query.to) {
+      fromDate = new Date(req.query.from as string);
+      toDate = new Date(req.query.to as string);
+    } else {
+      const now = new Date();
+      fromDate = new Date(now.getFullYear(), 0, 1);
+      toDate = now;
+    }
 
     const [incomeAccounts, expenseAccounts] = await Promise.all([
       prisma.chartOfAccount.findMany({ where: { accountType: 'income' } }),
@@ -61,12 +74,16 @@ export async function getProfitAndLoss(req: Request, res: Response, next: NextFu
 
     res.json({
       data: {
-        period: { from: fromDate, to: toDate },
-        income: Object.values(incomeByAccount),
-        totalIncome,
-        expenses: Object.values(expenseByAccount),
-        totalExpenses,
-        netProfit,
+        year: req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear(),
+        income: {
+          items: Object.values(incomeByAccount).map((a) => ({ account_name: a.name, amount: a.amount })),
+          total: totalIncome,
+        },
+        expenses: {
+          items: Object.values(expenseByAccount).map((a) => ({ account_name: a.name, amount: a.amount })),
+          total: totalExpenses,
+        },
+        net_income: netProfit,
       },
     });
   } catch (err) { next(err); }
@@ -74,15 +91,25 @@ export async function getProfitAndLoss(req: Request, res: Response, next: NextFu
 
 export async function getBalanceSheet(req: Request, res: Response, next: NextFunction) {
   try {
-    const asOfDate = req.query.asOf ? new Date(req.query.asOf as string) : new Date();
+    let asOfDate: Date;
 
-    const [assetAccounts, liabilityAccounts, capitalAccounts] = await Promise.all([
+    if (req.query.year) {
+      const year = parseInt(req.query.year as string);
+      asOfDate = new Date(year, 11, 31, 23, 59, 59);
+    } else if (req.query.asOf) {
+      asOfDate = new Date(req.query.asOf as string);
+    } else {
+      asOfDate = new Date();
+    }
+
+    const [assetAccounts, liabilityAccounts, capitalAccounts, incomeAccounts] = await Promise.all([
       prisma.chartOfAccount.findMany({ where: { accountType: { in: ['asset', 'bank', 'cash'] } } }),
       prisma.chartOfAccount.findMany({ where: { accountType: 'liability' } }),
       prisma.chartOfAccount.findMany({ where: { accountType: 'capital' } }),
+      prisma.chartOfAccount.findMany({ where: { accountType: 'income' } }),
     ]);
 
-    const allAccountIds = [...assetAccounts, ...liabilityAccounts, ...capitalAccounts].map((a) => a.id);
+    const allAccountIds = [...assetAccounts, ...liabilityAccounts, ...capitalAccounts, ...incomeAccounts].map((a) => a.id);
 
     const lines = await prisma.journalEntryLine.findMany({
       where: {
@@ -96,7 +123,7 @@ export async function getBalanceSheet(req: Request, res: Response, next: NextFun
     });
 
     const accountBalances: Record<string, { name: string; type: string; balance: number }> = {};
-    for (const account of [...assetAccounts, ...liabilityAccounts, ...capitalAccounts]) {
+    for (const account of [...assetAccounts, ...liabilityAccounts, ...capitalAccounts, ...incomeAccounts]) {
       accountBalances[account.id] = { name: account.name, type: account.accountType, balance: 0 };
     }
 
@@ -116,25 +143,104 @@ export async function getBalanceSheet(req: Request, res: Response, next: NextFun
       .reduce((s, a) => s + a.balance, 0);
 
     const totalLiabilities = Object.values(accountBalances)
-      .filter((a) => a.type === 'liability')
+      .filter((a) => ['liability', 'capital', 'income'].includes(a.type))
       .reduce((s, a) => s + a.balance, 0);
 
-    const totalCapital = Object.values(accountBalances)
-      .filter((a) => a.type === 'capital')
-      .reduce((s, a) => s + a.balance, 0);
-
-    const balanceCheck = Math.abs(totalAssets - (totalLiabilities + totalCapital)) < 0.01;
+    const balanceCheck = Math.abs(totalAssets - totalLiabilities) < 0.01;
 
     res.json({
       data: {
-        asOf: asOfDate,
-        assets: Object.values(accountBalances).filter((a) => ['asset', 'bank', 'cash'].includes(a.type)),
-        totalAssets,
-        liabilities: Object.values(accountBalances).filter((a) => a.type === 'liability'),
-        totalLiabilities,
-        capital: Object.values(accountBalances).filter((a) => a.type === 'capital'),
-        totalCapital,
-        balanceCheck,
+        year: req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear(),
+        assets: {
+          items: Object.values(accountBalances)
+            .filter((a) => ['asset', 'bank', 'cash'].includes(a.type))
+            .map((a) => ({ account_name: a.name, amount: a.balance })),
+          total: totalAssets,
+        },
+        liabilities: {
+          items: Object.values(accountBalances)
+            .filter((a) => ['liability', 'capital', 'income'].includes(a.type))
+            .map((a) => ({ account_name: a.name, amount: a.balance })),
+          total: totalLiabilities,
+        },
+        balance_check: balanceCheck,
+      },
+    });
+  } catch (err) { next(err); }
+}
+
+export async function getBudgetReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const type = req.query.type as string | undefined;
+
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31);
+
+    const where: any = {
+      startDate: { gte: startDate },
+      endDate: { lte: endDate },
+    };
+    if (type) where.type = type;
+
+    const budgets = await prisma.budget.findMany({
+      where,
+      include: { responsible: true, analytical: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const budgetsReport = await Promise.all(
+      budgets.map(async (budget) => {
+        let achievedAmount = 0;
+
+        if (budget.type === 'income') {
+          const invoices = await prisma.customerInvoice.findMany({
+            where: {
+              status: { in: ['confirmed', 'paid'] },
+              invoiceDate: { gte: new Date(budget.startDate), lte: new Date(budget.endDate) },
+              invoiceLines: { some: { budgetAnalyticId: budget.analyticalId } },
+            },
+            include: { invoiceLines: { where: { budgetAnalyticId: budget.analyticalId } } },
+          });
+          achievedAmount = invoices.reduce((sum, inv) => {
+            return sum + inv.invoiceLines.reduce((ls, l) => ls + Number(l.total), 0);
+          }, 0);
+        } else {
+          const bills = await prisma.vendorBill.findMany({
+            where: {
+              status: { in: ['confirmed', 'paid'] },
+              billDate: { gte: new Date(budget.startDate), lte: new Date(budget.endDate) },
+              billLines: { some: { budgetAnalyticId: budget.analyticalId } },
+            },
+            include: { billLines: { where: { budgetAnalyticId: budget.analyticalId } } },
+          });
+          achievedAmount = bills.reduce((sum, bill) => {
+            return sum + bill.billLines.reduce((ls, l) => ls + Number(l.total), 0);
+          }, 0);
+        }
+
+        const committedAmount = Number(budget.committedAmount) || 0;
+        const achievedPercentage = committedAmount > 0 ? Math.round((achievedAmount / committedAmount) * 100) : 0;
+        const amountToAchieve = committedAmount > 0 ? committedAmount - achievedAmount : 0;
+
+        return {
+          id: budget.id,
+          name: budget.name,
+          start_date: budget.startDate,
+          end_date: budget.endDate,
+          type: budget.type,
+          committed_amount: Number(budget.committedAmount) || 0,
+          achieved_amount: achievedAmount,
+          achieved_percentage: achievedPercentage,
+          amount_to_achieve: amountToAchieve,
+          status: budget.status,
+        };
+      })
+    );
+
+    res.json({
+      data: {
+        budgets: budgetsReport,
       },
     });
   } catch (err) { next(err); }

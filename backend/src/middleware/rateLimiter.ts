@@ -1,6 +1,13 @@
+import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 
-export const loginLimiter = rateLimit({
+const isTest = process.env.NODE_ENV === 'test';
+
+function noopMiddleware(_req: Request, _res: Response, next: NextFunction) {
+  next();
+}
+
+export const loginLimiter = isTest ? noopMiddleware : rateLimit({
   windowMs: 60 * 1000,
   max: 5,
   message: {
@@ -15,7 +22,7 @@ export const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export const signupLimiter = rateLimit({
+export const signupLimiter = isTest ? noopMiddleware : rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
   message: {
@@ -30,7 +37,7 @@ export const signupLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export const apiLimiter = rateLimit({
+export const apiLimiter = isTest ? noopMiddleware : rateLimit({
   windowMs: 60 * 1000,
   max: 100,
   message: {

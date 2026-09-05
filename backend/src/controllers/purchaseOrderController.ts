@@ -51,7 +51,11 @@ export async function createPurchaseOrder(req: Request, res: Response, next: Nex
     }
 
     const poNumber = await generateSequence('PO');
-    const total = lines.reduce((sum: number, l: any) => sum + parseFloat(l.qty) * parseFloat(l.unitPrice), 0);
+    const total = lines.reduce((sum: number, l: any) => {
+      const qty = parseFloat(l.qty || l.quantity);
+      const price = parseFloat(l.unitPrice || l.unit_price);
+      return sum + qty * price;
+    }, 0);
 
     const order = await prisma.purchaseOrder.create({
       data: {
@@ -64,12 +68,12 @@ export async function createPurchaseOrder(req: Request, res: Response, next: Nex
         purchaseOrderLines: {
           create: lines.map((line: any, index: number) => ({
             srNo: index + 1,
-            productId: line.productId,
-            chartOfAccountId: line.accountId,
-            budgetAnalyticId: line.analyticId || null,
-            qty: parseFloat(line.qty),
-            unitPrice: parseFloat(line.unitPrice),
-            total: parseFloat(line.qty) * parseFloat(line.unitPrice),
+            productId: line.productId || line.product_id,
+            chartOfAccountId: line.accountId || line.chart_of_account_id,
+            budgetAnalyticId: line.analyticId || line.budget_analytic_id || null,
+            qty: parseFloat(line.qty || line.quantity),
+            unitPrice: parseFloat(line.unitPrice || line.unit_price),
+            total: parseFloat(line.qty || line.quantity) * parseFloat(line.unitPrice || line.unit_price),
           })),
         },
       },
@@ -113,16 +117,64 @@ export async function confirmPurchaseOrder(req: Request, res: Response, next: Ne
           createdBy: req.user!.id,
           lines: {
             create: [
-              { srNo: 1, accountId: purchaseExpense.id, debit: Number(order.total), credit: 0 },
-              { srNo: 2, accountId: apAccount.id, debit: 0, credit: Number(order.total) },
+              { srNo: 1, accountId: purchaseExpense.id, partnerId: order.vendorId, debit: Number(order.total), credit: 0 },
+              { srNo: 2, accountId: apAccount.id, partnerId: order.vendorId, debit: 0, credit: Number(order.total) },
             ],
           },
         },
       });
 
       return updated;
-    });
+    }, { isolationLevel: 'Serializable' });
 
     res.json({ data: result });
+  } catch (err) { next(err); }
+}
+
+export async function updatePurchaseOrder(req: Request, res: Response, next: NextFunction) {
+  try {
+    const order = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!order) throw new AppError('NOT_FOUND', 'Purchase order not found', 404);
+    if (order.status !== 'draft') throw new AppError('INVALID_STATUS', 'Only draft purchase orders can be updated', 400);
+
+    const { vendorId, date, billDate, dueDate, lines } = req.body;
+    const updateData: any = {};
+    if (vendorId !== undefined) updateData.vendorId = vendorId;
+    if (date !== undefined) updateData.date = new Date(date);
+    if (billDate !== undefined) updateData.billDate = new Date(billDate);
+    if (dueDate !== undefined) updateData.dueDate = new Date(dueDate);
+
+    if (lines !== undefined) {
+      if (!Array.isArray(lines) || lines.length === 0) {
+        throw new AppError('VALIDATION_ERROR', 'Purchase order must have at least one line', 400);
+      }
+      const total = lines.reduce((sum: number, l: any) => {
+        const qty = parseFloat(l.qty || l.quantity);
+        const price = parseFloat(l.unitPrice || l.unit_price);
+        return sum + qty * price;
+      }, 0);
+      updateData.total = total;
+      await prisma.purchaseOrderLine.deleteMany({ where: { purchaseOrderId: req.params.id } });
+      await prisma.purchaseOrderLine.createMany({
+        data: lines.map((line: any, index: number) => ({
+          purchaseOrderId: req.params.id,
+          srNo: index + 1,
+          productId: line.productId || line.product_id,
+          chartOfAccountId: line.accountId || line.chart_of_account_id,
+          budgetAnalyticId: line.analyticId || line.budget_analytic_id || null,
+          qty: parseFloat(line.qty || line.quantity),
+          unitPrice: parseFloat(line.unitPrice || line.unit_price),
+          total: parseFloat(line.qty || line.quantity) * parseFloat(line.unitPrice || line.unit_price),
+        })),
+      });
+    }
+
+    const updated = await prisma.purchaseOrder.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: { purchaseOrderLines: true },
+    });
+
+    res.json({ data: updated });
   } catch (err) { next(err); }
 }

@@ -15,7 +15,15 @@ export async function listPayments(req: Request, res: Response, next: NextFuncti
     if (req.query.vendorBillId) where.vendorBillId = req.query.vendorBillId;
 
     if (req.user!.role === 'user') {
-      where.createdBy = req.user!.id;
+      const contact = await prisma.contact.findFirst({ where: { email: req.user!.email } });
+      if (!contact) {
+        return res.json({ data: [], total: 0, page, limit });
+      }
+      const ownInvoiceIds = await prisma.customerInvoice.findMany({
+        where: { customerId: contact.id },
+        select: { id: true },
+      });
+      where.invoiceId = { in: ownInvoiceIds.map((i) => i.id) };
     }
 
     const [data, total] = await Promise.all([
@@ -40,8 +48,14 @@ export async function getPayment(req: Request, res: Response, next: NextFunction
       include: { invoice: true, vendorBill: true, journalEntry: true },
     });
     if (!payment) throw new AppError('NOT_FOUND', 'Payment not found', 404);
-    if (req.user!.role === 'user' && payment.createdBy !== req.user!.id) {
-      throw new AppError('FORBIDDEN', 'You do not have access to this payment', 403);
+    if (req.user!.role === 'user') {
+      const contact = await prisma.contact.findFirst({ where: { email: req.user!.email } });
+      const ownInvoiceIds = contact
+        ? (await prisma.customerInvoice.findMany({ where: { customerId: contact.id }, select: { id: true } })).map((i) => i.id)
+        : [];
+      if (!payment.invoiceId || !ownInvoiceIds.includes(payment.invoiceId)) {
+        throw new AppError('FORBIDDEN', 'You do not have access to this payment', 403);
+      }
     }
     res.json({ data: payment });
   } catch (err) { next(err); }
@@ -114,6 +128,10 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
           throw new AppError('INVALID_STATUS', 'Invoice must be confirmed before payment', 400);
         }
 
+        if (Number(payment.amount) > Number(invoice.amountDue)) {
+          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount cannot exceed amount due', 400);
+        }
+
         const arAccount = await tx.chartOfAccount.findFirst({ where: { name: 'Accounts Receivable' } });
         if (!arAccount) throw new AppError('CONFIG_ERROR', 'Accounts Receivable account not found', 500);
 
@@ -128,14 +146,14 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
             createdBy: req.user!.id,
             lines: {
               create: [
-                { srNo: 1, accountId: targetAccount.id, debit: Number(payment.amount), credit: 0 },
-                { srNo: 2, accountId: arAccount.id, debit: 0, credit: Number(payment.amount) },
+                { srNo: 1, accountId: targetAccount.id, partnerId: invoice.customerId, debit: Number(payment.amount), credit: 0 },
+                { srNo: 2, accountId: arAccount.id, partnerId: invoice.customerId, debit: 0, credit: Number(payment.amount) },
               ],
             },
           },
         });
 
-        const newAmountDue = Math.max(0, Number(invoice.amountDue) - Number(payment.amount));
+        const newAmountDue = Number(invoice.amountDue) - Number(payment.amount);
         await tx.customerInvoice.update({
           where: { id: payment.invoiceId },
           data: { amountDue: newAmountDue, status: newAmountDue <= 0 ? 'paid' : invoice.status },
@@ -146,6 +164,10 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
         const bill = await tx.vendorBill.findUnique({ where: { id: payment.vendorBillId } });
         if (!bill || bill.status !== 'confirmed') {
           throw new AppError('INVALID_STATUS', 'Bill must be confirmed before payment', 400);
+        }
+
+        if (Number(payment.amount) > Number(bill.amountDue)) {
+          throw new AppError('OVERPAYMENT_NOT_ALLOWED', 'Payment amount cannot exceed amount due', 400);
         }
 
         const apAccount = await tx.chartOfAccount.findFirst({ where: { name: 'Accounts Payable' } });
@@ -162,14 +184,14 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
             createdBy: req.user!.id,
             lines: {
               create: [
-                { srNo: 1, accountId: apAccount.id, debit: Number(payment.amount), credit: 0 },
-                { srNo: 2, accountId: targetAccount.id, debit: 0, credit: Number(payment.amount) },
+                { srNo: 1, accountId: apAccount.id, partnerId: bill.vendorId, debit: Number(payment.amount), credit: 0 },
+                { srNo: 2, accountId: targetAccount.id, partnerId: bill.vendorId, debit: 0, credit: Number(payment.amount) },
               ],
             },
           },
         });
 
-        const newAmountDue = Math.max(0, Number(bill.amountDue) - Number(payment.amount));
+        const newAmountDue = Number(bill.amountDue) - Number(payment.amount);
         await tx.vendorBill.update({
           where: { id: payment.vendorBillId },
           data: { amountDue: newAmountDue, status: newAmountDue <= 0 ? 'paid' : bill.status },
@@ -182,7 +204,7 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
       });
 
       return updated;
-    });
+    }, { isolationLevel: 'Serializable' });
 
     res.json({ data: result });
   } catch (err) { next(err); }

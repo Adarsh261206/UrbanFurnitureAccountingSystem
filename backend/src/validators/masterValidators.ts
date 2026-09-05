@@ -60,6 +60,7 @@ export const analyticalCreateValidation = [
   body('toDate').isISO8601().withMessage('Valid to date is required'),
   body('endDate').isISO8601().withMessage('Valid end date is required'),
   body('analyticAccount').trim().notEmpty().withMessage('Analytic account is required'),
+  body('analytical_account').optional().trim().notEmpty().withMessage('Analytic account is required'),
   validate,
 ];
 
@@ -70,6 +71,7 @@ export const analyticalUpdateValidation = [
   body('toDate').optional().isISO8601().withMessage('Valid to date is required'),
   body('endDate').optional().isISO8601().withMessage('Valid end date is required'),
   body('analyticAccount').optional().trim().notEmpty().withMessage('Analytic account cannot be empty'),
+  body('analytical_account').optional().trim().notEmpty().withMessage('Analytic account cannot be empty'),
   validate,
 ];
 
@@ -106,5 +108,24 @@ export const userUpdateValidation = [
   body('email').optional().isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('role').optional().isIn(['admin', 'accountant', 'user']).withMessage('Invalid role'),
   body('isActive').optional().isBoolean().withMessage('isActive must be boolean'),
+  validate,
+];
+
+export const userCreateValidation = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('loginId').trim().isLength({ min: 6, max: 12 }).withMessage('Login ID must be 6-12 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('password').custom((value) => {
+    if (typeof value !== 'string' || value.length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+    if (!/[a-z]/.test(value)) throw new Error('Password must contain at least one lowercase letter');
+    if (!/[A-Z]/.test(value)) throw new Error('Password must contain at least one uppercase letter');
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=;'[\]\\/]/.test(value)) {
+      throw new Error('Password must contain at least one special character');
+    }
+    return true;
+  }),
+  body('role').optional().isIn(['admin', 'accountant', 'user']).withMessage('Invalid role'),
   validate,
 ];

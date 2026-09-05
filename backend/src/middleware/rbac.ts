@@ -43,16 +43,9 @@ const permissions: RolePermissions = {
     report: ['read'],
     dashboard: ['read'],
   },
-  user: {
-    contact: ['read'],
-    product: ['read'],
-    category: ['read'],
-    salesOrder: ['read'],
-    customerInvoice: ['read'],
-    purchaseOrder: ['read'],
-    vendorBill: ['read'],
-    report: ['read'],
-    dashboard: ['read'],
+user: {
+    customerInvoice: ['read', 'pay', 'print', 'send'],
+    payment: ['read'],
   },
 };
 

@@ -82,6 +82,25 @@ async function main() {
     });
   }
 
+  const currentYear = new Date().getFullYear();
+  const sequences = [
+    { name: 'so_number', prefix: 'S', yearScope: false, year: 0 },
+    { name: 'po_number', prefix: 'P', yearScope: false, year: 0 },
+    { name: 'invoice_number', prefix: 'INV', yearScope: false, year: 0 },
+    { name: 'invoice_reference', prefix: 'INV', yearScope: true, year: currentYear },
+    { name: 'bill_reference', prefix: 'Bill', yearScope: true, year: currentYear },
+    { name: 'je_entry_number', prefix: 'JE', yearScope: true, year: currentYear },
+    { name: 'payment_number', prefix: 'PAY', yearScope: true, year: currentYear },
+  ];
+
+  for (const seq of sequences) {
+    await prisma.sequence.upsert({
+      where: { name_year: { name: seq.name, year: seq.year } },
+      update: {},
+      create: { name: seq.name, prefix: seq.prefix, value: 0, yearScope: seq.yearScope, year: seq.year },
+    });
+  }
+
   console.log('Seed completed successfully');
 }
 

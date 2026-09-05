@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../utils/errors';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class GenericController {
   private model: any;
   private modelName: string;
@@ -47,6 +49,9 @@ export class GenericController {
   }
 
   async getById(id: string) {
+    if (!UUID_REGEX.test(id)) {
+      throw new AppError('VALIDATION_ERROR', `Invalid ID format for ${this.modelName}`, 400);
+    }
     const item = await this.model.findFirst({
       where: { id, deletedAt: null },
       ...(this.selectFields ? { select: this.selectFields } : {}),
@@ -65,6 +70,9 @@ export class GenericController {
   }
 
   async update(id: string, data: any) {
+    if (!UUID_REGEX.test(id)) {
+      throw new AppError('VALIDATION_ERROR', `Invalid ID format for ${this.modelName}`, 400);
+    }
     await this.getById(id);
     const item = await this.model.update({
       where: { id },
@@ -75,6 +83,9 @@ export class GenericController {
   }
 
   async softDelete(id: string) {
+    if (!UUID_REGEX.test(id)) {
+      throw new AppError('VALIDATION_ERROR', `Invalid ID format for ${this.modelName}`, 400);
+    }
     await this.getById(id);
     await this.model.update({
       where: { id },

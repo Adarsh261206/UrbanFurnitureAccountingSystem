@@ -1,0 +1,25 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+(async () => {
+  await prisma.payment.deleteMany();
+  await prisma.customerInvoiceLine.deleteMany();
+  await prisma.customerInvoice.deleteMany();
+  await prisma.vendorBillLine.deleteMany();
+  await prisma.vendorBill.deleteMany();
+  await prisma.salesOrderLine.deleteMany();
+  await prisma.salesOrder.deleteMany();
+  await prisma.purchaseOrderLine.deleteMany();
+  await prisma.purchaseOrder.deleteMany();
+  await prisma.journalEntryLine.deleteMany();
+  await prisma.journalEntry.deleteMany();
+  await prisma.budget.deleteMany();
+  await prisma.sequence.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.contact.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.analytical.deleteMany();
+  await prisma.chartOfAccount.deleteMany();
+  await prisma.journal.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('All tables cleared');
+})().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

@@ -50,12 +50,12 @@ describe('RBAC Enforcement', () => {
       expect(res.body.error.code).toBe('FORBIDDEN');
     });
 
-    it('user should be able to read contacts', async () => {
+    it('user should NOT be able to read contacts', async () => {
       const res = await request(app)
         .get('/api/v1/contacts')
         .set('Cookie', [`auth_token=${userToken}`]);
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
     });
 
     it('user should NOT be able to update contacts', async () => {
@@ -137,17 +137,26 @@ describe('RBAC Enforcement', () => {
   });
 
   describe('Payment endpoints', () => {
-    it('user should NOT be able to access payments', async () => {
+    it('user should be able to read own payments', async () => {
       const res = await request(app)
         .get('/api/v1/payments')
         .set('Cookie', [`auth_token=${userToken}`]);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('user should NOT be able to create payments', async () => {
+      const res = await request(app)
+        .post('/api/v1/payments')
+        .set('Cookie', [`auth_token=${userToken}`])
+        .send({ invoiceId: '00000000-0000-0000-0000-000000000000', amount: 100, paymentVia: 'bank' });
 
       expect(res.status).toBe(403);
     });
   });
 
   describe('Dashboard endpoints', () => {
-    it('all roles should be able to access dashboard', async () => {
+    it('admin and accountant should access dashboard, user should not', async () => {
       const adminRes = await request(app)
         .get('/api/v1/dashboard')
         .set('Cookie', [`auth_token=${adminToken}`]);
@@ -161,7 +170,7 @@ describe('RBAC Enforcement', () => {
       const userRes = await request(app)
         .get('/api/v1/dashboard')
         .set('Cookie', [`auth_token=${userToken}`]);
-      expect(userRes.status).toBe(200);
+      expect(userRes.status).toBe(403);
     });
   });
 

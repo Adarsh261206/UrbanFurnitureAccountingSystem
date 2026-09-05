@@ -7,6 +7,11 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
-  setupFilesAfterEnv: [],
   testTimeout: 30000,
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!uuid/)',
+  ],
 };
