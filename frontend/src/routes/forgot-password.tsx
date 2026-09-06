@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/authService";
 import { errorMessage } from "@/lib/api/errors";
+import { validateEmail } from "@/lib/validation";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -37,10 +38,14 @@ function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (submitting) return;
+    const nextError = validateEmail(email);
+    setEmailError(nextError);
+    if (nextError) return;
     setSubmitting(true);
     setError(null);
     setMessage(null);
@@ -73,8 +78,19 @@ function ForgotPasswordPage() {
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError(null);
+            }}
+            onBlur={() => setEmailError(validateEmail(email))}
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? "email-error" : undefined}
           />
+          {emailError ? (
+            <p id="email-error" className="text-xs font-medium text-destructive">
+              {emailError}
+            </p>
+          ) : null}
         </div>
         {message ? (
           <p role="status" className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">

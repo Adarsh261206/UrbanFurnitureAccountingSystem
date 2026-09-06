@@ -69,6 +69,7 @@ function Page() {
   const [endDate, setEndDate] = useState("");
   const [analyticAccount, setAnalyticAccount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [endDateError, setEndDateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (record) {
@@ -124,7 +125,7 @@ function Page() {
           title="Analytical account not found"
           description="This analytical account does not exist or has been removed."
           action={
-            <Button variant="outline" onClick={() => navigate({ to: "/analyticals/new" })}>
+            <Button variant="outline" onClick={() => navigate({ to: "/analyticals" })}>
               Back to analyticals
             </Button>
           }
@@ -154,7 +155,13 @@ function Page() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (canSubmit) mutation.mutate();
+          setEndDateError(null);
+          if (!canSubmit) return;
+          if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+            setEndDateError("End date cannot be before start date.");
+            return;
+          }
+          mutation.mutate();
         }}
       >
         <FormSection title="Analytical account">
@@ -181,7 +188,10 @@ function Page() {
                 id="start_date"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setEndDateError(null);
+                }}
                 required
               />
             </Field>
@@ -190,16 +200,30 @@ function Page() {
                 id="to_date"
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setEndDateError(null);
+                }}
                 required
               />
             </Field>
-            <Field label="End date" htmlFor="end_date" required>
+            <Field
+              label="End date"
+              htmlFor="end_date"
+              required
+              error={endDateError}
+              errorId="end_date-error"
+            >
               <Input
                 id="end_date"
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setEndDateError(null);
+                }}
+                aria-invalid={Boolean(endDateError)}
+                aria-describedby={endDateError ? "end_date-error" : undefined}
                 required
               />
             </Field>
@@ -217,11 +241,7 @@ function Page() {
         <ErrorBanner message={error} />
 
         <FormActions>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate({ to: "/analyticals/new" })}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate({ to: "/analyticals" })}>
             Back
           </Button>
           <Button type="submit" disabled={!canSubmit || mutation.isPending}>

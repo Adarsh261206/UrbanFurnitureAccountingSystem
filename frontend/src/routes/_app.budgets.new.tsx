@@ -55,6 +55,7 @@ function Page() {
   const [type, setType] = useState<BudgetType | "">("");
   const [analyticalId, setAnalyticalId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [endDateError, setEndDateError] = useState<string | null>(null);
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all-for-select"],
@@ -108,7 +109,13 @@ function Page() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (canSubmit) mutation.mutate();
+          setEndDateError(null);
+          if (!canSubmit) return;
+          if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+            setEndDateError("End date cannot be before start date.");
+            return;
+          }
+          mutation.mutate();
         }}
       >
         <FormSection title="Budget details">
@@ -160,16 +167,30 @@ function Page() {
                 id="start_date"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setEndDateError(null);
+                }}
                 required
               />
             </Field>
-            <Field label="End date" htmlFor="end_date" required>
+            <Field
+              label="End date"
+              htmlFor="end_date"
+              required
+              error={endDateError}
+              errorId="end_date-error"
+            >
               <Input
                 id="end_date"
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setEndDateError(null);
+                }}
+                aria-invalid={Boolean(endDateError)}
+                aria-describedby={endDateError ? "end_date-error" : undefined}
                 required
               />
             </Field>

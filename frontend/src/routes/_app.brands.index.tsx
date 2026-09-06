@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
+import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,16 +135,13 @@ function Page() {
         }
       />
 
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search brands…"
-          className="pl-9"
-          aria-label="Search brands"
-        />
-      </div>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search brands…"
+        label="Search brands"
+        className="max-w-sm"
+      />
 
       {editing ? (
         <div className="flex max-w-md items-end gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
@@ -159,7 +157,13 @@ function Page() {
           <Button
             size="sm"
             disabled={updateMutation.isPending}
-            onClick={() => updateMutation.mutate()}
+            onClick={() => {
+              if (!editName.trim()) {
+                toast.error("Name is required.");
+                return;
+              }
+              updateMutation.mutate();
+            }}
           >
             Save
           </Button>

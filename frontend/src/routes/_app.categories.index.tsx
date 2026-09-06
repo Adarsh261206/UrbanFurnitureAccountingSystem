@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
+import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { FormSection, Field, ErrorBanner } from "@/components/common/FormLayout";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,15 @@ function Page() {
   const query = useQuery({ queryKey: ["categories"], queryFn: () => categoriesService.list() });
 
   const [name, setName] = useState("");
+  const [search, setSearch] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return query.data ?? [];
+    return (query.data ?? []).filter((c) => c.name.toLowerCase().includes(q));
+  }, [query.data, search]);
 
   const mutation = useMutation({
     mutationFn: () => categoriesService.create({ name: name.trim() }),
@@ -115,7 +123,25 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.length > 0 ? (
-        <DataTable columns={columns} rows={query.data} rowKey={(r) => r.id} caption="Categories" />
+        <div className="space-y-4">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search categories…"
+            label="Search categories"
+            className="max-w-sm"
+          />
+          {filtered.length > 0 ? (
+            <DataTable
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              caption="Categories"
+            />
+          ) : (
+            <EmptyState title="No matching records found" description="Try a different search." />
+          )}
+        </div>
       ) : (
         <EmptyState title="No categories yet" description="Add your first category above." />
       )}

@@ -7,6 +7,7 @@ import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +27,7 @@ import {
 import { inventoryService, type StockAdjustInput } from "@/services/inventoryService";
 import { brandsService } from "@/services/masterDataService";
 import { money } from "@/lib/format";
+import { validateNumber, trimmed } from "@/lib/validation";
 import type { StockLevel } from "@/types/api";
 
 export const Route = createFileRoute("/_app/inventory/")({
@@ -58,6 +60,7 @@ function Page() {
   const [adjustProduct, setAdjustProduct] = useState<StockLevel | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
+  const [adjustQtyError, setAdjustQtyError] = useState<string | null>(null);
 
   useMemo(() => {
     const t = setTimeout(() => {
@@ -119,7 +122,7 @@ function Page() {
     adjustMutation.mutate({
       product_id: adjustProduct.product_id,
       quantity: qty,
-      notes: adjustNotes || undefined,
+      notes: trimmed(adjustNotes) || undefined,
     });
   }
 
@@ -235,16 +238,13 @@ function Page() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative max-w-sm flex-1 min-w-[220px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or SKU…"
-            className="pl-9"
-            aria-label="Search products"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by name or SKU…"
+          label="Search products"
+          className="max-w-sm flex-1 min-w-[220px]"
+        />
         <Select
           value={brandId}
           onValueChange={(v) => {
@@ -321,9 +321,20 @@ function Page() {
                   id="adjust-qty"
                   type="number"
                   value={adjustQty}
-                  onChange={(e) => setAdjustQty(e.target.value)}
+                  onChange={(e) => {
+                    setAdjustQty(e.target.value);
+                    setAdjustQtyError(null);
+                  }}
+                  onBlur={() => setAdjustQtyError(validateNumber(adjustQty, "quantity"))}
                   placeholder="e.g. 10 or -5"
+                  aria-invalid={!!adjustQtyError}
+                  aria-describedby={adjustQtyError ? "adjust-qty-error" : undefined}
                 />
+                {adjustQtyError ? (
+                  <p id="adjust-qty-error" className="mt-1 text-xs font-medium text-destructive">
+                    {adjustQtyError}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-xs text-muted-foreground">
                   Positive to add stock, negative to remove.
                 </p>

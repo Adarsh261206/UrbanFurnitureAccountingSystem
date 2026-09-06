@@ -4,6 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/States";
+import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { invoicesService } from "@/services/salesService";
 import { contactsService } from "@/services/masterDataService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { money, date } from "@/lib/format";
+import { enumLabel } from "@/lib/labels";
 import type { InvoiceListRow, InvoiceStatus } from "@/types/api";
 
 /** Reachable by admin, accountant and user (portal). No role restriction here. */
@@ -52,6 +54,7 @@ function InvoicesPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [customerId, setCustomerId] = useState("");
+  const [search, setSearch] = useState("");
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all"],
@@ -90,6 +93,16 @@ function InvoicesPage() {
     { key: "amount_due", header: "Due", cell: (r) => money(r.amount_due), align: "right" },
   ];
 
+  const pageRows = query.data?.invoices ?? [];
+  const searchText = search.trim().toLowerCase();
+  const filteredRows = searchText
+    ? pageRows.filter((r) =>
+        [r.invoice_number, r.customer_name, enumLabel(r.status)]
+          .map((v) => v.toLowerCase())
+          .some((v) => v.includes(searchText)),
+      )
+    : pageRows;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -104,6 +117,15 @@ function InvoicesPage() {
       />
 
       <div className="flex flex-wrap items-center gap-3">
+        <SearchInput
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          placeholder="Search invoice, customer or status"
+          className="w-64"
+        />
         <Select
           value={status || "__all"}
           onValueChange={(v) => {
@@ -164,12 +186,18 @@ function InvoicesPage() {
         />
       ) : (
         <div className="space-y-4">
-          <DataTable
-            columns={columns}
-            rows={query.data.invoices}
-            rowKey={(r) => r.id}
-            onRowClick={(r) => navigate({ to: "/invoices/$id", params: { id: r.id } })}
-          />
+          {filteredRows.length === 0 ? (
+            <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
+              No matching records found
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={filteredRows}
+              rowKey={(r) => r.id}
+              onRowClick={(r) => navigate({ to: "/invoices/$id", params: { id: r.id } })}
+            />
+          )}
           <TablePagination
             page={page}
             limit={LIMIT}

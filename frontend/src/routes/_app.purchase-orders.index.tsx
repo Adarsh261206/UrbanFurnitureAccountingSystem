@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, EmptyState, ErrorState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { SearchInput } from "@/components/common/SearchInput";
 import {
   KanbanCard,
   KanbanGrid,
@@ -45,19 +46,28 @@ function Page() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("list");
 
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const query = useQuery({
-    queryKey: ["purchase-orders", page, status, search],
+    queryKey: ["purchase-orders", page, status, debouncedSearch],
     queryFn: () =>
       purchaseOrdersService.list({
         page,
         limit: LIMIT,
         ...(status ? { status } : {}),
-        ...(search ? { search } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
   });
 
@@ -132,15 +142,12 @@ function Page() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <input
+          <SearchInput
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={setSearch}
             placeholder="Search PO number or vendor…"
-            aria-label="Search purchase orders"
-            className="h-9 w-64 rounded-md border border-input bg-card px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring"
+            label="Search purchase orders"
+            className="w-64"
           />
           <SectionTabs
             label="Purchase order status"

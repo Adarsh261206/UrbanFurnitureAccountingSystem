@@ -1,13 +1,16 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
+import { SearchInput } from "@/components/common/SearchInput";
 import { DataTable, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { accountsService } from "@/services/masterDataService";
+import { enumLabel } from "@/lib/labels";
 import type { ChartOfAccount } from "@/types/api";
 
 export const Route = createFileRoute("/_app/chart-of-accounts/")({
@@ -34,10 +37,20 @@ export const Route = createFileRoute("/_app/chart-of-accounts/")({
 
 function Page() {
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
   const query = useQuery({
     queryKey: ["chart-of-accounts"],
     queryFn: () => accountsService.list(),
   });
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return query.data ?? [];
+    return (query.data ?? []).filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) || enumLabel(r.account_type).toLowerCase().includes(q),
+    );
+  }, [query.data, search]);
 
   const columns: Column<ChartOfAccount>[] = [
     {
@@ -66,12 +79,25 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.length > 0 ? (
-        <DataTable
-          columns={columns}
-          rows={query.data}
-          rowKey={(r) => r.id}
-          caption="Chart of accounts"
-        />
+        <div className="space-y-4">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search accounts…"
+            label="Search accounts"
+            className="max-w-sm"
+          />
+          {filtered.length > 0 ? (
+            <DataTable
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              caption="Chart of accounts"
+            />
+          ) : (
+            <EmptyState title="No matching records found" description="Try a different search." />
+          )}
+        </div>
       ) : (
         <EmptyState
           title="No accounts yet"

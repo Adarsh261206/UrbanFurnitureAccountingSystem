@@ -77,18 +77,24 @@ function Page() {
     },
   });
 
+  function validateAmount(): string | null {
+    if (!invoice) return null;
+    const value = Number(amount);
+    if (!amount || Number.isNaN(value) || value <= 0) {
+      return "Enter an amount greater than zero";
+    }
+    if (value > invoice.amount_due) return "Amount cannot exceed the amount due";
+    return null;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     setAmountError(null);
     if (!invoice) return;
-    const value = Number(amount);
-    if (!amount || Number.isNaN(value) || value <= 0) {
-      setAmountError("Enter an amount greater than zero");
-      return;
-    }
-    if (value > invoice.amount_due) {
-      setAmountError("Amount cannot exceed the amount due");
+    const error = validateAmount();
+    if (error) {
+      setAmountError(error);
       return;
     }
     mutation.mutate();
@@ -204,6 +210,11 @@ function Page() {
                   setAmount(e.target.value);
                   setAmountError(null);
                 }}
+                onBlur={() => {
+                  if (!amount) return;
+                  setAmountError(validateAmount());
+                }}
+                aria-invalid={!!amountError}
                 required
               />
             </Field>

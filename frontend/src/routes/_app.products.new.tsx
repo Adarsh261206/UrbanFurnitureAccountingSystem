@@ -31,6 +31,7 @@ import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
 import type { ProductType } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { validateRequired } from "@/lib/validation";
 
 export const Route = createFileRoute("/_app/products/new")({
   head: () => ({
@@ -137,6 +138,36 @@ function Page() {
     setFieldErrors((e) => ({ ...e, [key]: "" }));
   }
 
+  function validateField(key: keyof FormState, value: string): string | null {
+    switch (key) {
+      case "name":
+        return validateRequired(value, "Name");
+      case "sales_price":
+        if (!value.trim() || Number.isNaN(Number(value)) || Number(value) < 0)
+          return "Enter a valid sales price.";
+        return null;
+      case "cost":
+        if (!value.trim() || Number.isNaN(Number(value)) || Number(value) < 0)
+          return "Enter a valid cost.";
+        return null;
+      case "barcode":
+        if (value.trim() && !/^[\dA-Za-z-]{6,64}$/.test(value.trim()))
+          return "Barcode must be 6-64 alphanumeric characters";
+        return null;
+      case "hsn_code":
+        if (value.trim() && !/^\d{2,8}$/.test(value.trim())) return "HSN must be 2-8 digits";
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  function handleFieldBlur(key: keyof FormState) {
+    const value = String(form[key] ?? "");
+    const message = validateField(key, value);
+    setFieldErrors((e) => ({ ...e, [key]: message ?? "" }));
+  }
+
   function validate(): boolean {
     const errors: Record<string, string> = {};
     if (!form["name"].trim()) errors["name"] = "Name is required";
@@ -181,11 +212,20 @@ function Page() {
         <FormSection title="Product details">
           <ErrorBanner message={formError} />
           <FormGrid>
-            <Field label="Name" htmlFor="name" required error={fieldErrors["name"] ?? null}>
+            <Field
+              label="Name"
+              htmlFor="name"
+              required
+              error={fieldErrors["name"] ?? null}
+              errorId="name-error"
+            >
               <Input
                 id="name"
                 value={form["name"]}
                 onChange={(e) => setField("name", e.target.value)}
+                onBlur={() => handleFieldBlur("name")}
+                aria-invalid={Boolean(fieldErrors["name"])}
+                aria-describedby={fieldErrors["name"] ? "name-error" : undefined}
                 required
               />
             </Field>
@@ -194,12 +234,18 @@ function Page() {
               htmlFor="product_type"
               required
               error={fieldErrors["product_type"] ?? null}
+              errorId="product_type-error"
             >
               <Select
                 value={form["product_type"]}
                 onValueChange={(v) => setField("product_type", v as ProductType)}
               >
-                <SelectTrigger id="product_type" aria-label="Product type">
+                <SelectTrigger
+                  id="product_type"
+                  aria-label="Product type"
+                  aria-invalid={Boolean(fieldErrors["product_type"])}
+                  aria-describedby={fieldErrors["product_type"] ? "product_type-error" : undefined}
+                >
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,9 +262,15 @@ function Page() {
               htmlFor="category_id"
               required
               error={fieldErrors["category_id"] ?? null}
+              errorId="category_id-error"
             >
               <Select value={form["category_id"]} onValueChange={(v) => setField("category_id", v)}>
-                <SelectTrigger id="category_id" aria-label="Category">
+                <SelectTrigger
+                  id="category_id"
+                  aria-label="Category"
+                  aria-invalid={Boolean(fieldErrors["category_id"])}
+                  aria-describedby={fieldErrors["category_id"] ? "category_id-error" : undefined}
+                >
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -252,19 +304,35 @@ function Page() {
                 placeholder="e.g. SOF-3S-001"
               />
             </Field>
-            <Field label="Barcode" htmlFor="barcode" error={fieldErrors["barcode"] ?? null}>
+            <Field
+              label="Barcode"
+              htmlFor="barcode"
+              error={fieldErrors["barcode"] ?? null}
+              errorId="barcode-error"
+            >
               <Input
                 id="barcode"
                 value={form.barcode}
                 onChange={(e) => setField("barcode", e.target.value)}
+                onBlur={() => handleFieldBlur("barcode")}
+                aria-invalid={Boolean(fieldErrors["barcode"])}
+                aria-describedby={fieldErrors["barcode"] ? "barcode-error" : undefined}
                 placeholder="e.g. 8901234567890"
               />
             </Field>
-            <Field label="HSN/SAC code" htmlFor="hsn_code" error={fieldErrors["hsn_code"] ?? null}>
+            <Field
+              label="HSN/SAC code"
+              htmlFor="hsn_code"
+              error={fieldErrors["hsn_code"] ?? null}
+              errorId="hsn_code-error"
+            >
               <Input
                 id="hsn_code"
                 value={form.hsn_code}
                 onChange={(e) => setField("hsn_code", e.target.value)}
+                onBlur={() => handleFieldBlur("hsn_code")}
+                aria-invalid={Boolean(fieldErrors["hsn_code"])}
+                aria-describedby={fieldErrors["hsn_code"] ? "hsn_code-error" : undefined}
                 placeholder="e.g. 9403"
               />
             </Field>
@@ -329,6 +397,7 @@ function Page() {
               htmlFor="sales_price"
               required
               error={fieldErrors["sales_price"] ?? null}
+              errorId="sales_price-error"
             >
               <Input
                 id="sales_price"
@@ -337,10 +406,19 @@ function Page() {
                 min="0"
                 value={form["sales_price"]}
                 onChange={(e) => setField("sales_price", e.target.value)}
+                onBlur={() => handleFieldBlur("sales_price")}
+                aria-invalid={Boolean(fieldErrors["sales_price"])}
+                aria-describedby={fieldErrors["sales_price"] ? "sales_price-error" : undefined}
                 required
               />
             </Field>
-            <Field label="Cost" htmlFor="cost" required error={fieldErrors["cost"] ?? null}>
+            <Field
+              label="Cost"
+              htmlFor="cost"
+              required
+              error={fieldErrors["cost"] ?? null}
+              errorId="cost-error"
+            >
               <Input
                 id="cost"
                 type="number"
@@ -348,6 +426,9 @@ function Page() {
                 min="0"
                 value={form["cost"]}
                 onChange={(e) => setField("cost", e.target.value)}
+                onBlur={() => handleFieldBlur("cost")}
+                aria-invalid={Boolean(fieldErrors["cost"])}
+                aria-describedby={fieldErrors["cost"] ? "cost-error" : undefined}
                 required
               />
             </Field>

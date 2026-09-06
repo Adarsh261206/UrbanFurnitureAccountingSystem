@@ -24,6 +24,7 @@ import { billsService } from "@/services/purchaseService";
 import { paymentsService } from "@/services/reportsService";
 import { budgetsService } from "@/services/budgetsService";
 import { errorMessage } from "@/lib/api/errors";
+import { validateEmail } from "@/lib/validation";
 import { money, date } from "@/lib/format";
 import { useBudgetWarnings } from "@/components/accounting/useBudgetWarnings";
 import { BudgetWarningBanner } from "@/components/accounting/BudgetWarningBanner";
@@ -54,6 +55,7 @@ function Page() {
   const [emailTo, setEmailTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -108,6 +110,15 @@ function Page() {
     },
     onError: (error) => setActionError(errorMessage(error)),
   });
+
+  function handleSend() {
+    const error = validateEmail(emailTo);
+    if (error) {
+      setEmailError(error);
+      return;
+    }
+    sendMutation.mutate();
+  }
 
   const printMutation = useMutation({
     mutationFn: () => billsService.print(id),
@@ -395,8 +406,23 @@ function Page() {
                 id="email_to"
                 type="email"
                 value={emailTo}
-                onChange={(e) => setEmailTo(e.target.value)}
+                onChange={(e) => {
+                  setEmailTo(e.target.value);
+                  setEmailError(null);
+                }}
+                onBlur={() => setEmailError(validateEmail(emailTo))}
+                aria-invalid={!!emailError}
+                aria-describedby={emailError ? "email_to-error" : undefined}
               />
+              {emailError ? (
+                <p
+                  id="email_to-error"
+                  role="alert"
+                  className="text-xs font-medium text-destructive"
+                >
+                  {emailError}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="subject">Subject</Label>
@@ -411,10 +437,7 @@ function Page() {
             <Button variant="outline" onClick={() => setSendOpen(false)}>
               Cancel
             </Button>
-            <Button
-              disabled={!emailTo || !subject || sendMutation.isPending}
-              onClick={() => sendMutation.mutate()}
-            >
+            <Button disabled={!emailTo || !subject || sendMutation.isPending} onClick={handleSend}>
               {sendMutation.isPending ? "Sending…" : "Send"}
             </Button>
           </DialogFooter>

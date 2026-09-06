@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/authService";
 import { errorMessage } from "@/lib/api/errors";
+import {
+  validateConfirmPassword,
+  validateEmail,
+  validateLoginId,
+  validatePassword,
+} from "@/lib/validation";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -44,20 +50,35 @@ function SignupPage() {
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [errors, setErrors] = useState<{
+    login_id: string | null;
+    email: string | null;
+    password: string | null;
+    confirm_password: string | null;
+  }>({ login_id: null, email: null, password: null, confirm_password: null });
 
   function set(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: null }));
   }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (submitting) return;
+    const nextErrors = {
+      login_id: validateLoginId(form.login_id),
+      email: validateEmail(form.email),
+      password: validatePassword(form.password),
+      confirm_password: validateConfirmPassword(form.password, form.confirm_password),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
     setSubmitting(true);
     setError(null);
     try {
       // Signup does not create a session (22 §4) — the account must be
       // approved by an administrator before the user can sign in.
-      await authService.signup(form);
+      await authService.signup({ ...form, login_id: form.login_id.trim() });
       setDone(true);
     } catch (err) {
       setError(err);
@@ -103,7 +124,17 @@ function SignupPage() {
               required
               value={form.login_id}
               onChange={(e) => set("login_id", e.target.value)}
+              onBlur={() =>
+                setErrors((prev) => ({ ...prev, login_id: validateLoginId(form.login_id) }))
+              }
+              aria-invalid={!!errors.login_id}
+              aria-describedby={errors.login_id ? "login_id-error" : undefined}
             />
+            {errors.login_id ? (
+              <p id="login_id-error" className="text-xs font-medium text-destructive">
+                {errors.login_id}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
@@ -114,7 +145,15 @@ function SignupPage() {
               required
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
+              onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(form.email) }))}
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
             />
+            {errors.email ? (
+              <p id="email-error" className="text-xs font-medium text-destructive">
+                {errors.email}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
@@ -125,7 +164,17 @@ function SignupPage() {
               required
               value={form.password}
               onChange={(e) => set("password", e.target.value)}
+              onBlur={() =>
+                setErrors((prev) => ({ ...prev, password: validatePassword(form.password) }))
+              }
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
             />
+            {errors.password ? (
+              <p id="password-error" className="text-xs font-medium text-destructive">
+                {errors.password}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm_password">Confirm password</Label>
@@ -136,7 +185,20 @@ function SignupPage() {
               required
               value={form.confirm_password}
               onChange={(e) => set("confirm_password", e.target.value)}
+              onBlur={() =>
+                setErrors((prev) => ({
+                  ...prev,
+                  confirm_password: validateConfirmPassword(form.password, form.confirm_password),
+                }))
+              }
+              aria-invalid={!!errors.confirm_password}
+              aria-describedby={errors.confirm_password ? "confirm_password-error" : undefined}
             />
+            {errors.confirm_password ? (
+              <p id="confirm_password-error" className="text-xs font-medium text-destructive">
+                {errors.confirm_password}
+              </p>
+            ) : null}
           </div>
           {error ? (
             <p

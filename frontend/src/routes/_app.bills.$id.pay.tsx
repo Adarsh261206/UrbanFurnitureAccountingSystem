@@ -46,6 +46,7 @@ function Page() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [amount, setAmount] = useState("");
+  const [amountError, setAmountError] = useState<string | null>(null);
   const [paymentVia, setPaymentVia] = useState<PaymentVia>("bank");
   const [paymentDate, setPaymentDate] = useState(today());
   const [formError, setFormError] = useState<string | null>(null);
@@ -147,7 +148,7 @@ function Page() {
           <Field label="Partner" htmlFor="partner">
             <Input id="partner" value={bill.vendor?.name ?? "—"} readOnly disabled />
           </Field>
-          <Field label="Amount" htmlFor="amount" required>
+          <Field label="Amount" htmlFor="amount" required error={amountError}>
             <Input
               id="amount"
               type="number"
@@ -156,7 +157,20 @@ function Page() {
               max={bill.amount_due}
               placeholder="0.00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setAmountError(null);
+              }}
+              onBlur={() => {
+                if (!amount) return;
+                const value = Number(amount);
+                if (Number.isNaN(value) || value <= 0) {
+                  setAmountError("Enter an amount greater than zero");
+                } else if (value > bill.amount_due) {
+                  setAmountError("Amount cannot exceed the amount due");
+                }
+              }}
+              aria-invalid={!!amountError}
             />
           </Field>
           <Field label="Payment via" htmlFor="payment_via" required>

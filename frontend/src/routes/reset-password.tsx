@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/authService";
 import { errorMessage } from "@/lib/api/errors";
+import { validateConfirmPassword, validatePassword } from "@/lib/validation";
 
 export const Route = createFileRoute("/reset-password")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -42,14 +43,20 @@ function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{
+    password: string | null;
+    confirm_password: string | null;
+  }>({ password: null, confirm_password: null });
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (submitting || !token) return;
-    if (password !== confirmPassword) {
-      setError({ message: "Passwords do not match" });
-      return;
-    }
+    const nextErrors = {
+      password: validatePassword(password),
+      confirm_password: validateConfirmPassword(password, confirmPassword),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -87,8 +94,21 @@ function ResetPasswordPage() {
               autoComplete="new-password"
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, password: null }));
+              }}
+              onBlur={() =>
+                setErrors((prev) => ({ ...prev, password: validatePassword(password) }))
+              }
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
             />
+            {errors.password ? (
+              <p id="password-error" className="text-xs font-medium text-destructive">
+                {errors.password}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm_password">Confirm new password</Label>
@@ -98,8 +118,24 @@ function ResetPasswordPage() {
               autoComplete="new-password"
               required
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, confirm_password: null }));
+              }}
+              onBlur={() =>
+                setErrors((prev) => ({
+                  ...prev,
+                  confirm_password: validateConfirmPassword(password, confirmPassword),
+                }))
+              }
+              aria-invalid={!!errors.confirm_password}
+              aria-describedby={errors.confirm_password ? "confirm_password-error" : undefined}
             />
+            {errors.confirm_password ? (
+              <p id="confirm_password-error" className="text-xs font-medium text-destructive">
+                {errors.confirm_password}
+              </p>
+            ) : null}
           </div>
           {error ? (
             <p

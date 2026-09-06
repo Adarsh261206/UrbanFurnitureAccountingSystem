@@ -19,6 +19,15 @@ import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { date as fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import type { Contact, ContactType } from "@/types/api";
+import { enumLabel } from "@/lib/labels";
+import {
+  validateRequired,
+  validateEmail,
+  validateMobile,
+  validateGstin,
+  validatePan,
+  validatePincode,
+} from "@/lib/validation";
 import {
   Select,
   SelectContent,
@@ -98,23 +107,30 @@ function Page() {
     setFieldErrors((e) => ({ ...e, [key]: "" }));
   }
 
+  function setFieldError(field: string, message: string | null) {
+    setFieldErrors((e) => ({ ...e, [field]: message ?? "" }));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     if (!form) return;
     const errors: Record<string, string> = {};
-    if (!form["name"].trim()) errors["name"] = "Name is required";
-    if (!form["email"].trim()) errors["email"] = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form["email"].trim()))
-      errors["email"] = "Enter a valid email";
-    if (form.gstin && form.gstin.trim() && !/^[0-9A-Z]{15}$/.test(form.gstin.trim().toUpperCase()))
-      errors["gstin"] = "GSTIN must be 15 characters";
-    if (
-      form.pan &&
-      form.pan.trim() &&
-      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(form.pan.trim().toUpperCase())
-    )
-      errors["pan"] = "PAN must be 10 characters (e.g. ABCDE1234F)";
+    const name = validateRequired(form["name"], "Name");
+    if (name) errors["name"] = name;
+    if (!form["email"].trim()) errors["email"] = "Email is required.";
+    else {
+      const email = validateEmail(form["email"]);
+      if (email) errors["email"] = email;
+    }
+    const phone = validateMobile(form.phone ?? "");
+    if (phone) errors["phone"] = phone;
+    const gstin = validateGstin(form.gstin ?? "");
+    if (gstin) errors["gstin"] = gstin;
+    const pan = validatePan(form.pan ?? "");
+    if (pan) errors["pan"] = pan;
+    const pincode = validatePincode(form.pincode ?? "");
+    if (pincode) errors["pincode"] = pincode;
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     mutation.mutate(form);
@@ -141,28 +157,54 @@ function Page() {
         <FormSection title="Contact details">
           <ErrorBanner message={formError} />
           <FormGrid>
-            <Field label="Name" htmlFor="name" required error={fieldErrors["name"] ?? null}>
+            <Field
+              label="Name"
+              htmlFor="name"
+              required
+              error={fieldErrors["name"] ?? null}
+              errorId="name-error"
+            >
               <Input
                 id="name"
                 value={form["name"]}
                 onChange={(e) => setField("name", e.target.value)}
+                onBlur={() => setFieldError("name", validateRequired(form["name"], "Name"))}
+                aria-invalid={!!fieldErrors["name"]}
+                aria-describedby={fieldErrors["name"] ? "name-error" : undefined}
                 required
               />
             </Field>
-            <Field label="Email" htmlFor="email" required error={fieldErrors["email"] ?? null}>
+            <Field
+              label="Email"
+              htmlFor="email"
+              required
+              error={fieldErrors["email"] ?? null}
+              errorId="email-error"
+            >
               <Input
                 id="email"
                 type="email"
                 value={form["email"]}
                 onChange={(e) => setField("email", e.target.value)}
+                onBlur={() => setFieldError("email", validateEmail(form["email"]))}
+                aria-invalid={!!fieldErrors["email"]}
+                aria-describedby={fieldErrors["email"] ? "email-error" : undefined}
                 required
               />
             </Field>
-            <Field label="Phone" htmlFor="phone" error={fieldErrors["phone"] ?? null}>
+            <Field
+              label="Phone"
+              htmlFor="phone"
+              error={fieldErrors["phone"] ?? null}
+              errorId="phone-error"
+            >
               <Input
                 id="phone"
                 value={form.phone}
                 onChange={(e) => setField("phone", e.target.value)}
+                onBlur={() => setFieldError("phone", validateMobile(form.phone ?? ""))}
+                aria-invalid={!!fieldErrors["phone"]}
+                aria-describedby={fieldErrors["phone"] ? "phone-error" : undefined}
               />
             </Field>
             <Field label="Photo" htmlFor="image_url" error={fieldErrors["image_url"] ?? null}>
@@ -185,26 +227,37 @@ function Page() {
                 </SelectTrigger>
                 <SelectContent>
                   {CONTACT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t} className="capitalize">
-                      {t}
+                    <SelectItem key={t} value={t}>
+                      {enumLabel(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="GSTIN" htmlFor="gstin" error={fieldErrors["gstin"] ?? null}>
+            <Field
+              label="GSTIN"
+              htmlFor="gstin"
+              error={fieldErrors["gstin"] ?? null}
+              errorId="gstin-error"
+            >
               <Input
                 id="gstin"
                 value={form.gstin}
                 onChange={(e) => setField("gstin", e.target.value)}
+                onBlur={() => setFieldError("gstin", validateGstin(form.gstin ?? ""))}
+                aria-invalid={!!fieldErrors["gstin"]}
+                aria-describedby={fieldErrors["gstin"] ? "gstin-error" : undefined}
                 placeholder="e.g. 07AABCU9603R1ZM"
               />
             </Field>
-            <Field label="PAN" htmlFor="pan" error={fieldErrors["pan"] ?? null}>
+            <Field label="PAN" htmlFor="pan" error={fieldErrors["pan"] ?? null} errorId="pan-error">
               <Input
                 id="pan"
                 value={form.pan}
                 onChange={(e) => setField("pan", e.target.value)}
+                onBlur={() => setFieldError("pan", validatePan(form.pan ?? ""))}
+                aria-invalid={!!fieldErrors["pan"]}
+                aria-describedby={fieldErrors["pan"] ? "pan-error" : undefined}
                 placeholder="e.g. AABCU9603R"
               />
             </Field>
@@ -236,11 +289,19 @@ function Page() {
                 onChange={(e) => setField("country", e.target.value)}
               />
             </Field>
-            <Field label="Pincode" htmlFor="pincode" error={fieldErrors["pincode"] ?? null}>
+            <Field
+              label="Pincode"
+              htmlFor="pincode"
+              error={fieldErrors["pincode"] ?? null}
+              errorId="pincode-error"
+            >
               <Input
                 id="pincode"
                 value={form.pincode}
                 onChange={(e) => setField("pincode", e.target.value)}
+                onBlur={() => setFieldError("pincode", validatePincode(form.pincode ?? ""))}
+                aria-invalid={!!fieldErrors["pincode"]}
+                aria-describedby={fieldErrors["pincode"] ? "pincode-error" : undefined}
               />
             </Field>
           </FormGrid>

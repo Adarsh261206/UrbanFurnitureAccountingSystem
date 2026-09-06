@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth, homePathForRole } from "@/lib/auth/auth-context";
 import { errorMessage } from "@/lib/api/errors";
+import { validateRequired } from "@/lib/validation";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -39,6 +40,10 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{
+    login_id?: string | null;
+    password?: string | null;
+  }>({});
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -81,8 +86,21 @@ function LoginPage() {
             autoComplete="username"
             required
             value={loginId}
-            onChange={(e) => setLoginId(e.target.value)}
+            onChange={(e) => {
+              setLoginId(e.target.value);
+              setErrors((prev) => ({ ...prev, login_id: null }));
+            }}
+            onBlur={() =>
+              setErrors((prev) => ({ ...prev, login_id: validateRequired(loginId, "Login ID") }))
+            }
+            aria-invalid={!!errors.login_id}
+            aria-describedby={errors.login_id ? "login_id-error" : undefined}
           />
+          {errors.login_id ? (
+            <p id="login_id-error" className="text-xs font-medium text-destructive">
+              {errors.login_id}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
@@ -93,8 +111,21 @@ function LoginPage() {
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrors((prev) => ({ ...prev, password: null }));
+            }}
+            onBlur={() =>
+              setErrors((prev) => ({ ...prev, password: validateRequired(password, "Password") }))
+            }
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "password-error" : undefined}
           />
+          {errors.password ? (
+            <p id="password-error" className="text-xs font-medium text-destructive">
+              {errors.password}
+            </p>
+          ) : null}
         </div>
         {error ? (
           <p

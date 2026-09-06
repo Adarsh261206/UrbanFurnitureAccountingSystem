@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { settingsService, type SmtpSettings } from "@/services/settingsService";
 import { errorMessage } from "@/lib/api/errors";
+import { validateEmail, validateNumber } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/settings/smtp")({
@@ -44,6 +45,11 @@ function Page() {
   const [form, setForm] = useState<SmtpSettings | null>(null);
   const [testEmail, setTestEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    from: string | null;
+    port: string | null;
+    test_to: string | null;
+  }>({ from: null, port: null, test_to: null });
 
   useEffect(() => {
     if (query.data) setForm(query.data);
@@ -113,14 +119,32 @@ function Page() {
                 placeholder="smtp.gmail.com"
               />
             </Field>
-            <Field label="Port" htmlFor="smtp_port" hint="587 (STARTTLS) or 465 (SSL)">
+            <Field
+              label="Port"
+              htmlFor="smtp_port"
+              hint="587 (STARTTLS) or 465 (SSL)"
+              error={errors.port}
+            >
               <Input
                 id="smtp_port"
                 type="number"
                 min={1}
                 max={65535}
                 value={form.port}
-                onChange={(e) => set("port", Number(e.target.value))}
+                onChange={(e) => {
+                  set("port", Number(e.target.value));
+                  setErrors((prev) => ({ ...prev, port: null }));
+                }}
+                onBlur={(e) =>
+                  setErrors((prev) => ({
+                    ...prev,
+                    port:
+                      e.target.value !== ""
+                        ? validateNumber(e.target.value, "Port", { min: 1, max: 65535 })
+                        : null,
+                  }))
+                }
+                aria-invalid={!!errors.port}
               />
             </Field>
             <Field
@@ -144,11 +168,26 @@ function Page() {
                 placeholder={form.has_pass ? "•••••••• (saved)" : ""}
               />
             </Field>
-            <Field label="From address" htmlFor="smtp_from" hint="Shown as the sender">
+            <Field
+              label="From address"
+              htmlFor="smtp_from"
+              hint="Shown as the sender"
+              error={errors.from}
+            >
               <Input
                 id="smtp_from"
                 value={form.from}
-                onChange={(e) => set("from", e.target.value)}
+                onChange={(e) => {
+                  set("from", e.target.value);
+                  setErrors((prev) => ({ ...prev, from: null }));
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({
+                    ...prev,
+                    from: form.from.trim() ? validateEmail(form.from) : null,
+                  }))
+                }
+                aria-invalid={!!errors.from}
                 placeholder="Urban Furniture <no-reply@example.com>"
               />
             </Field>
@@ -206,9 +245,25 @@ function Page() {
                 id="test_to"
                 type="email"
                 value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
+                onChange={(e) => {
+                  setTestEmail(e.target.value);
+                  setErrors((prev) => ({ ...prev, test_to: null }));
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({
+                    ...prev,
+                    test_to: testEmail.trim() ? validateEmail(testEmail) : null,
+                  }))
+                }
+                aria-invalid={!!errors.test_to}
+                aria-describedby={errors.test_to ? "test_to-error" : undefined}
                 placeholder="you@example.com"
               />
+              {errors.test_to ? (
+                <p id="test_to-error" className="text-xs font-medium text-destructive">
+                  {errors.test_to}
+                </p>
+              ) : null}
             </div>
             <Button
               type="button"

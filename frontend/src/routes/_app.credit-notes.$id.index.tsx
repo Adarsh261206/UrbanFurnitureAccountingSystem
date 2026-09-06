@@ -24,6 +24,7 @@ import { invoicesService } from "@/services/salesService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage } from "@/lib/api/errors";
 import { money, date } from "@/lib/format";
+import { validateNumber } from "@/lib/validation";
 
 export const Route = createFileRoute("/_app/credit-notes/$id/")({
   head: () => ({
@@ -53,6 +54,7 @@ function CreditNotePage() {
   const [form, setForm] = useState<Partial<CreditNoteInput>>({});
   const [subtotalInput, setSubtotalInput] = useState("0");
   const [taxRateInput, setTaxRateInput] = useState("0");
+  const [errors, setErrors] = useState<{ subtotal?: string; taxRate?: string }>({});
 
   const query = useQuery({
     queryKey: ["credit-notes", id],
@@ -125,6 +127,13 @@ function CreditNotePage() {
   }
 
   function handleSave() {
+    const subtotalError = validateNumber(subtotalInput, "Subtotal", { min: 0 });
+    const taxRateError = validateNumber(taxRateInput, "Tax rate", { min: 0, max: 100 });
+    setErrors({
+      subtotal: subtotalError ?? undefined,
+      taxRate: taxRateError ?? undefined,
+    });
+    if (subtotalError || taxRateError) return;
     const payload: Partial<CreditNoteInput> = {
       ...form,
       subtotal: parseFloat(subtotalInput) || 0,
@@ -224,8 +233,24 @@ function CreditNotePage() {
                 step="0.01"
                 min="0"
                 value={subtotalInput}
-                onChange={(e) => setSubtotalInput(e.target.value)}
+                onChange={(e) => {
+                  setSubtotalInput(e.target.value);
+                  setErrors((prev) => ({ ...prev, subtotal: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    subtotal: validateNumber(subtotalInput, "Subtotal", { min: 0 }) ?? undefined,
+                  }))
+                }
+                aria-invalid={!!errors.subtotal}
+                aria-describedby={errors.subtotal ? "subtotal-error" : undefined}
               />
+              {errors.subtotal ? (
+                <p id="subtotal-error" className="text-xs font-medium text-destructive">
+                  {errors.subtotal}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Tax rate (%)</Label>
@@ -235,8 +260,25 @@ function CreditNotePage() {
                 min="0"
                 max="100"
                 value={taxRateInput}
-                onChange={(e) => setTaxRateInput(e.target.value)}
+                onChange={(e) => {
+                  setTaxRateInput(e.target.value);
+                  setErrors((prev) => ({ ...prev, taxRate: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    taxRate:
+                      validateNumber(taxRateInput, "Tax rate", { min: 0, max: 100 }) ?? undefined,
+                  }))
+                }
+                aria-invalid={!!errors.taxRate}
+                aria-describedby={errors.taxRate ? "tax_rate-error" : undefined}
               />
+              {errors.taxRate ? (
+                <p id="tax_rate-error" className="text-xs font-medium text-destructive">
+                  {errors.taxRate}
+                </p>
+              ) : null}
             </div>
             <dl className="space-y-2 text-sm border-t border-border pt-3">
               <div className="flex justify-between">

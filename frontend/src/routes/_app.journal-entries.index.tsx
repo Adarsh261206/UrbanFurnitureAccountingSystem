@@ -6,6 +6,7 @@ import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
+import { SearchInput } from "@/components/common/SearchInput";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ import {
   contactsService,
 } from "@/services/masterDataService";
 import { date as fmtDate, money } from "@/lib/format";
+import { enumLabel } from "@/lib/labels";
 import type { JournalEntryRow } from "@/types/api";
 
 export const Route = createFileRoute("/_app/journal-entries/")({
@@ -61,6 +63,7 @@ function Page() {
   const [status, setStatus] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const journalsQuery = useQuery({ queryKey: ["journals"], queryFn: () => journalsService.list() });
@@ -77,6 +80,30 @@ function Page() {
         date_to: dateTo || undefined,
       }),
   });
+
+  const hasActiveFilters =
+    journalId !== "all" || status !== "all" || dateFrom !== "" || dateTo !== "" || search !== "";
+
+  function clearFilters() {
+    setJournalId("all");
+    setStatus("all");
+    setDateFrom("");
+    setDateTo("");
+    setSearch("");
+    setPage(1);
+  }
+
+  const filteredRows = useMemo(() => {
+    const rows = query.data?.journal_entries ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        (r.reference ?? "").toLowerCase().includes(q) ||
+        r.journal_name.toLowerCase().includes(q) ||
+        enumLabel(r.status).toLowerCase().includes(q),
+    );
+  }, [query.data, search]);
 
   const columns: Column<JournalEntryRow>[] = [
     {
@@ -170,6 +197,21 @@ function Page() {
             }}
           />
         </div>
+        <SearchInput
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          placeholder="Search entries…"
+          label="Search entries"
+          className="w-56"
+        />
+        {hasActiveFilters ? (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+            Clear filters
+          </Button>
+        ) : null}
       </div>
 
       {query.isLoading ? (
@@ -177,21 +219,25 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.journal_entries.length > 0 ? (
-        <div className="space-y-4">
-          <DataTable
-            columns={columns}
-            rows={query.data.journal_entries}
-            rowKey={(r) => r.id}
-            onRowClick={(r) => setSelectedId(r.id)}
-            caption="Journal entries"
-          />
-          <TablePagination
-            page={page}
-            limit={LIMIT}
-            total={query.data.total}
-            onPageChange={setPage}
-          />
-        </div>
+        filteredRows.length > 0 ? (
+          <div className="space-y-4">
+            <DataTable
+              columns={columns}
+              rows={filteredRows}
+              rowKey={(r) => r.id}
+              onRowClick={(r) => setSelectedId(r.id)}
+              caption="Journal entries"
+            />
+            <TablePagination
+              page={page}
+              limit={LIMIT}
+              total={query.data.total}
+              onPageChange={setPage}
+            />
+          </div>
+        ) : (
+          <EmptyState title="No matching records found" description="Try a different search." />
+        )
       ) : (
         <EmptyState
           title="No journal entries yet"

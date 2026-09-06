@@ -58,6 +58,8 @@ function Page() {
   const [endDate, setEndDate] = useState("");
   const [analyticAccount, setAnalyticAccount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [toDateError, setToDateError] = useState<string | null>(null);
+  const [endDateError, setEndDateError] = useState<string | null>(null);
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all-for-select"],
@@ -136,7 +138,18 @@ function Page() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (canSubmit) mutation.mutate();
+          setToDateError(null);
+          setEndDateError(null);
+          if (!canSubmit) return;
+          if (toDate && startDate && new Date(toDate) < new Date(startDate)) {
+            setToDateError("To date cannot be before start date.");
+            return;
+          }
+          if (endDate && startDate && new Date(endDate) < new Date(startDate)) {
+            setEndDateError("End date cannot be before start date.");
+            return;
+          }
+          mutation.mutate();
         }}
       >
         <FormSection title="New analytical account">
@@ -163,25 +176,51 @@ function Page() {
                 id="start_date"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setToDateError(null);
+                  setEndDateError(null);
+                }}
                 required
               />
             </Field>
-            <Field label="To date" htmlFor="to_date" required>
+            <Field
+              label="To date"
+              htmlFor="to_date"
+              required
+              error={toDateError}
+              errorId="to_date-error"
+            >
               <Input
                 id="to_date"
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setToDateError(null);
+                }}
+                aria-invalid={Boolean(toDateError)}
+                aria-describedby={toDateError ? "to_date-error" : undefined}
                 required
               />
             </Field>
-            <Field label="End date" htmlFor="end_date" required>
+            <Field
+              label="End date"
+              htmlFor="end_date"
+              required
+              error={endDateError}
+              errorId="end_date-error"
+            >
               <Input
                 id="end_date"
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setEndDateError(null);
+                }}
+                aria-invalid={Boolean(endDateError)}
+                aria-describedby={endDateError ? "end_date-error" : undefined}
                 required
               />
             </Field>

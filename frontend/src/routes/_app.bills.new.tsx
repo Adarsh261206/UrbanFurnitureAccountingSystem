@@ -31,6 +31,7 @@ import {
 } from "@/services/masterDataService";
 import { errorMessage } from "@/lib/api/errors";
 import { today, money } from "@/lib/format";
+import { validateRequired, validateDateOrder } from "@/lib/validation";
 
 export const Route = createFileRoute("/_app/bills/new")({
   validateSearch: (search: Record<string, unknown>): { po?: string } =>
@@ -59,6 +60,7 @@ function Page() {
   const [purchaseOrderId, setPurchaseOrderId] = useState(po ?? "");
   const [lines, setLines] = useState<EditableLine[]>([emptyLine()]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "for-bill"],
@@ -155,6 +157,24 @@ function Page() {
       (l) => l.product_id && l.account_id && Number(l.quantity) > 0 && Number(l.unit_price) >= 0,
     );
 
+  function validate(): boolean {
+    const errors: Record<string, string> = {};
+    const billDateError = validateRequired(billDate, "Bill date");
+    if (billDateError) errors.bill_date = billDateError;
+    const dueDateError = validateRequired(dueDate, "Due date");
+    if (dueDateError) errors.due_date = dueDateError;
+    const orderError = validateDateOrder(billDate, dueDate, "bill date", "Due date");
+    if (orderError) errors.due_date = orderError;
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  function handleSubmit() {
+    setFormError(null);
+    if (!validate()) return;
+    createMutation.mutate();
+  }
+
   if (loading) return <LoadingState label="Loading form data" />;
   if (loadError)
     return <ErrorState error={loadError} onRetry={() => void contactsQuery.refetch()} />;
@@ -211,20 +231,42 @@ function Page() {
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Bill date" htmlFor="bill_date" required>
+          <Field
+            label="Bill date"
+            htmlFor="bill_date"
+            required
+            error={fieldErrors.bill_date}
+            errorId="bill_date-error"
+          >
             <Input
               id="bill_date"
               type="date"
               value={billDate}
-              onChange={(e) => setBillDate(e.target.value)}
+              onChange={(e) => {
+                setBillDate(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, bill_date: "" }));
+              }}
+              aria-invalid={!!fieldErrors.bill_date}
+              aria-describedby={fieldErrors.bill_date ? "bill_date-error" : undefined}
             />
           </Field>
-          <Field label="Due date" htmlFor="due_date" required>
+          <Field
+            label="Due date"
+            htmlFor="due_date"
+            required
+            error={fieldErrors.due_date}
+            errorId="due_date-error"
+          >
             <Input
               id="due_date"
               type="date"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e) => {
+                setDueDate(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, due_date: "" }));
+              }}
+              aria-invalid={!!fieldErrors.due_date}
+              aria-describedby={fieldErrors.due_date ? "due_date-error" : undefined}
             />
           </Field>
         </FormGrid>
@@ -247,10 +289,7 @@ function Page() {
         <Button variant="outline" onClick={() => navigate({ to: "/bills" })}>
           Cancel
         </Button>
-        <Button
-          disabled={!canSubmit || createMutation.isPending}
-          onClick={() => createMutation.mutate()}
-        >
+        <Button disabled={!canSubmit || createMutation.isPending} onClick={handleSubmit}>
           {createMutation.isPending ? "Creating…" : "Create bill"}
         </Button>
       </FormActions>

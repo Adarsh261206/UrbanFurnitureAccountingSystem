@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/labels";
 
 /**
  * One consistent status system — subtle tinted badges with semantic meaning.
@@ -22,12 +23,12 @@ export function StatusBadge({ status, className }: { status: string; className?:
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold",
         tone,
         className,
       )}
     >
-      {status.replace(/_/g, " ")}
+      {enumLabel(status)}
     </span>
   );
 }

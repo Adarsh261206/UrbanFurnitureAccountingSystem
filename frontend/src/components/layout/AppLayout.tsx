@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDismiss } from "@/hooks/useDismiss";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Role } from "@/types/api";
 import { cn } from "@/lib/utils";
@@ -444,10 +445,13 @@ function GlobalSearch({
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const matches = query.trim()
     ? items.filter((i) => i.label.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8)
     : [];
+
+  useDismiss(containerRef, () => setOpen(false));
 
   function go(to: string) {
     setQuery("");
@@ -457,7 +461,7 @@ function GlobalSearch({
   }
 
   return (
-    <div className="relative hidden md:block">
+    <div ref={containerRef} className="relative hidden md:block">
       <Search
         className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-navbar-muted"
         aria-hidden
@@ -469,13 +473,13 @@ function GlobalSearch({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && matches[0]) go(matches[0].to);
           if (e.key === "Escape") setOpen(false);
         }}
         placeholder="Search modules…"
         aria-label="Search modules"
+        aria-expanded={open}
         className="h-8 w-44 rounded-md border border-white/25 bg-white/10 pl-8 pr-3 text-[13px] text-white placeholder:text-navbar-muted shadow-sm backdrop-blur-sm transition-[width] focus:w-64 focus:border-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
       />
       {open && matches.length > 0 ? (
@@ -500,8 +504,12 @@ function GlobalSearch({
 
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useDismiss(containerRef, () => setOpen(false));
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <Button
         variant="ghost"
         size="icon"
@@ -513,7 +521,11 @@ function NotificationsBell() {
         <Bell className="size-4" />
       </Button>
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-lg border bg-popover shadow-md">
+        <div
+          role="dialog"
+          aria-label="Notifications"
+          className="absolute right-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-lg border bg-popover shadow-md"
+        >
           <p className="border-b px-4 py-2.5 text-[13px] font-semibold text-popover-foreground">
             Notifications
           </p>

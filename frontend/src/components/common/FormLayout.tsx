@@ -30,6 +30,7 @@ export function Field({
   label,
   htmlFor,
   error,
+  errorId,
   hint,
   required,
   children,
@@ -38,6 +39,7 @@ export function Field({
   label: string;
   htmlFor: string;
   error?: string | null | undefined;
+  errorId?: string | undefined;
   hint?: string | undefined;
   required?: boolean | undefined;
   children: ReactNode;
@@ -52,7 +54,7 @@ export function Field({
       {children}
       {hint && !error ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       {error ? (
-        <p role="alert" className="text-xs font-medium text-destructive">
+        <p id={errorId} role="alert" className="text-xs font-medium text-destructive">
           {error}
         </p>
       ) : null}

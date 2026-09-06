@@ -31,6 +31,7 @@ import {
 } from "@/services/masterDataService";
 import { normalizeError, errorMessage } from "@/lib/api/errors";
 import { today } from "@/lib/format";
+import { validateRequired, validateDateOrder } from "@/lib/validation";
 
 export const Route = createFileRoute("/_app/invoices/new")({
   validateSearch: (search: Record<string, unknown>): { so?: string } =>
@@ -160,8 +161,12 @@ function Page() {
   function validate(): boolean {
     const errors: Record<string, string> = {};
     if (!customerId) errors.customer_id = "Customer is required";
-    if (!invoiceDate) errors.invoice_date = "Invoice date is required";
-    if (!dueDate) errors.due_date = "Due date is required";
+    const invoiceDateError = validateRequired(invoiceDate, "Invoice date");
+    if (invoiceDateError) errors.invoice_date = invoiceDateError;
+    const dueDateError = validateRequired(dueDate, "Due date");
+    if (dueDateError) errors.due_date = dueDateError;
+    const orderError = validateDateOrder(invoiceDate, dueDate, "invoice date", "Due date");
+    if (orderError) errors.due_date = orderError;
     if (lines.length === 0) errors.lines = "Add at least one line";
     for (const l of lines) {
       if (!l.product_id || !l.account_id || !l.quantity || l.quantity <= 0 || l.unit_price < 0) {
@@ -258,21 +263,50 @@ function Page() {
               htmlFor="invoice_date"
               required
               error={fieldErrors.invoice_date}
+              errorId="invoice_date-error"
             >
               <Input
                 id="invoice_date"
                 type="date"
                 value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
+                onChange={(e) => {
+                  setInvoiceDate(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, invoice_date: "" }));
+                }}
+                onBlur={() =>
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    invoice_date: validateRequired(invoiceDate, "Invoice date") ?? "",
+                  }))
+                }
+                aria-invalid={!!fieldErrors.invoice_date}
+                aria-describedby={fieldErrors.invoice_date ? "invoice_date-error" : undefined}
                 required
               />
             </Field>
-            <Field label="Due date" htmlFor="due_date" required error={fieldErrors.due_date}>
+            <Field
+              label="Due date"
+              htmlFor="due_date"
+              required
+              error={fieldErrors.due_date}
+              errorId="due_date-error"
+            >
               <Input
                 id="due_date"
                 type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  setFieldErrors((prev) => ({ ...prev, due_date: "" }));
+                }}
+                onBlur={() =>
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    due_date: validateRequired(dueDate, "Due date") ?? "",
+                  }))
+                }
+                aria-invalid={!!fieldErrors.due_date}
+                aria-describedby={fieldErrors.due_date ? "due_date-error" : undefined}
                 required
               />
             </Field>

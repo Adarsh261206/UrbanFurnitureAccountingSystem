@@ -24,6 +24,7 @@ import { paymentsService } from "@/services/reportsService";
 import { budgetsService } from "@/services/budgetsService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage } from "@/lib/api/errors";
+import { validateEmail } from "@/lib/validation";
 import { money, date } from "@/lib/format";
 import { useBudgetWarnings } from "@/components/accounting/useBudgetWarnings";
 import { BudgetWarningBanner } from "@/components/accounting/BudgetWarningBanner";
@@ -54,6 +55,7 @@ function Page() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [sendForm, setSendForm] = useState({ email_to: "", subject: "", body: "" });
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -107,6 +109,15 @@ function Page() {
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
+
+  async function handleSend() {
+    const error = validateEmail(sendForm.email_to);
+    if (error) {
+      setEmailError(error);
+      return;
+    }
+    sendMutation.mutate();
+  }
 
   async function handlePrint() {
     if (!query.data) return;
@@ -462,8 +473,23 @@ function Page() {
                 id="email_to"
                 type="email"
                 value={sendForm.email_to}
-                onChange={(e) => setSendForm((f) => ({ ...f, email_to: e.target.value }))}
+                onChange={(e) => {
+                  setSendForm((f) => ({ ...f, email_to: e.target.value }));
+                  setEmailError(null);
+                }}
+                onBlur={() => setEmailError(validateEmail(sendForm.email_to))}
+                aria-invalid={!!emailError}
+                aria-describedby={emailError ? "email_to-error" : undefined}
               />
+              {emailError ? (
+                <p
+                  id="email_to-error"
+                  role="alert"
+                  className="text-xs font-medium text-destructive"
+                >
+                  {emailError}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="subject">Subject</Label>
@@ -487,10 +513,7 @@ function Page() {
             <Button variant="outline" onClick={() => setSendOpen(false)}>
               Cancel
             </Button>
-            <Button
-              disabled={sendMutation.isPending || !sendForm.email_to}
-              onClick={() => sendMutation.mutate()}
-            >
+            <Button disabled={sendMutation.isPending || !sendForm.email_to} onClick={handleSend}>
               {sendMutation.isPending ? "Sending…" : "Send"}
             </Button>
           </DialogFooter>

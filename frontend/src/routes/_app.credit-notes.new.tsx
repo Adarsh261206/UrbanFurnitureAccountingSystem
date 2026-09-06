@@ -20,6 +20,7 @@ import { contactsService } from "@/services/masterDataService";
 import { invoicesService } from "@/services/salesService";
 import { errorMessage } from "@/lib/api/errors";
 import { money } from "@/lib/format";
+import { validateNumber, validateDateOrder } from "@/lib/validation";
 
 export const Route = createFileRoute("/_app/credit-notes/new")({
   head: () => ({
@@ -49,6 +50,13 @@ function NewCreditNotePage() {
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    contact?: string;
+    date?: string;
+    dueDate?: string;
+    subtotal?: string;
+    taxRate?: string;
+  }>({});
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all"],
@@ -85,11 +93,34 @@ function NewCreditNotePage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
+    const next = validateFields();
+    const first = Object.values(next).find(Boolean);
+    if (first) {
+      setFormError(first);
+      return;
+    }
     if (!contactId) {
       setFormError("Contact is required");
       return;
     }
     mutation.mutate();
+  }
+
+  function validateFields() {
+    const next = {
+      contact: contactId ? undefined : "Contact is required.",
+      date: date && isNaN(new Date(date).getTime()) ? "Enter a valid date." : undefined,
+      dueDate:
+        dueDate && isNaN(new Date(dueDate).getTime())
+          ? "Enter a valid date."
+          : dueDate && date
+            ? (validateDateOrder(date, dueDate, "date", "Due date") ?? undefined)
+            : undefined,
+      subtotal: validateNumber(subtotal, "Subtotal", { min: 0 }) ?? undefined,
+      taxRate: validateNumber(taxRate, "Tax rate", { min: 0, max: 100 }) ?? undefined,
+    };
+    setErrors(next);
+    return next;
   }
 
   const taxAmount = (parseFloat(subtotal) || 0) * ((parseFloat(taxRate) || 0) / 100);
@@ -120,8 +151,23 @@ function NewCreditNotePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Contact *</Label>
-              <Select value={contactId} onValueChange={setContactId}>
-                <SelectTrigger>
+              <Select
+                value={contactId}
+                onValueChange={(v) => {
+                  setContactId(v);
+                  setErrors((e) => ({ ...e, contact: undefined }));
+                }}
+              >
+                <SelectTrigger
+                  onBlur={() =>
+                    setErrors((e) => ({
+                      ...e,
+                      contact: contactId ? undefined : "Contact is required.",
+                    }))
+                  }
+                  aria-invalid={!!errors.contact}
+                  aria-describedby={errors.contact ? "contact-error" : undefined}
+                >
                   <SelectValue placeholder="Select contact" />
                 </SelectTrigger>
                 <SelectContent>
@@ -132,6 +178,11 @@ function NewCreditNotePage() {
                   ))}
                 </SelectContent>
               </Select>
+              {errors.contact ? (
+                <p id="contact-error" className="text-xs font-medium text-destructive">
+                  {errors.contact}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Type *</Label>
@@ -147,11 +198,57 @@ function NewCreditNotePage() {
             </div>
             <div className="space-y-1.5">
               <Label>Date *</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setErrors((prev) => ({ ...prev, date: undefined, dueDate: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    date:
+                      date && isNaN(new Date(date).getTime()) ? "Enter a valid date." : undefined,
+                  }))
+                }
+                aria-invalid={!!errors.date}
+                aria-describedby={errors.date ? "date-error" : undefined}
+              />
+              {errors.date ? (
+                <p id="date-error" className="text-xs font-medium text-destructive">
+                  {errors.date}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Due date</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  setErrors((prev) => ({ ...prev, dueDate: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    dueDate:
+                      dueDate && isNaN(new Date(dueDate).getTime())
+                        ? "Enter a valid date."
+                        : dueDate && date
+                          ? (validateDateOrder(date, dueDate, "date", "Due date") ?? undefined)
+                          : undefined,
+                  }))
+                }
+                aria-invalid={!!errors.dueDate}
+                aria-describedby={errors.dueDate ? "due_date-error" : undefined}
+              />
+              {errors.dueDate ? (
+                <p id="due_date-error" className="text-xs font-medium text-destructive">
+                  {errors.dueDate}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Linked Invoice</Label>
@@ -198,8 +295,24 @@ function NewCreditNotePage() {
                 step="0.01"
                 min="0"
                 value={subtotal}
-                onChange={(e) => setSubtotal(e.target.value)}
+                onChange={(e) => {
+                  setSubtotal(e.target.value);
+                  setErrors((prev) => ({ ...prev, subtotal: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    subtotal: validateNumber(subtotal, "Subtotal", { min: 0 }) ?? undefined,
+                  }))
+                }
+                aria-invalid={!!errors.subtotal}
+                aria-describedby={errors.subtotal ? "subtotal-error" : undefined}
               />
+              {errors.subtotal ? (
+                <p id="subtotal-error" className="text-xs font-medium text-destructive">
+                  {errors.subtotal}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Tax rate (%)</Label>
@@ -209,8 +322,24 @@ function NewCreditNotePage() {
                 min="0"
                 max="100"
                 value={taxRate}
-                onChange={(e) => setTaxRate(e.target.value)}
+                onChange={(e) => {
+                  setTaxRate(e.target.value);
+                  setErrors((prev) => ({ ...prev, taxRate: undefined }));
+                }}
+                onBlur={() =>
+                  setErrors((e) => ({
+                    ...e,
+                    taxRate: validateNumber(taxRate, "Tax rate", { min: 0, max: 100 }) ?? undefined,
+                  }))
+                }
+                aria-invalid={!!errors.taxRate}
+                aria-describedby={errors.taxRate ? "tax_rate-error" : undefined}
               />
+              {errors.taxRate ? (
+                <p id="tax_rate-error" className="text-xs font-medium text-destructive">
+                  {errors.taxRate}
+                </p>
+              ) : null}
             </div>
             <dl className="space-y-2 text-sm border-t border-border pt-3">
               <div className="flex justify-between">

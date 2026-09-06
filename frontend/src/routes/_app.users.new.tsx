@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/select";
 import { usersService } from "@/services/masterDataService";
 import { errorMessage } from "@/lib/api/errors";
+import {
+  validateConfirmPassword,
+  validateEmail,
+  validateLoginId,
+  validatePassword,
+  validateRequired,
+} from "@/lib/validation";
+import { enumLabel } from "@/lib/labels";
 import type { Role } from "@/types/api";
 
 export const Route = createFileRoute("/_app/users/new")({
@@ -52,14 +60,25 @@ function Page() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    name: string | null;
+    login_id: string | null;
+    email: string | null;
+    role: string | null;
+    password: string | null;
+    confirm_password: string | null;
+  }>({
+    name: null,
+    login_id: null,
+    email: null,
+    role: null,
+    password: null,
+    confirm_password: null,
+  });
 
-  const passwordsMatch = password.length > 0 && password === confirmPassword;
-  const canSubmit =
-    name.trim().length > 0 &&
-    loginId.trim().length > 0 &&
-    email.trim().length > 0 &&
-    role !== "" &&
-    passwordsMatch;
+  function clearError(field: keyof typeof errors) {
+    setErrors((prev) => ({ ...prev, [field]: null }));
+  }
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -96,51 +115,100 @@ function Page() {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (canSubmit) mutation.mutate();
+          const nextErrors = {
+            name: validateRequired(name, "Name"),
+            login_id: validateRequired(loginId, "Login ID") ?? validateLoginId(loginId),
+            email: validateRequired(email, "Email") ?? validateEmail(email),
+            role: validateRequired(role, "Role"),
+            password: validateRequired(password, "Password") ?? validatePassword(password),
+            confirm_password:
+              validateRequired(confirmPassword, "Confirm password") ??
+              validateConfirmPassword(password, confirmPassword),
+          };
+          setErrors(nextErrors);
+          if (Object.values(nextErrors).some(Boolean)) return;
+          mutation.mutate();
         }}
       >
         <FormSection title="User details">
           <FormGrid>
-            <Field label="Name" htmlFor="name" required>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </Field>
-            <Field label="Login ID" htmlFor="login_id" required>
+            <Field label="Name" htmlFor="name" required error={errors.name}>
               <Input
-                id="login_id"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clearError("name");
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({ ...prev, name: validateRequired(name, "Name") }))
+                }
+                aria-invalid={!!errors.name}
                 required
               />
             </Field>
-            <Field label="Email" htmlFor="email" required>
+            <Field label="Login ID" htmlFor="login_id" required error={errors.login_id}>
+              <Input
+                id="login_id"
+                value={loginId}
+                onChange={(e) => {
+                  setLoginId(e.target.value);
+                  clearError("login_id");
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({ ...prev, login_id: validateLoginId(loginId) }))
+                }
+                aria-invalid={!!errors.login_id}
+                required
+              />
+            </Field>
+            <Field label="Email" htmlFor="email" required error={errors.email}>
               <Input
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearError("email");
+                }}
+                onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
+                aria-invalid={!!errors.email}
                 required
               />
             </Field>
-            <Field label="Role" htmlFor="role" required>
-              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                <SelectTrigger id="role">
+            <Field label="Role" htmlFor="role" required error={errors.role}>
+              <Select
+                value={role}
+                onValueChange={(v) => {
+                  setRole(v as Role);
+                  clearError("role");
+                }}
+              >
+                <SelectTrigger id="role" aria-invalid={!!errors.role}>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   {ROLES.map((r) => (
-                    <SelectItem key={r} value={r} className="capitalize">
-                      {r}
+                    <SelectItem key={r} value={r}>
+                      {enumLabel(r)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Password" htmlFor="password" required>
+            <Field label="Password" htmlFor="password" required error={errors.password}>
               <Input
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearError("password");
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({ ...prev, password: validatePassword(password) }))
+                }
+                aria-invalid={!!errors.password}
                 required
               />
             </Field>
@@ -148,15 +216,23 @@ function Page() {
               label="Confirm password"
               htmlFor="confirm_password"
               required
-              error={
-                confirmPassword.length > 0 && !passwordsMatch ? "Passwords do not match" : null
-              }
+              error={errors.confirm_password}
             >
               <Input
                 id="confirm_password"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  clearError("confirm_password");
+                }}
+                onBlur={() =>
+                  setErrors((prev) => ({
+                    ...prev,
+                    confirm_password: validateConfirmPassword(password, confirmPassword),
+                  }))
+                }
+                aria-invalid={!!errors.confirm_password}
                 required
               />
             </Field>
@@ -169,7 +245,7 @@ function Page() {
           <Button type="button" variant="outline" onClick={() => navigate({ to: "/users" })}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canSubmit || mutation.isPending}>
+          <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? "Creating…" : "Create user"}
           </Button>
         </FormActions>

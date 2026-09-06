@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { KanbanCard, KanbanGrid, ViewToggle, type ViewMode } from "@/components/common/ViewToggle";
+import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,7 @@ import { date as fmtDate } from "@/lib/format";
 import type { Contact, ContactType } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { imgUrl } from "@/lib/imgUrl";
+import { enumLabel } from "@/lib/labels";
 
 export const Route = createFileRoute("/_app/contacts/")({
   head: () => ({
@@ -55,7 +56,7 @@ function TypeBadge({ type }: { type: ContactType }) {
         TYPE_STYLES[type],
       )}
     >
-      {type}
+      {enumLabel(type)}
     </span>
   );
 }
@@ -119,16 +120,13 @@ function Page() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative max-w-sm flex-1 min-w-[220px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search contacts by name or email…"
-            className="pl-9"
-            aria-label="Search contacts"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search contacts by name or email…"
+          label="Search contacts"
+          className="max-w-sm flex-1 min-w-[220px]"
+        />
         <div className="flex items-center gap-3">
           <Select
             value={typeFilter}
