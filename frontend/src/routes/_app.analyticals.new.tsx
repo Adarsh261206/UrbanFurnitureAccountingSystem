@@ -121,8 +121,14 @@ function Page() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Analytical accounts"
+        title="New analytical account"
         description="Track budgets and costs by analytic dimension."
+        backTo="/analyticals"
+        crumbs={[
+          { label: "Master Settings" },
+          { label: "Analyticals", to: "/analyticals" },
+          { label: "New analytical account" },
+        ]}
       />
 
       <form

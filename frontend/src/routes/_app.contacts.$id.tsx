@@ -128,6 +128,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={query.data.name}
+        backTo="/contacts"
         crumbs={[{ label: "Master Settings" }, { label: "Contact", to: "/contacts" }]}
         description={`Created ${fmtDate(query.data.created_at)}`}
         actions={

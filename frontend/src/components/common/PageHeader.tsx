@@ -1,31 +1,46 @@
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export type Crumb = { label: string; to?: string };
 
 /**
- * Page header: strong title, contextual subtitle, breadcrumb trail and
- * primary actions. Typography-driven — no card chrome around it.
+ * Page header: back button, breadcrumb trail, strong title, contextual
+ * subtitle, and primary actions. Typography-driven — no card chrome.
  */
 export function PageHeader({
   title,
   crumbs = [],
   description,
   actions,
+  backTo,
   className,
 }: {
   title: string;
   crumbs?: Crumb[];
   description?: string;
   actions?: ReactNode;
+  backTo?: string;
   className?: string;
 }) {
+  const navigate = useNavigate();
   const trail = crumbs.length > 0 ? crumbs : [{ label: title }];
+
   return (
     <div className={cn("mb-6", className)}>
       <nav aria-label="Breadcrumb" className="mb-1.5 flex items-center gap-1 text-xs">
+        {backTo ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-1 h-6 px-1.5 text-xs text-muted-foreground hover:text-primary"
+            onClick={() => navigate({ to: backTo })}
+          >
+            <ArrowLeft className="size-3.5" />
+          </Button>
+        ) : null}
         <Link
           to="/dashboard"
           className="font-medium text-muted-foreground transition-colors hover:text-primary"

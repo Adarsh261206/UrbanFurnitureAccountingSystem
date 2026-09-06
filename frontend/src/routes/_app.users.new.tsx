@@ -81,7 +81,16 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New user" description="Create an account with access to the system." />
+      <PageHeader
+        title="New user"
+        description="Create an account with access to the system."
+        backTo="/users"
+        crumbs={[
+          { label: "Administration" },
+          { label: "Users", to: "/users" },
+          { label: "New user" },
+        ]}
+      />
       <form
         className="space-y-6"
         onSubmit={(e) => {

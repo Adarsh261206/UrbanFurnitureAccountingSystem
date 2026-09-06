@@ -93,7 +93,16 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New budget" description="Create a budget for an analytical account." />
+      <PageHeader
+        title="New budget"
+        description="Create a budget for an analytical account."
+        backTo="/budgets"
+        crumbs={[
+          { label: "Master Settings" },
+          { label: "Analytical Budget", to: "/budgets" },
+          { label: "New budget" },
+        ]}
+      />
       <form
         className="space-y-6"
         onSubmit={(e) => {

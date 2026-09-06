@@ -157,6 +157,7 @@ function Page() {
       ) : null}
       <PageHeader
         title={`Invoice ${invoice.invoice_number}`}
+        backTo="/invoices"
         crumbs={[{ label: "Sales" }, { label: "Sale Invoice", to: "/invoices" }]}
         description={invoice.invoice_reference}
         actions={

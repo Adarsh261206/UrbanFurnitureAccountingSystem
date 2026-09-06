@@ -78,7 +78,11 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Categories" description="Product categories used across the catalog." />
+      <PageHeader
+        title="Categories"
+        crumbs={[{ label: "Master Settings" }, { label: "Categories" }]}
+        description="Product categories used across the catalog."
+      />
 
       <FormSection title="Add category">
         <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3" noValidate>

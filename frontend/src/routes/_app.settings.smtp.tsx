@@ -89,6 +89,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="SMTP Settings"
+        backTo="/dashboard"
         crumbs={[{ label: "Administration" }, { label: "SMTP Settings" }]}
         description="Configure the mail server used for approvals, password resets and notifications."
       />

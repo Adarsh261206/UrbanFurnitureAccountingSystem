@@ -195,6 +195,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={product.name}
+        backTo="/products"
         crumbs={[{ label: "Master Settings" }, { label: "Product", to: "/products" }]}
         description={`${product.brand_name ?? "No brand"} · ${product.sku ?? "No SKU"}`}
         actions={

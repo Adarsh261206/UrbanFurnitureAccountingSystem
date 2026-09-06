@@ -167,7 +167,16 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New product" description="Add a good, service or combo item." />
+      <PageHeader
+        title="New product"
+        description="Add a good, service or combo item."
+        backTo="/products"
+        crumbs={[
+          { label: "Master Settings" },
+          { label: "Product", to: "/products" },
+          { label: "New product" },
+        ]}
+      />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <FormSection title="Product details">
           <ErrorBanner message={formError} />

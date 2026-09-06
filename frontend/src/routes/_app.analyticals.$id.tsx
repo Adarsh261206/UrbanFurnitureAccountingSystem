@@ -143,7 +143,12 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={record.name} description="Edit analytical account details." />
+      <PageHeader
+        title={record.name}
+        backTo="/analyticals"
+        crumbs={[{ label: "Master Settings" }, { label: "Analyticals", to: "/analyticals" }]}
+        description="Edit analytical account details."
+      />
       <form
         className="space-y-6"
         onSubmit={(e) => {

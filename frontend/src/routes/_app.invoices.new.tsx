@@ -206,6 +206,12 @@ function Page() {
       <PageHeader
         title="New invoice"
         description="Create a customer invoice, optionally linked to a confirmed sales order."
+        backTo="/invoices"
+        crumbs={[
+          { label: "Sales" },
+          { label: "Sale Invoice", to: "/invoices" },
+          { label: "New invoice" },
+        ]}
       />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <FormSection title="Invoice details">

@@ -80,6 +80,7 @@ function Page() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title={`Record payment`}
+        backTo="/bills"
         crumbs={[
           { label: "Purchase" },
           { label: "Bills", to: "/bills" },

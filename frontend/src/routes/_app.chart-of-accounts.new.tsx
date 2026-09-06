@@ -72,6 +72,12 @@ function Page() {
       <PageHeader
         title="New account"
         description="Add a ledger account to the chart of accounts."
+        backTo="/chart-of-accounts"
+        crumbs={[
+          { label: "Account" },
+          { label: "Chart of Accounts", to: "/chart-of-accounts" },
+          { label: "New account" },
+        ]}
       />
       <form
         className="space-y-6"

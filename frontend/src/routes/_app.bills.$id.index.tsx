@@ -165,6 +165,7 @@ function Page() {
       {isDraft && warnings.length > 0 ? <BudgetWarningBanner warnings={warnings} /> : null}
       <PageHeader
         title={`Bill ${bill.bill_reference}`}
+        backTo="/bills"
         crumbs={[{ label: "Purchase" }, { label: "Purchase Bill", to: "/bills" }]}
         description={`Vendor: ${bill.vendor?.name ?? "—"}`}
         actions={

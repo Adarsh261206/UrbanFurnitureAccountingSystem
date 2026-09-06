@@ -156,6 +156,12 @@ function Page() {
       <PageHeader
         title="New sales order"
         description="Create a draft sales order for a customer."
+        backTo="/sales-orders"
+        crumbs={[
+          { label: "Sales" },
+          { label: "Sales Order", to: "/sales-orders" },
+          { label: "New sales order" },
+        ]}
       />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <FormSection title="Order details">

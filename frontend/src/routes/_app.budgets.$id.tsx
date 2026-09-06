@@ -107,6 +107,8 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={budget.name}
+        backTo="/budgets"
+        crumbs={[{ label: "Master Settings" }, { label: "Analytical Budget", to: "/budgets" }]}
         description={`${budget.type === "income" ? "Income" : "Expense"} budget · ${budget.analytical?.name ?? "—"}`}
         actions={<StatusBadge status={budget.status} />}
       />

@@ -72,6 +72,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title={po ? `Purchase Order ${po.po_number}` : "Purchase order"}
+        backTo="/purchase-orders"
         crumbs={[{ label: "Purchase" }, { label: "Purchase Orders", to: "/purchase-orders" }]}
         description={po?.vendor?.name}
         actions={

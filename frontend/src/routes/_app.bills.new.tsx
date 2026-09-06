@@ -163,11 +163,12 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="New bill"
-        actions={
-          <Button variant="outline" onClick={() => navigate({ to: "/bills" })}>
-            Back
-          </Button>
-        }
+        backTo="/bills"
+        crumbs={[
+          { label: "Purchase" },
+          { label: "Purchase Bill", to: "/bills" },
+          { label: "New bill" },
+        ]}
       />
 
       <ErrorBanner message={formError} />

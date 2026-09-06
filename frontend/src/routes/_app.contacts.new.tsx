@@ -135,7 +135,16 @@ function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New contact" description="Add a customer or vendor contact." />
+      <PageHeader
+        title="New contact"
+        description="Add a customer or vendor contact."
+        backTo="/contacts"
+        crumbs={[
+          { label: "Master Settings" },
+          { label: "Contact", to: "/contacts" },
+          { label: "New contact" },
+        ]}
+      />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <FormSection title="Contact details">
           <ErrorBanner message={formError} />
