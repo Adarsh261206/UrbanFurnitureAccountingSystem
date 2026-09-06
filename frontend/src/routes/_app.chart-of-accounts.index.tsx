@@ -52,7 +52,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Chart of accounts"
-        crumbs={[{ label: "Account" }, { label: "Chart of Accounts" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Chart of Accounts" }]}
         description="Ledger accounts used across journals, invoices and bills."
         actions={
           <Button onClick={() => navigate({ to: "/chart-of-accounts/new" })}>

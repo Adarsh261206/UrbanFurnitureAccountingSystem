@@ -74,7 +74,7 @@ function Page() {
         description="Add a manufacturer or product brand."
         backTo="/brands"
         crumbs={[
-          { label: "Master Settings" },
+          { label: "Master Data" },
           { label: "Brands", to: "/brands" },
           { label: "New brand" },
         ]}

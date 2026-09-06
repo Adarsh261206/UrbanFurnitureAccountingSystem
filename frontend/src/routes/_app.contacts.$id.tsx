@@ -129,7 +129,7 @@ function Page() {
       <PageHeader
         title={query.data.name}
         backTo="/contacts"
-        crumbs={[{ label: "Master Settings" }, { label: "Contact", to: "/contacts" }]}
+        crumbs={[{ label: "Master Data" }, { label: "Contacts", to: "/contacts" }]}
         description={`Created ${fmtDate(query.data.created_at)}`}
         actions={
           <Button variant="outline" onClick={() => navigate({ to: "/contacts" })}>

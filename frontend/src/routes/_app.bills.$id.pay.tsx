@@ -83,7 +83,7 @@ function Page() {
         backTo="/bills"
         crumbs={[
           { label: "Purchase" },
-          { label: "Bills", to: "/bills" },
+          { label: "Vendor Bills", to: "/bills" },
           { label: bill.bill_reference },
         ]}
         description="Record a vendor payment against this bill."

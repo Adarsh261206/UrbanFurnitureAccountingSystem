@@ -80,7 +80,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Categories"
-        crumbs={[{ label: "Master Settings" }, { label: "Categories" }]}
+        crumbs={[{ label: "Master Data" }, { label: "Categories" }]}
         description="Product categories used across the catalog."
       />
 

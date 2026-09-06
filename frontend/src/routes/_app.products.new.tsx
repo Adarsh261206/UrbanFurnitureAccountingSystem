@@ -172,8 +172,8 @@ function Page() {
         description="Add a good, service or combo item."
         backTo="/products"
         crumbs={[
-          { label: "Master Settings" },
-          { label: "Product", to: "/products" },
+          { label: "Master Data" },
+          { label: "Products", to: "/products" },
           { label: "New product" },
         ]}
       />

@@ -98,8 +98,8 @@ function Page() {
         description="Create a budget for an analytical account."
         backTo="/budgets"
         crumbs={[
-          { label: "Master Settings" },
-          { label: "Analytical Budget", to: "/budgets" },
+          { label: "Accounting" },
+          { label: "Budgets", to: "/budgets" },
           { label: "New budget" },
         ]}
       />

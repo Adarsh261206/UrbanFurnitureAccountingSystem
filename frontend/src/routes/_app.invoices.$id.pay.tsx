@@ -106,7 +106,7 @@ function Page() {
         backTo="/invoices"
         crumbs={[
           { label: "Sales" },
-          { label: "Invoices", to: "/invoices" },
+          { label: "Customer Invoices", to: "/invoices" },
           { label: invoice.invoice_number },
         ]}
         description="Record a customer payment against this invoice."

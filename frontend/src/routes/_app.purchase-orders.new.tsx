@@ -127,7 +127,7 @@ function Page() {
         backTo="/purchase-orders"
         crumbs={[
           { label: "Purchase" },
-          { label: "Purchase Order", to: "/purchase-orders" },
+          { label: "Purchase Orders", to: "/purchase-orders" },
           { label: "New purchase order" },
         ]}
       />

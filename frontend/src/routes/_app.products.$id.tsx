@@ -196,7 +196,7 @@ function Page() {
       <PageHeader
         title={product.name}
         backTo="/products"
-        crumbs={[{ label: "Master Settings" }, { label: "Product", to: "/products" }]}
+        crumbs={[{ label: "Master Data" }, { label: "Products", to: "/products" }]}
         description={`${product.brand_name ?? "No brand"} · ${product.sku ?? "No SKU"}`}
         actions={
           <Button variant="outline" onClick={() => navigate({ to: "/products" })}>

@@ -118,7 +118,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Sales orders"
-        crumbs={[{ label: "Sales" }, { label: "Sales Order" }]}
+        crumbs={[{ label: "Sales" }, { label: "Sales Orders" }]}
         description="Create and confirm customer sales orders."
         actions={
           <>

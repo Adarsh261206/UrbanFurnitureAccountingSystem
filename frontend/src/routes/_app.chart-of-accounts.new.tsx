@@ -74,7 +74,7 @@ function Page() {
         description="Add a ledger account to the chart of accounts."
         backTo="/chart-of-accounts"
         crumbs={[
-          { label: "Account" },
+          { label: "Accounting" },
           { label: "Chart of Accounts", to: "/chart-of-accounts" },
           { label: "New account" },
         ]}

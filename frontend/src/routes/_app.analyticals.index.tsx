@@ -55,7 +55,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Analyticals"
-        crumbs={[{ label: "Master Settings" }, { label: "Analyticals" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Analyticals" }]}
         description="Analytical accounts available for budgets and document lines."
         actions={<Button onClick={() => navigate({ to: "/analyticals/new" })}>New</Button>}
       />

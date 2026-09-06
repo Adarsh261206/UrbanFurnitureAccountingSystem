@@ -159,7 +159,7 @@ function Page() {
         backTo="/sales-orders"
         crumbs={[
           { label: "Sales" },
-          { label: "Sales Order", to: "/sales-orders" },
+          { label: "Sales Orders", to: "/sales-orders" },
           { label: "New sales order" },
         ]}
       />

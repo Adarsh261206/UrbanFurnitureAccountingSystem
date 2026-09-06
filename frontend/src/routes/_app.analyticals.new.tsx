@@ -125,7 +125,7 @@ function Page() {
         description="Track budgets and costs by analytic dimension."
         backTo="/analyticals"
         crumbs={[
-          { label: "Master Settings" },
+          { label: "Accounting" },
           { label: "Analyticals", to: "/analyticals" },
           { label: "New analytical account" },
         ]}

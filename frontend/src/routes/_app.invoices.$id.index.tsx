@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { CheckCircle2, Circle, Download, FileText, Send as SendIcon, X } from "lucide-react";
+import { CheckCircle2, Circle, Download, FileText, Send as SendIcon } from "lucide-react";
 import { RequireAuth } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingState, ErrorState, EmptyState } from "@/components/common/States";
@@ -158,7 +158,7 @@ function Page() {
       <PageHeader
         title={`Invoice ${invoice.invoice_number}`}
         backTo="/invoices"
-        crumbs={[{ label: "Sales" }, { label: "Sale Invoice", to: "/invoices" }]}
+        crumbs={[{ label: "Sales" }, { label: "Customer Invoices", to: "/invoices" }]}
         description={invoice.invoice_reference}
         actions={
           <>
@@ -427,11 +427,8 @@ function Page() {
 
       <Dialog open={previewOpen} onOpenChange={(o) => (o ? undefined : closePreview())}>
         <DialogContent className="max-w-4xl">
-          <DialogHeader className="flex-row items-center justify-between">
+          <DialogHeader>
             <DialogTitle>Print preview</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={closePreview}>
-              <X className="size-4" />
-            </Button>
           </DialogHeader>
           {previewUrl ? (
             <>

@@ -209,7 +209,7 @@ function Page() {
         backTo="/invoices"
         crumbs={[
           { label: "Sales" },
-          { label: "Sale Invoice", to: "/invoices" },
+          { label: "Customer Invoices", to: "/invoices" },
           { label: "New invoice" },
         ]}
       />

@@ -166,7 +166,7 @@ function Page() {
         backTo="/bills"
         crumbs={[
           { label: "Purchase" },
-          { label: "Purchase Bill", to: "/bills" },
+          { label: "Vendor Bills", to: "/bills" },
           { label: "New bill" },
         ]}
       />

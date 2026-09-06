@@ -140,8 +140,8 @@ function Page() {
         description="Add a customer or vendor contact."
         backTo="/contacts"
         crumbs={[
-          { label: "Master Settings" },
-          { label: "Contact", to: "/contacts" },
+          { label: "Master Data" },
+          { label: "Contacts", to: "/contacts" },
           { label: "New contact" },
         ]}
       />

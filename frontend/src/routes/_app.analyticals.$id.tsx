@@ -146,7 +146,7 @@ function Page() {
       <PageHeader
         title={record.name}
         backTo="/analyticals"
-        crumbs={[{ label: "Master Settings" }, { label: "Analyticals", to: "/analyticals" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Analyticals", to: "/analyticals" }]}
         description="Edit analytical account details."
       />
       <form

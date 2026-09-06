@@ -101,7 +101,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Payments"
-        crumbs={[{ label: "Sales" }, { label: "Receipt" }]}
+        crumbs={[{ label: "Sales" }, { label: "Customer Payments" }]}
         description="All recorded receipts and vendor payments."
       />
 

@@ -57,7 +57,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Journals"
-        crumbs={[{ label: "Account" }, { label: "Journals" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Journals" }]}
         description="Journals used to record accounting entries."
         actions={
           <Button onClick={() => navigate({ to: "/journals/new" })}>

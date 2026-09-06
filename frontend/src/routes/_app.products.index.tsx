@@ -138,7 +138,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Products"
-        crumbs={[{ label: "Master Settings" }, { label: "Product" }]}
+        crumbs={[{ label: "Master Data" }, { label: "Products" }]}
         description="Goods, services and combo items sold or purchased."
         actions={
           <Button onClick={() => navigate({ to: "/products/new" })}>

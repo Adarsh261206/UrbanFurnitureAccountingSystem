@@ -77,7 +77,7 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="Budgets"
-        crumbs={[{ label: "Master Settings" }, { label: "Analytical Budget" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Budgets" }]}
         description="Track committed and achieved amounts against analytic accounts."
         actions={
           <Button onClick={() => navigate({ to: "/budgets/new" })}>

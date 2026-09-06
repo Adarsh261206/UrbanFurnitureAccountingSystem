@@ -108,7 +108,7 @@ function Page() {
       <PageHeader
         title={budget.name}
         backTo="/budgets"
-        crumbs={[{ label: "Master Settings" }, { label: "Analytical Budget", to: "/budgets" }]}
+        crumbs={[{ label: "Accounting" }, { label: "Budgets", to: "/budgets" }]}
         description={`${budget.type === "income" ? "Income" : "Expense"} budget · ${budget.analytical?.name ?? "—"}`}
         actions={<StatusBadge status={budget.status} />}
       />

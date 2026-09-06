@@ -94,7 +94,7 @@ function InvoicesPage() {
     <div className="space-y-6">
       <PageHeader
         title={canManage ? "Invoices" : "My Invoices"}
-        crumbs={[{ label: "Sales" }, { label: "Sale Invoice" }]}
+        crumbs={[{ label: "Sales" }, { label: "Customer Invoices" }]}
         description="Track customer invoices, statuses and outstanding balances."
         actions={
           canManage ? (
