@@ -136,12 +136,6 @@ const TABS: { group: string; items: NavItem[] }[] = [
         roles: ["admin", "accountant"],
       },
       {
-        label: "Budget Report",
-        to: "/reports/budget-report",
-        icon: FileText,
-        roles: ["admin", "accountant"],
-      },
-      {
         label: "AR Aging",
         to: "/reports/aging-receivables",
         icon: BarChart3,
