@@ -17,6 +17,8 @@ export type PaymentVia = "bank" | "cash";
 export type PaymentStatus = "draft" | "confirmed" | "successful";
 export type OrderStatus = "draft" | "confirmed" | "cancelled";
 export type JournalEntryStatus = "draft" | "posted" | "cancelled";
+export type CreditNoteStatus = "draft" | "confirmed" | "cancelled";
+export type CreditNoteType = "credit_note" | "debit_note";
 export type JournalType = "sale" | "purchase" | "bank" | "cash";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -354,6 +356,32 @@ export interface BalanceSheetReport {
   liabilities: { items: ReportItem[]; total: number };
   balance_check: boolean;
 }
+export interface TrialBalanceReport {
+  year: number;
+  accounts: {
+    account_id: string;
+    account_name: string;
+    account_type: string;
+    debit: number;
+    credit: number;
+  }[];
+  total_debit: number;
+  total_credit: number;
+  is_balanced: boolean;
+}
+export interface CashFlowReportItem {
+  description: string;
+  amount: number;
+}
+export interface CashFlowReport {
+  year: number;
+  operating: { items: CashFlowReportItem[]; total: number };
+  investing: { items: CashFlowReportItem[]; total: number };
+  financing: { items: CashFlowReportItem[]; total: number };
+  net_change: number;
+  opening_balance: number;
+  closing_balance: number;
+}
 export interface BudgetReportRow {
   id: string;
   name: string;
@@ -369,6 +397,210 @@ export interface BudgetReportRow {
 export interface BudgetReport {
   budgets: BudgetReportRow[];
 }
+
+// ---------- Credit Notes ----------
+export interface CreditNoteListRow {
+  id: string;
+  number: string;
+  type: string;
+  contact_id: string;
+  contact_name: string;
+  date: string;
+  due_date: string | null;
+  status: CreditNoteStatus;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  amount_due: number;
+  notes: string | null;
+  reason: string | null;
+  created_at: string;
+}
+export interface CreditNoteDetail {
+  id: string;
+  number: string;
+  type: string;
+  contact: { id: string; name: string; gstin?: string | null } | null;
+  invoice_id: string | null;
+  invoice_number: string | null;
+  bill_id: string | null;
+  bill_reference: string | null;
+  date: string;
+  due_date: string | null;
+  status: CreditNoteStatus;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  amount_due: number;
+  notes: string | null;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ---------- Aging Reports ----------
+export interface AgingInvoiceItem {
+  invoice_id: string;
+  invoice_number: string;
+  total: number;
+  amount_due: number;
+  due_date: string;
+  days_overdue: number;
+  bucket: "current" | "1_30" | "31_60" | "61_90" | "90_plus";
+}
+export interface AgingCustomerRow {
+  contact_id: string;
+  contact_name: string;
+  invoices: AgingInvoiceItem[];
+  total_due: number;
+}
+export interface AgingReceivablesReport {
+  as_of_date: string;
+  customers: AgingCustomerRow[];
+  bucket_totals: {
+    current: number;
+    "1_30": number;
+    "31_60": number;
+    "61_90": number;
+    "90_plus": number;
+  };
+  grand_total: number;
+}
+export interface AgingBillItem {
+  bill_id: string;
+  bill_reference: string;
+  total: number;
+  amount_due: number;
+  due_date: string;
+  days_overdue: number;
+  bucket: "current" | "1_30" | "31_60" | "61_90" | "90_plus";
+}
+export interface AgingVendorRow {
+  contact_id: string;
+  contact_name: string;
+  bills: AgingBillItem[];
+  total_due: number;
+}
+export interface AgingPayablesReport {
+  as_of_date: string;
+  vendors: AgingVendorRow[];
+  bucket_totals: {
+    current: number;
+    "1_30": number;
+    "31_60": number;
+    "61_90": number;
+    "90_plus": number;
+  };
+  grand_total: number;
+}
+
+// ---------- GST Reports ----------
+export interface Gstr1HsnItem {
+  hsn_code: string;
+  description: string;
+  uqc: string;
+  total_quantity: number;
+  total_value: number;
+  taxable_value: number;
+  igst: number;
+  cgst: number;
+  sgst: number;
+}
+
+export interface Gstr1Invoice {
+  invoice_id: string;
+  invoice_number: string;
+  date: string;
+  customer_name: string;
+  customer_gstin: string | null;
+  place_of_supply: string;
+  invoice_type: string;
+  taxable_value: number;
+  igst: number;
+  cgst: number;
+  sgst: number;
+  total: number;
+  hsn_summary: Gstr1HsnItem[];
+}
+
+export interface Gstr1Report {
+  period: string;
+  summary: {
+    total_taxable_value: number;
+    total_igst: number;
+    total_cgst: number;
+    total_sgst: number;
+    total_invoices: number;
+  };
+  invoices: Gstr1Invoice[];
+  hsn_summary: Gstr1HsnItem[];
+}
+
+export interface Gstr3bReport {
+  period: string;
+  "3_1": {
+    taxable_outward: number;
+    zero_rated: number;
+    deemed_exports: number;
+    reverse_charge: number;
+    total_outward: number;
+  };
+  "3_2": { inter_state: number; intra_state: number };
+  "4": { total_igst: number; total_cgst: number; total_sgst: number; total_cess: number };
+  "5": {
+    eligible_itc_igst: number;
+    eligible_itc_cgst: number;
+    eligible_itc_sgst: number;
+    ineligible_itc: number;
+  };
+  "6": {
+    tax_payable_igst: number;
+    tax_payable_cgst: number;
+    tax_payable_sgst: number;
+    interest: number;
+    late_fee: number;
+    total_tax_payable: number;
+  };
+}
+
+// ---------- Inventory / Stock ----------
+export interface StockLevel {
+  id: number;
+  product_id: string;
+  product_name: string;
+  product_sku: string | null;
+  brand?: string | null;
+  stock_quantity: number;
+  reserved_qty: number;
+  available_qty: number;
+}
+
+export interface StockMove {
+  id: number;
+  product_id: string;
+  product_name: string;
+  type: string;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  location?: string | null;
+  notes?: string | null;
+  move_date: string;
+}
+
+export interface StockSummary {
+  total_products: number;
+  total_stock_value: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+}
+
+export type StockLevelList = Paginated & { products: StockLevel[] };
+export type StockMoveList = Paginated & { moves: StockMove[] };
 
 // ---------- Pagination (A22) ----------
 export interface Paginated {
@@ -386,11 +618,29 @@ export type PurchaseOrderList = Paginated & {
   purchase_orders: PurchaseOrderRow[];
 };
 export type PaymentList = Paginated & { payments: PaymentRow[] };
+export type CreditNoteList = Paginated & { credit_notes: CreditNoteListRow[] };
 export type BudgetList = Paginated & { budgets: BudgetListRow[] };
 export type UserList = Paginated & { users: User[] };
 export type JournalEntryList = Paginated & {
   journal_entries: JournalEntryRow[];
 };
+
+// ---------- Audit Log ----------
+export interface AuditLogEntry {
+  id: number;
+  user_id?: string;
+  user_name?: string;
+  action: string;
+  entity: string;
+  entity_id?: string;
+  entity_name?: string;
+  old_values?: Record<string, unknown>;
+  new_values?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+export type AuditLogList = Paginated & { logs: AuditLogEntry[] };
 
 // ---------- Error (universal) ----------
 export interface ApiErrorBody {

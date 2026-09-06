@@ -92,7 +92,11 @@ function Page() {
     <div className="space-y-6">
       <PageHeader
         title="New journal"
-        crumbs={[{ label: "Accounting" }, { label: "Journals", to: "/journals" }, { label: "New journal" }]}
+        crumbs={[
+          { label: "Accounting" },
+          { label: "Journals", to: "/journals" },
+          { label: "New journal" },
+        ]}
         description="Create a journal for a specific accounting flow."
       />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>

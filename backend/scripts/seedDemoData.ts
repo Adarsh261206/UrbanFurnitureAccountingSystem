@@ -28,6 +28,20 @@ async function main() {
     'Ramesh Iyer', 'Swati Kale', 'Naveen Reddy', 'Jyoti Rathi', 'Alok Sinha', 'Madhuri Dixit',
     'Ravi Shankar', 'Gayatri Prasad', 'Sandeep Kaur', 'Preeti Nair', 'Tarun Bhardwaj', 'Shalini Verma',
     'Kunal Mehta', 'Asha Rao', 'Jitendra Gupta', 'Sapna Jain', 'Nitin Agarwal', 'Ritu Singh',
+    'Abhishek Bose', 'Aishwarya Rai', 'Akash Thakur', 'Alka Yagnik', 'Amitabh Bachchan', 'Anurag Kashyap',
+    'Barkha Dutt', 'Chetan Bhagat', 'Dalai Lama', 'Ekta Kapoor', 'Farhan Akhtar', 'Gautam Gambhir',
+    'Hrithik Roshan', 'Indra Nooyi', 'Javed Akhtar', 'Kareena Kapoor', 'Lata Mangeshkar', 'M.S. Dhoni',
+    'Narayan Murthy', 'Oberoi Hotels', 'Pratibha Patil', 'Ratan Tata', 'Sachin Tendulkar', 'Tulsi Kumar',
+    'Udit Narayan', 'Vijay Mallya', 'Warren Buffett', 'Zakir Hussain', 'Aamir Khan', 'Bhoomika Chawla',
+    'Catherine Zeta', 'Dimple Kapadia', 'Emraan Hashmi', 'Feroz Khan', 'Govinda Ahuja', 'Hema Malini',
+    'Irrfan Khan', 'Juhi Chawla', 'Kamal Hassan', 'Lara Dutta', 'Mammootty', 'Nana Patekar',
+    'Om Puri', 'Paresh Rawal', 'Raj Babbar', 'Shabana Azmi', 'Tom Alter', 'Urmila Matondkar',
+    'Vinod Khanna', 'Waheeda Rehman', 'Yash Chopra', 'Zeenat Aman', 'Anil Kapoor', 'Bobby Deol',
+    'Chiranjeevi', 'Dharmendra', ' Jackie Shroff', 'Kajol Devgan', 'Madhoo Shah', 'Naseeruddin Shah',
+    'Rekha Ganguly', 'Sunny Deol', 'Tabu Hashmi', 'Vikas Bhalla', 'Ajeet Singh', 'Balraj Sahni',
+    'Dev Anand', 'Geeta Bali', 'Hema Singh', 'Inder Kumar', 'Johnny Walker', 'K.L. Saigal',
+    'Meena Kumari', 'Nargis Dutt', 'Prithviraj Kapoor', 'Raj Kapoor', 'Suraiya Jamaal', 'Vilasrao Deshmukh',
+    'Yakub Khan', 'Zulfikar Ali', 'Ashok Kumar', 'Bharat Bhushan', 'Chandan Roy', 'Dilip Kumar',
   ];
   const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Pune', 'Hyderabad', 'Ahmedabad', 'Jaipur', 'Lucknow'];
   const vendorNames = [
@@ -36,6 +50,11 @@ async function main() {
     'Starwood Creations', 'Vintage Mouldings', 'Solid Seating Co', 'DeskCraft Solutions', 'LoungeCraft',
     'BedMaster Industries', 'Wardrobe World', 'Dining Divas', 'Outdoor Living Ltd', 'Decor Nexus',
     'Teak & Rosewood LLP', 'Karigari Crafts', 'Shivam Timber Traders', 'Metro Steel Furniture', 'Ganga Plywood Mart',
+    'Sahara Wood Products', 'Trendy Furniture Hub', 'Pacific Plywood Co', 'National Furnishers', 'Apex Timber Industries',
+    'Bright Wood Works', 'Central Furniture Mart', 'Diamond Upholstery', 'Evergreen Timber Co', 'Fine Oak Interiors',
+    'Global Furniture Exports', 'Harmony Home Decor', 'Indian Craftsmen Ltd', 'Jupiter Wood Industries', 'Kingfisher Furniture',
+    'Lakewood Creations', 'Maple Leaf Furnishings', 'Noble Rattan Works', 'Oasis Home Solutions', 'Prestige Furniture Ltd',
+    'Quality Wood Traders', 'Royal Cushion Works', 'Supreme Teak House', 'Titan Furniture Co', 'Unique Interiors Pvt Ltd',
   ];
   const states = ['MH', 'DL', 'KA', 'TN', 'WB', 'AP', 'GJ', 'RJ', 'UP', 'HR'];
 
@@ -105,16 +124,16 @@ async function main() {
     { name: 'Decor & Accessories', base: 1500, max: 20000 },
   ];
   const productNames = {
-    'Sofas & Couches': ['L-Shaped Sofa', '3-Seater Fabric Sofa', 'Recliner Sofa', 'Sectional Couch', 'Chesterfield Sofa', 'Sofa Cum Bed', 'Loveseat', 'Bean Bag Lounge'],
-    'Chairs': ['Ergonomic Office Chair', 'Dining Chair', 'Rocking Chair', 'Accent Chair', 'Bar Stool', 'Armchair', 'Recliner Chair', 'Plastic Moulded Chair'],
-    'Tables': ['Coffee Table', 'Dining Table 6-Seater', 'Study Desk', 'Computer Table', 'Console Table', 'Centre Table', 'Folding Table', 'TV Unit'],
-    'Beds': ['King Size Bed', 'Queen Size Bed', 'Single Bed', 'Double Bed with Storage', 'Platform Bed', 'Bunk Bed', 'Hydraulic Bed', 'Divan Bed'],
-    'Wardrobes': ['3-Door Wardrobe', 'Sliding Wardrobe', 'Almirah', 'Wardrobe with Mirror', 'Dressing Table Combo', 'Walk-in Closet Units', 'Loft Storage', 'Chest of Drawers'],
-    'Dining Sets': ['6-Seater Dining Set', '4-Seater Dining Set', '2-Seater Bistro Set', 'Dining Set with Bench', 'Round Dining Set', '8-Seater Family Set', 'Dining Bench', 'Bar Table Set'],
-    'Office Furniture': ['Executive Desk', 'Office Workstation', 'Meeting Table', 'Filing Cabinet', 'Bookshelf', 'Office Chair', 'Reception Desk', 'Staff Bench'],
-    'Outdoor Furniture': ['Garden Bench', 'Patio Chair Set', 'Outdoor Dining Table', 'Swing Chair', 'Sun Lounger', 'Balcony Table', 'Garden Umbrella', 'Picnic Table'],
-    'Storage & Shelves': ['Wall Shelf Unit', 'Corner Shelf', 'Open Bookcase', 'Shoe Rack', 'Media Console', 'Kitchen Cabinet', 'Sideboard', 'Cupboard'],
-    'Decor & Accessories': ['Table Lamp', 'Wall Art Frame', 'Cushion Set', 'Vase Set', 'Wall Clock', 'Mirror', 'Photo Frame', 'Showpiece'],
+    'Sofas & Couches': ['L-Shaped Sofa', '3-Seater Fabric Sofa', 'Recliner Sofa', 'Sectional Couch', 'Chesterfield Sofa', 'Sofa Cum Bed', 'Loveseat', 'Bean Bag Lounge', 'Tuxedo Sofa', 'Lawson Sofa', 'Mid-Century Sofa', 'Camelback Sofa'],
+    'Chairs': ['Ergonomic Office Chair', 'Dining Chair', 'Rocking Chair', 'Accent Chair', 'Bar Stool', 'Armchair', 'Recliner Chair', 'Plastic Moulded Chair', 'Wingback Chair', 'Slipper Chair', 'Club Chair', 'Chaise Lounge'],
+    'Tables': ['Coffee Table', 'Dining Table 6-Seater', 'Study Desk', 'Computer Table', 'Console Table', 'Centre Table', 'Folding Table', 'TV Unit', 'Side Table', 'Nesting Tables', 'L-Shaped Desk', 'Standing Desk'],
+    'Beds': ['King Size Bed', 'Queen Size Bed', 'Single Bed', 'Double Bed with Storage', 'Platform Bed', 'Bunk Bed', 'Hydraulic Bed', 'Divan Bed', 'Canopy Bed', 'Sleigh Bed', 'Poster Bed', 'Trundle Bed'],
+    'Wardrobes': ['3-Door Wardrobe', 'Sliding Wardrobe', 'Almirah', 'Wardrobe with Mirror', 'Dressing Table Combo', 'Walk-in Closet Units', 'Loft Storage', 'Chest of Drawers', '4-Door Wardrobe', 'Corner Wardrobe', 'Mirror Cabinet', 'Linen Tower'],
+    'Dining Sets': ['6-Seater Dining Set', '4-Seater Dining Set', '2-Seater Bistro Set', 'Dining Set with Bench', 'Round Dining Set', '8-Seater Family Set', 'Dining Bench', 'Bar Table Set', 'Extendable Dining Table', 'Counter Height Set', 'Drop Leaf Table', 'Pub Table Set'],
+    'Office Furniture': ['Executive Desk', 'Office Workstation', 'Meeting Table', 'Filing Cabinet', 'Bookshelf', 'Office Chair', 'Reception Desk', 'Staff Bench', 'Conference Table', 'Cubicle Partition', 'Mobile Pedestal', 'Credenza'],
+    'Outdoor Furniture': ['Garden Bench', 'Patio Chair Set', 'Outdoor Dining Table', 'Swing Chair', 'Sun Lounger', 'Balcony Table', 'Garden Umbrella', 'Picnic Table', 'Adirondack Chair', 'Hammock Stand', 'Fire Pit Set', 'Bistro Set'],
+    'Storage & Shelves': ['Wall Shelf Unit', 'Corner Shelf', 'Open Bookcase', 'Shoe Rack', 'Media Console', 'Kitchen Cabinet', 'Sideboard', 'Cupboard', 'Floating Shelf Set', 'Ladder Shelf', 'Cube Organizer', 'Magazine Rack'],
+    'Decor & Accessories': ['Table Lamp', 'Wall Art Frame', 'Cushion Set', 'Vase Set', 'Wall Clock', 'Mirror', 'Photo Frame', 'Showpiece', 'Candle Holder', 'Plant Stand', 'Coaster Set', 'Door Stopper'],
   };
   const categories: { id: string; name: string }[] = [];
   for (const cd of categoryData) {
@@ -181,7 +200,14 @@ async function main() {
 
   // ================= ANALYTICALS =================
   const analyticals: string[] = [];
-  const anaRegions = ['North India Sales', 'South India Sales', 'West India Sales', 'East India Sales', 'Central India Sales', 'Online Channel Sales', 'Retail Store Sales', 'B2B Corporate Sales', 'Export Sales', 'Festival Campaign Sales', 'Mumbai Region', 'Delhi NCR Region'];
+  const anaRegions = [
+    'North India Sales', 'South India Sales', 'West India Sales', 'East India Sales',
+    'Central India Sales', 'Online Channel Sales', 'Retail Store Sales', 'B2B Corporate Sales',
+    'Export Sales', 'Festival Campaign Sales', 'Mumbai Region', 'Delhi NCR Region',
+    'Bangalore Metro', 'Chennai Zone', 'Kolkata Territory', 'Pune Division',
+    'Hyderabad Hub', 'Ahmedabad Center', 'Jaipur Circle', 'Lucknow District',
+    'Chandigarh Zone', 'Indore Territory', 'Coimbatore Hub', 'Visakhapatnam Center',
+  ];
   for (let i = 0; i < anaRegions.length; i++) {
     const a = await prisma.analytical.create({
       data: {
@@ -199,10 +225,10 @@ async function main() {
 
   // ================= SALES ORDERS =================
   const soIds: string[] = [];
-  const soCount = 40;
+  const soCount = 150;
   for (let i = 0; i < soCount; i++) {
     const customerId = pick(customers);
-    const month = rnd(1, 8);
+    const month = rnd(1, 12);
     const day = rnd(1, 28);
     const d = dateIn(YEAR, month, day);
     const lineCount = rnd(1, 4);
@@ -258,10 +284,10 @@ async function main() {
 
   // ================= INVOICES =================
   const invoiceIds: string[] = [];
-  const invoiceCount = 90;
+  const invoiceCount = 200;
   for (let i = 0; i < invoiceCount; i++) {
     const customerId = pick(customers);
-    const month = rnd(1, 8);
+    const month = rnd(1, 12);
     const day = rnd(1, 28);
     const d = dateIn(YEAR, month, day);
     const lineCount = rnd(1, 4);
@@ -368,10 +394,10 @@ async function main() {
 
   // ================= PURCHASE ORDERS =================
   const poIds: string[] = [];
-  const poCount = 28;
+  const poCount = 100;
   for (let i = 0; i < poCount; i++) {
     const vendorId = pick(vendors);
-    const month = rnd(1, 8);
+    const month = rnd(1, 12);
     const d = dateIn(YEAR, month, rnd(1, 28));
     const lines = Array.from({ length: rnd(1, 3) }, () => {
       const prod = pick(products);
@@ -419,10 +445,10 @@ async function main() {
 
   // ================= BILLS =================
   const billIds: string[] = [];
-  const billCount = 65;
+  const billCount = 150;
   for (let i = 0; i < billCount; i++) {
     const vendorId = pick(vendors);
-    const month = rnd(1, 8);
+    const month = rnd(1, 12);
     const d = dateIn(YEAR, month, rnd(1, 28));
     const lineCount = rnd(1, 3);
     const analyticalId = Math.random() < 0.5 ? pick(analyticals) : null;
@@ -524,8 +550,25 @@ async function main() {
   console.log(`Bills: ${billCount}`);
 
   // ================= BUDGETS =================
-  const budgetNames = ['Q1 Sales Target', 'Q2 Sales Target', 'Q3 Sales Target', 'Q4 Sales Target', 'Annual Sales Goal', 'Festival Season Target', 'Online Channel Goal', 'Retail Expansion Budget', 'New Store Opening Budget', 'Warehouse Rental Budget', 'Marketing Campaign Budget', 'Staff Salaries Budget', 'Transport & Logistics Budget', 'Raw Material Budget', 'Showroom Maintenance Budget', 'Annual Purchase Budget'];
-  const budgetTypes: ('income' | 'expense')[] = ['income', 'income', 'income', 'income', 'income', 'income', 'income', 'income', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense'];
+  const budgetNames = [
+    'Q1 Sales Target', 'Q2 Sales Target', 'Q3 Sales Target', 'Q4 Sales Target',
+    'Annual Sales Goal', 'Festival Season Target', 'Online Channel Goal', 'Retail Expansion Budget',
+    'New Store Opening Budget', 'Warehouse Rental Budget', 'Marketing Campaign Budget', 'Staff Salaries Budget',
+    'Transport & Logistics Budget', 'Raw Material Budget', 'Showroom Maintenance Budget', 'Annual Purchase Budget',
+    'IT Infrastructure Budget', 'Training & Development Budget', 'Travel & Entertainment Budget', 'Office Supplies Budget',
+    'Insurance Premium Budget', 'Legal & Compliance Budget', 'R&D Innovation Budget', 'Customer Support Budget',
+    'Brand Promotion Budget', 'E-commerce Growth Budget', 'Dealer Network Budget', 'Quality Assurance Budget',
+    'Sustainability Initiative Budget', 'Furniture Exhibition Budget', 'Warehouse Expansion Budget', 'Fleet Maintenance Budget',
+    'HR Recruitment Budget', 'Product Launch Budget', 'Market Research Budget', 'Packaging Material Budget',
+    'Utilities & Rent Budget', 'Security Services Budget', 'Cleaning & Maintenance Budget', 'Capital Expenditure Budget',
+  ];
+  const budgetTypes: ('income' | 'expense')[] = [
+    'income', 'income', 'income', 'income', 'income', 'income', 'income', 'income',
+    'income', 'income', 'income', 'income', 'income', 'income', 'income', 'income',
+    'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense',
+    'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense',
+    'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense', 'expense',
+  ];
   const createdBudgetIds: string[] = [];
   for (let i = 0; i < budgetNames.length; i++) {
     const q = Math.floor(i / 4);
@@ -573,9 +616,9 @@ async function main() {
   console.log(`Budgets: ${createdBudgetIds.length}`);
 
   // ================= MANUAL JOURNAL ENTRIES =================
-  const manualJEs = 8;
+  const manualJEs = 30;
   for (let i = 0; i < manualJEs; i++) {
-    const month = rnd(1, 8);
+    const month = rnd(1, 12);
     const d = dateIn(YEAR, month, rnd(1, 28));
     const amount = rnd(5000, 50000);
     const entryNumber = await generateSequence('JE');

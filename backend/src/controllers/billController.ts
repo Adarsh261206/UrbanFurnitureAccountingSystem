@@ -5,6 +5,7 @@ import { generateSequence } from '../services/sequenceService';
 import { serializeBillDetail, serializeBillListRow } from '../utils/serializers';
 import { generateBillPdf } from '../services/documentPdfService';
 import { sendPdfBuffer } from '../services/pdfService';
+import { logAudit } from '../services/auditService';
 
 export async function listBills(req: Request, res: Response, next: NextFunction) {
   try {
@@ -105,6 +106,16 @@ export async function createBill(req: Request, res: Response, next: NextFunction
         },
       },
       include: { vendor: true, partner: true, billLines: { include: { product: true } } },
+    });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'create',
+      entity: 'bill',
+      entityId: bill.id,
+      entityName: bill.billReference,
+      newValues: { status: bill.status, total: Number(bill.total) },
+      req,
     });
 
     res.status(201).json(serializeBillDetail(bill));
@@ -218,6 +229,16 @@ export async function confirmBill(req: Request, res: Response, next: NextFunctio
 
       return updated;
     }, { isolationLevel: 'Serializable' });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'confirm',
+      entity: 'bill',
+      entityId: result.id,
+      entityName: result.billReference,
+      newValues: { status: result.status },
+      req,
+    });
 
     res.json(serializeBillDetail(result));
   } catch (err) { next(err); }
@@ -338,6 +359,17 @@ export async function cancelBill(req: Request, res: Response, next: NextFunction
     if (bill.status !== 'draft') throw new AppError('DRAFT_REQUIRED', 'Only draft bills can be cancelled', 400);
 
     await prisma.vendorBill.delete({ where: { id: req.params.id } });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'delete',
+      entity: 'bill',
+      entityId: bill.id,
+      entityName: bill.billReference,
+      oldValues: { status: bill.status },
+      req,
+    });
+
     res.json(serializeBillDetail(bill));
   } catch (err) { next(err); }
 }

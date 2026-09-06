@@ -6,9 +6,12 @@ import { listProducts, getProduct, createProduct, updateProduct, deleteProduct, 
 import { listBrands, getBrand, createBrand, updateBrand, deleteBrand } from '../controllers/brandController';
 import { listCategories, getCategory, createCategory, updateCategory, deleteCategory } from '../controllers/categoryController';
 import { listAnalytics, getAnalytical, createAnalytical, updateAnalytical, deleteAnalytical } from '../controllers/analyticalController';
+import { getStockLevels, getStockMoves, adjustStock, getStockSummary } from '../controllers/inventoryController';
 import { listCOA, getCOA, createCOA, updateCOA, deleteCOA } from '../controllers/coaController';
 import { listJournals, getJournal, createJournal, updateJournal, deleteJournal } from '../controllers/journalController';
 import { listUsers, getUser, createUser, updateUser, deleteUser, approveUser, rejectUser } from '../controllers/userController';
+import { getAuditLogs, getAuditLogById } from '../controllers/auditController';
+import { getProfitAndLoss, getBalanceSheet, getTrialBalance, getCashFlowStatement, getCashFlowPdf, getAgingReceivables, getAgingPayables, getBudgetReport, getGstr1, getGstr1Pdf, getGstr3b, getGstr3bPdf } from '../controllers/reportController';
 import { contactCreateValidation, contactUpdateValidation } from '../validators/masterValidators';
 import { productCreateValidation, productUpdateValidation } from '../validators/masterValidators';
 import { brandCreateValidation, brandUpdateValidation } from '../validators/masterValidators';
@@ -75,5 +78,25 @@ router.put('/users/:id', authorizeResource('user', 'update'), userUpdateValidati
 router.post('/users/:id/approve', authorizeResource('user', 'update'), approveUser);
 router.post('/users/:id/reject', authorizeResource('user', 'update'), rejectUser);
 router.delete('/users/:id', authorizeResource('user', 'delete'), deleteUser);
+
+router.get('/audit-logs', authorizeResource('user', 'read'), getAuditLogs);
+router.get('/audit-logs/:id', authorizeResource('user', 'read'), getAuditLogById);
+
+router.get('/inventory', authorizeResource('product', 'read'), getStockLevels);
+router.get('/inventory/moves', authorizeResource('product', 'read'), getStockMoves);
+router.get('/inventory/summary', authorizeResource('product', 'read'), getStockSummary);
+router.post('/inventory/adjust', authorizeResource('product', 'write'), adjustStock);
+
+router.get('/reports/profit-and-loss', authorizeResource('report', 'read'), getProfitAndLoss);
+router.get('/reports/balance-sheet', authorizeResource('report', 'read'), getBalanceSheet);
+router.get('/reports/trial-balance', authorizeResource('report', 'read'), getTrialBalance);
+router.get('/reports/cash-flow', authorizeResource('report', 'read'), getCashFlowStatement);
+router.get('/reports/budget-report', authorizeResource('report', 'read'), getBudgetReport);
+router.get('/reports/aging-receivables', authorizeResource('report', 'read'), getAgingReceivables);
+router.get('/reports/aging-payables', authorizeResource('report', 'read'), getAgingPayables);
+router.get('/reports/gstr-1', authorizeResource('report', 'read'), getGstr1);
+router.get('/reports/gstr-3b', authorizeResource('report', 'read'), getGstr3b);
+router.get('/reports/gstr-1/pdf', authorizeResource('report', 'read'), getGstr1Pdf);
+router.get('/reports/gstr-3b/pdf', authorizeResource('report', 'read'), getGstr3bPdf);
 
 export default router;

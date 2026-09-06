@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { serializeContact } from '../utils/serializers';
 import { GenericController } from './genericController';
+import { logAudit } from '../services/auditService';
 
 const controller = new GenericController(prisma, 'contact');
 
@@ -40,6 +41,17 @@ export async function createContact(req: Request, res: Response, next: NextFunct
       pan: req.body.pan ?? null,
     };
     const item = await controller.create(data);
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'create',
+      entity: 'contact',
+      entityId: item.id,
+      entityName: item.name,
+      newValues: { name: item.name, contact_type: item.contactType },
+      req,
+    });
+
     res.status(201).json(serializeContact(item));
   } catch (err) { next(err); }
 }
@@ -60,13 +72,36 @@ export async function updateContact(req: Request, res: Response, next: NextFunct
     if (req.body.gstin !== undefined) data.gstin = req.body.gstin;
     if (req.body.pan !== undefined) data.pan = req.body.pan;
     const item = await controller.update(req.params.id, data);
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'update',
+      entity: 'contact',
+      entityId: item.id,
+      entityName: item.name,
+      newValues: { name: item.name, contact_type: item.contactType },
+      req,
+    });
+
     res.json(serializeContact(item));
   } catch (err) { next(err); }
 }
 
 export async function deleteContact(req: Request, res: Response, next: NextFunction) {
   try {
+    const item = await controller.getById(req.params.id);
     await controller.softDelete(req.params.id);
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'delete',
+      entity: 'contact',
+      entityId: item.id,
+      entityName: item.name,
+      oldValues: { name: item.name, contact_type: item.contactType },
+      req,
+    });
+
     res.status(204).send();
   } catch (err) { next(err); }
 }

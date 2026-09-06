@@ -119,6 +119,8 @@ model User {
   createdBills     VendorBill[]
   createdPayments  Payment[]
   createdJE        JournalEntry[]
+  creditNotes      CreditNote[]
+  auditLogs        AuditLog[]
 
   @@map("users")
 }
@@ -150,6 +152,7 @@ model Contact {
   journalEntryLines JournalEntryLine[]
   analyticals       Analytical[]
   budgets           Budget[]
+  creditNotes       CreditNote[]
 
   @@map("contacts")
 }
@@ -203,6 +206,8 @@ model Product {
   customerInvoiceLines CustomerInvoiceLine[]
   purchaseOrderLines  PurchaseOrderLine[]
   vendorBillLines     VendorBillLine[]
+  stockLevel          StockLevel?
+  stockMoves          StockMove[]
 
   @@index([categoryId], map: "idx_products_category")
   @@index([brandId], map: "idx_products_brand")
@@ -424,6 +429,7 @@ model CustomerInvoice {
   creator             User                   @relation(fields: [createdBy], references: [id])
   invoiceLines        CustomerInvoiceLine[]
   payments            Payment[]
+  creditNotes         CreditNote[]
 
   @@index([invoiceReference], map: "idx_inv_ref")
   @@index([invoiceNumber], map: "idx_inv_number")
@@ -526,6 +532,7 @@ model VendorBill {
   creator          User             @relation(fields: [createdBy], references: [id])
   billLines        VendorBillLine[]
   payments         Payment[]
+  creditNotes      CreditNote[]
 
   @@index([billReference], map: "idx_bill_ref")
   @@index([purchaseOrderId], map: "idx_bill_po")
@@ -593,6 +600,39 @@ model Sequence {
   @@map("sequences")
 }
 
+model CreditNote {
+  id            String    @id @default(uuid()) @db.Uuid
+  number        String    @unique @db.VarChar(50)
+  type          String    @db.VarChar(20) // credit_note or debit_note
+  contactId     String    @map("contact_id") @db.Uuid
+  contact       Contact   @relation(fields: [contactId], references: [id])
+  invoiceId     String?   @map("invoice_id") @db.Uuid
+  invoice       CustomerInvoice? @relation(fields: [invoiceId], references: [id])
+  billId        String?   @map("bill_id") @db.Uuid
+  bill          VendorBill? @relation(fields: [billId], references: [id])
+  date          DateTime  @default(now()) @db.Date()
+  dueDate       DateTime? @map("due_date") @db.Date()
+  status        String    @default("draft") @db.VarChar(20) // draft, confirmed, cancelled
+  subtotal      Decimal   @default(0) @db.Decimal(15, 2)
+  taxRate       Decimal   @default(0) @db.Decimal(5, 2)
+  taxAmount     Decimal   @default(0) @db.Decimal(15, 2)
+  total         Decimal   @default(0) @db.Decimal(15, 2)
+  amountDue     Decimal   @default(0) @map("amount_due") @db.Decimal(15, 2)
+  notes         String?   @db.Text
+  reason        String?   @db.VarChar(255)
+  createdBy     String    @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  creator       User      @relation(fields: [createdBy], references: [id])
+
+  @@index([contactId], map: "idx_cn_contact")
+  @@index([invoiceId], map: "idx_cn_invoice")
+  @@index([billId], map: "idx_cn_bill")
+  @@index([status], map: "idx_cn_status")
+  @@map("credit_notes")
+}
+
 model AppSetting {
   id        String   @id @default(uuid()) @db.Uuid
   key       String   @unique @db.VarChar(100)
@@ -600,4 +640,59 @@ model AppSetting {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
 
   @@map("app_settings")
+}
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  userId        String?  @db.Uuid
+  user          User?    @relation(fields: [userId], references: [id])
+  action        String   // create, update, delete, confirm, cancel, approve, reject
+  entity        String   // invoice, bill, contact, product, payment, journal_entry, budget, credit_note, user
+  entityId      String?  @db.Uuid
+  entityName    String?  // Human-readable name like "INV-2026-0001"
+  oldValues     Json?    // Previous state (for updates)
+  newValues     Json?    // New state (for creates/updates)
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model StockLevel {
+  id          Int      @id @default(autoincrement())
+  productId   String   @map("product_id") @db.Uuid
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Decimal  @default(0) @db.Decimal(10, 2)
+  reservedQty Decimal  @default(0) @map("reserved_qty") @db.Decimal(10, 2)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([productId])
+  @@map("stock_levels")
+}
+
+model StockMove {
+  id              Int      @id @default(autoincrement())
+  productId       String   @map("product_id") @db.Uuid
+  product         Product  @relation(fields: [productId], references: [id])
+  type            String   @db.VarChar(50) // purchase, sale, adjustment, return_in, return_out
+  referenceType   String?  @map("reference_type") @db.VarChar(50) // invoice, bill, credit_note, manual
+  referenceId     String?  @map("reference_id") @db.Uuid
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitCost        Decimal  @default(0) @map("unit_cost") @db.Decimal(12, 2)
+  totalCost       Decimal  @default(0) @map("total_cost") @db.Decimal(12, 2)
+  location        String?  @default("main_warehouse") @db.VarChar(100)
+  notes           String?  @db.Text
+  moveDate        DateTime @default(now()) @map("move_date") @db.Timestamptz()
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([productId], map: "idx_stock_moves_product")
+  @@index([type], map: "idx_stock_moves_type")
+  @@index([moveDate], map: "idx_stock_moves_date")
+  @@index([referenceType, referenceId], map: "idx_stock_moves_ref")
+  @@map("stock_moves")
 }

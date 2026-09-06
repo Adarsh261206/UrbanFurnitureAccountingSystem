@@ -74,6 +74,12 @@ const TABS: { group: string; items: NavItem[] }[] = [
         roles: ["admin", "accountant", "user"],
       },
       {
+        label: "Credit Notes",
+        to: "/credit-notes",
+        icon: FileText,
+        roles: ["admin", "accountant"],
+      },
+      {
         label: "Customer Payments",
         to: "/payments",
         state: { tab: "receipts" },
@@ -118,8 +124,44 @@ const TABS: { group: string; items: NavItem[] }[] = [
         roles: ["admin", "accountant"],
       },
       {
+        label: "Trial Balance",
+        to: "/reports/trial-balance",
+        icon: BarChart3,
+        roles: ["admin", "accountant"],
+      },
+      {
         label: "Budget Report",
         to: "/reports/budget-report",
+        icon: FileText,
+        roles: ["admin", "accountant"],
+      },
+      {
+        label: "Budget Report",
+        to: "/reports/budget-report",
+        icon: FileText,
+        roles: ["admin", "accountant"],
+      },
+      {
+        label: "AR Aging",
+        to: "/reports/aging-receivables",
+        icon: BarChart3,
+        roles: ["admin", "accountant"],
+      },
+      {
+        label: "AP Aging",
+        to: "/reports/aging-payables",
+        icon: BarChart3,
+        roles: ["admin", "accountant"],
+      },
+      {
+        label: "GSTR-1",
+        to: "/reports/gstr-1",
+        icon: FileText,
+        roles: ["admin", "accountant"],
+      },
+      {
+        label: "GSTR-3B",
+        to: "/reports/gstr-3b",
         icon: FileText,
         roles: ["admin", "accountant"],
       },
@@ -132,12 +174,20 @@ const TABS: { group: string; items: NavItem[] }[] = [
       { label: "Products", to: "/products", icon: Package, roles: ["admin", "accountant"] },
       { label: "Brands", to: "/brands", icon: Tag, roles: ["admin", "accountant"] },
       { label: "Categories", to: "/categories", icon: Package, roles: ["admin", "accountant"] },
+      { label: "Stock Levels", to: "/inventory", icon: Package, roles: ["admin", "accountant"] },
+      {
+        label: "Stock Moves",
+        to: "/inventory/moves",
+        icon: Package,
+        roles: ["admin", "accountant"],
+      },
     ],
   },
   {
     group: "Administration",
     items: [
       { label: "Users", to: "/users", icon: Users, roles: ["admin"] },
+      { label: "Audit Log", to: "/admin/audit-log", icon: FileText, roles: ["admin"] },
       { label: "SMTP Settings", to: "/settings/smtp", icon: Mail, roles: ["admin"] },
     ],
   },

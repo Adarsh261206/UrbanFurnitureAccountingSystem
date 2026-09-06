@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { generateSequence } from '../services/sequenceService';
 import { serializePayment } from '../utils/serializers';
+import { logAudit } from '../services/auditService';
 
 export async function listPayments(req: Request, res: Response, next: NextFunction) {
   try {
@@ -98,6 +99,16 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
         status: 'draft',
         createdBy: req.user!.id,
       },
+    });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'create',
+      entity: 'payment',
+      entityId: payment.id,
+      entityName: payment.paymentNumber,
+      newValues: { status: payment.status, amount: Number(payment.amount) },
+      req,
     });
 
     res.status(201).json(serializePayment(payment));
@@ -205,6 +216,16 @@ export async function confirmPayment(req: Request, res: Response, next: NextFunc
 
       return updated;
     }, { isolationLevel: 'Serializable' });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'confirm',
+      entity: 'payment',
+      entityId: result.id,
+      entityName: result.paymentNumber,
+      newValues: { status: result.status },
+      req,
+    });
 
     res.json(serializePayment(result));
   } catch (err) { next(err); }

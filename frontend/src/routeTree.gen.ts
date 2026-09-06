@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAdminAuditLogRouteImport } from './routes/_app.admin.audit-log'
 import { Route as AppAnalyticalsIndexRouteImport } from './routes/_app.analyticals.index'
 import { Route as AppAnalyticalsIdRouteImport } from './routes/_app.analyticals.$id'
 import { Route as AppAnalyticalsNewRouteImport } from './routes/_app.analyticals.new'
@@ -32,6 +33,10 @@ import { Route as AppChartOfAccountsNewRouteImport } from './routes/_app.chart-o
 import { Route as AppContactsIndexRouteImport } from './routes/_app.contacts.index'
 import { Route as AppContactsIdRouteImport } from './routes/_app.contacts.$id'
 import { Route as AppContactsNewRouteImport } from './routes/_app.contacts.new'
+import { Route as AppCreditNotesIndexRouteImport } from './routes/_app.credit-notes.index'
+import { Route as AppCreditNotesNewRouteImport } from './routes/_app.credit-notes.new'
+import { Route as AppInventoryIndexRouteImport } from './routes/_app.inventory.index'
+import { Route as AppInventoryMovesRouteImport } from './routes/_app.inventory.moves'
 import { Route as AppInvoicesIndexRouteImport } from './routes/_app.invoices.index'
 import { Route as AppInvoicesNewRouteImport } from './routes/_app.invoices.new'
 import { Route as AppJournalEntriesIndexRouteImport } from './routes/_app.journal-entries.index'
@@ -45,9 +50,15 @@ import { Route as AppProductsNewRouteImport } from './routes/_app.products.new'
 import { Route as AppPurchaseOrdersIndexRouteImport } from './routes/_app.purchase-orders.index'
 import { Route as AppPurchaseOrdersIdRouteImport } from './routes/_app.purchase-orders.$id'
 import { Route as AppPurchaseOrdersNewRouteImport } from './routes/_app.purchase-orders.new'
+import { Route as AppReportsAgingPayablesRouteImport } from './routes/_app.reports.aging-payables'
+import { Route as AppReportsAgingReceivablesRouteImport } from './routes/_app.reports.aging-receivables'
 import { Route as AppReportsBalanceSheetRouteImport } from './routes/_app.reports.balance-sheet'
 import { Route as AppReportsBudgetReportRouteImport } from './routes/_app.reports.budget-report'
+import { Route as AppReportsCashFlowRouteImport } from './routes/_app.reports.cash-flow'
+import { Route as AppReportsGstr1RouteImport } from './routes/_app.reports.gstr-1'
+import { Route as AppReportsGstr3bRouteImport } from './routes/_app.reports.gstr-3b'
 import { Route as AppReportsProfitAndLossRouteImport } from './routes/_app.reports.profit-and-loss'
+import { Route as AppReportsTrialBalanceRouteImport } from './routes/_app.reports.trial-balance'
 import { Route as AppSalesOrdersIndexRouteImport } from './routes/_app.sales-orders.index'
 import { Route as AppSalesOrdersIdRouteImport } from './routes/_app.sales-orders.$id'
 import { Route as AppSalesOrdersNewRouteImport } from './routes/_app.sales-orders.new'
@@ -56,6 +67,7 @@ import { Route as AppUsersIndexRouteImport } from './routes/_app.users.index'
 import { Route as AppUsersNewRouteImport } from './routes/_app.users.new'
 import { Route as AppBillsIdIndexRouteImport } from './routes/_app.bills.$id.index'
 import { Route as AppBillsIdPayRouteImport } from './routes/_app.bills.$id.pay'
+import { Route as AppCreditNotesIdIndexRouteImport } from './routes/_app.credit-notes.$id.index'
 import { Route as AppInvoicesIdIndexRouteImport } from './routes/_app.invoices.$id.index'
 import { Route as AppInvoicesIdPayRouteImport } from './routes/_app.invoices.$id.pay'
 
@@ -91,6 +103,11 @@ const SignupRoute = SignupRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAuditLogRoute = AppAdminAuditLogRouteImport.update({
+  id: '/admin/audit-log',
+  path: '/admin/audit-log',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticalsIndexRoute = AppAnalyticalsIndexRouteImport.update({
@@ -173,6 +190,26 @@ const AppContactsNewRoute = AppContactsNewRouteImport.update({
   path: '/contacts/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCreditNotesIndexRoute = AppCreditNotesIndexRouteImport.update({
+  id: '/credit-notes/',
+  path: '/credit-notes/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCreditNotesNewRoute = AppCreditNotesNewRouteImport.update({
+  id: '/credit-notes/new',
+  path: '/credit-notes/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryMovesRoute = AppInventoryMovesRouteImport.update({
+  id: '/inventory/moves',
+  path: '/inventory/moves',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInvoicesIndexRoute = AppInvoicesIndexRouteImport.update({
   id: '/invoices/',
   path: '/invoices/',
@@ -238,6 +275,17 @@ const AppPurchaseOrdersNewRoute = AppPurchaseOrdersNewRouteImport.update({
   path: '/purchase-orders/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsAgingPayablesRoute = AppReportsAgingPayablesRouteImport.update({
+  id: '/reports/aging-payables',
+  path: '/reports/aging-payables',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsAgingReceivablesRoute =
+  AppReportsAgingReceivablesRouteImport.update({
+    id: '/reports/aging-receivables',
+    path: '/reports/aging-receivables',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppReportsBalanceSheetRoute = AppReportsBalanceSheetRouteImport.update({
   id: '/reports/balance-sheet',
   path: '/reports/balance-sheet',
@@ -248,9 +296,29 @@ const AppReportsBudgetReportRoute = AppReportsBudgetReportRouteImport.update({
   path: '/reports/budget-report',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsCashFlowRoute = AppReportsCashFlowRouteImport.update({
+  id: '/reports/cash-flow',
+  path: '/reports/cash-flow',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsGstr1Route = AppReportsGstr1RouteImport.update({
+  id: '/reports/gstr-1',
+  path: '/reports/gstr-1',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsGstr3bRoute = AppReportsGstr3bRouteImport.update({
+  id: '/reports/gstr-3b',
+  path: '/reports/gstr-3b',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportsProfitAndLossRoute = AppReportsProfitAndLossRouteImport.update({
   id: '/reports/profit-and-loss',
   path: '/reports/profit-and-loss',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsTrialBalanceRoute = AppReportsTrialBalanceRouteImport.update({
+  id: '/reports/trial-balance',
+  path: '/reports/trial-balance',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSalesOrdersIndexRoute = AppSalesOrdersIndexRouteImport.update({
@@ -293,6 +361,11 @@ const AppBillsIdPayRoute = AppBillsIdPayRouteImport.update({
   path: '/bills/$id/pay',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCreditNotesIdIndexRoute = AppCreditNotesIdIndexRouteImport.update({
+  id: '/credit-notes/$id/',
+  path: '/credit-notes/$id/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInvoicesIdIndexRoute = AppInvoicesIdIndexRouteImport.update({
   id: '/invoices/$id/',
   path: '/invoices/$id/',
@@ -311,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/admin/audit-log': typeof AppAdminAuditLogRoute
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/analyticals/new': typeof AppAnalyticalsNewRoute
   '/bills/new': typeof AppBillsNewRoute
@@ -320,6 +394,8 @@ export interface FileRoutesByFullPath {
   '/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
   '/contacts/$id': typeof AppContactsIdRoute
   '/contacts/new': typeof AppContactsNewRoute
+  '/credit-notes/new': typeof AppCreditNotesNewRoute
+  '/inventory/moves': typeof AppInventoryMovesRoute
   '/invoices/new': typeof AppInvoicesNewRoute
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/journals/new': typeof AppJournalsNewRoute
@@ -327,9 +403,15 @@ export interface FileRoutesByFullPath {
   '/products/new': typeof AppProductsNewRoute
   '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
+  '/reports/aging-payables': typeof AppReportsAgingPayablesRoute
+  '/reports/aging-receivables': typeof AppReportsAgingReceivablesRoute
   '/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/reports/budget-report': typeof AppReportsBudgetReportRoute
+  '/reports/cash-flow': typeof AppReportsCashFlowRoute
+  '/reports/gstr-1': typeof AppReportsGstr1Route
+  '/reports/gstr-3b': typeof AppReportsGstr3bRoute
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/reports/trial-balance': typeof AppReportsTrialBalanceRoute
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/settings/smtp': typeof AppSettingsSmtpRoute
@@ -341,6 +423,8 @@ export interface FileRoutesByFullPath {
   '/categories/': typeof AppCategoriesIndexRoute
   '/chart-of-accounts/': typeof AppChartOfAccountsIndexRoute
   '/contacts/': typeof AppContactsIndexRoute
+  '/credit-notes/': typeof AppCreditNotesIndexRoute
+  '/inventory/': typeof AppInventoryIndexRoute
   '/invoices/': typeof AppInvoicesIndexRoute
   '/journal-entries/': typeof AppJournalEntriesIndexRoute
   '/journals/': typeof AppJournalsIndexRoute
@@ -352,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/bills/$id/pay': typeof AppBillsIdPayRoute
   '/invoices/$id/pay': typeof AppInvoicesIdPayRoute
   '/bills/$id/': typeof AppBillsIdIndexRoute
+  '/credit-notes/$id/': typeof AppCreditNotesIdIndexRoute
   '/invoices/$id/': typeof AppInvoicesIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -361,6 +446,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/admin/audit-log': typeof AppAdminAuditLogRoute
   '/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/analyticals/new': typeof AppAnalyticalsNewRoute
   '/bills/new': typeof AppBillsNewRoute
@@ -370,6 +456,8 @@ export interface FileRoutesByTo {
   '/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
   '/contacts/$id': typeof AppContactsIdRoute
   '/contacts/new': typeof AppContactsNewRoute
+  '/credit-notes/new': typeof AppCreditNotesNewRoute
+  '/inventory/moves': typeof AppInventoryMovesRoute
   '/invoices/new': typeof AppInvoicesNewRoute
   '/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/journals/new': typeof AppJournalsNewRoute
@@ -377,9 +465,15 @@ export interface FileRoutesByTo {
   '/products/new': typeof AppProductsNewRoute
   '/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
+  '/reports/aging-payables': typeof AppReportsAgingPayablesRoute
+  '/reports/aging-receivables': typeof AppReportsAgingReceivablesRoute
   '/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/reports/budget-report': typeof AppReportsBudgetReportRoute
+  '/reports/cash-flow': typeof AppReportsCashFlowRoute
+  '/reports/gstr-1': typeof AppReportsGstr1Route
+  '/reports/gstr-3b': typeof AppReportsGstr3bRoute
   '/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/reports/trial-balance': typeof AppReportsTrialBalanceRoute
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/settings/smtp': typeof AppSettingsSmtpRoute
@@ -391,6 +485,8 @@ export interface FileRoutesByTo {
   '/categories': typeof AppCategoriesIndexRoute
   '/chart-of-accounts': typeof AppChartOfAccountsIndexRoute
   '/contacts': typeof AppContactsIndexRoute
+  '/credit-notes': typeof AppCreditNotesIndexRoute
+  '/inventory': typeof AppInventoryIndexRoute
   '/invoices': typeof AppInvoicesIndexRoute
   '/journal-entries': typeof AppJournalEntriesIndexRoute
   '/journals': typeof AppJournalsIndexRoute
@@ -402,6 +498,7 @@ export interface FileRoutesByTo {
   '/bills/$id/pay': typeof AppBillsIdPayRoute
   '/invoices/$id/pay': typeof AppInvoicesIdPayRoute
   '/bills/$id': typeof AppBillsIdIndexRoute
+  '/credit-notes/$id': typeof AppCreditNotesIdIndexRoute
   '/invoices/$id': typeof AppInvoicesIdIndexRoute
 }
 export interface FileRoutesById {
@@ -413,6 +510,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/admin/audit-log': typeof AppAdminAuditLogRoute
   '/_app/analyticals/$id': typeof AppAnalyticalsIdRoute
   '/_app/analyticals/new': typeof AppAnalyticalsNewRoute
   '/_app/bills/new': typeof AppBillsNewRoute
@@ -422,6 +520,8 @@ export interface FileRoutesById {
   '/_app/chart-of-accounts/new': typeof AppChartOfAccountsNewRoute
   '/_app/contacts/$id': typeof AppContactsIdRoute
   '/_app/contacts/new': typeof AppContactsNewRoute
+  '/_app/credit-notes/new': typeof AppCreditNotesNewRoute
+  '/_app/inventory/moves': typeof AppInventoryMovesRoute
   '/_app/invoices/new': typeof AppInvoicesNewRoute
   '/_app/journal-entries/new': typeof AppJournalEntriesNewRoute
   '/_app/journals/new': typeof AppJournalsNewRoute
@@ -429,9 +529,15 @@ export interface FileRoutesById {
   '/_app/products/new': typeof AppProductsNewRoute
   '/_app/purchase-orders/$id': typeof AppPurchaseOrdersIdRoute
   '/_app/purchase-orders/new': typeof AppPurchaseOrdersNewRoute
+  '/_app/reports/aging-payables': typeof AppReportsAgingPayablesRoute
+  '/_app/reports/aging-receivables': typeof AppReportsAgingReceivablesRoute
   '/_app/reports/balance-sheet': typeof AppReportsBalanceSheetRoute
   '/_app/reports/budget-report': typeof AppReportsBudgetReportRoute
+  '/_app/reports/cash-flow': typeof AppReportsCashFlowRoute
+  '/_app/reports/gstr-1': typeof AppReportsGstr1Route
+  '/_app/reports/gstr-3b': typeof AppReportsGstr3bRoute
   '/_app/reports/profit-and-loss': typeof AppReportsProfitAndLossRoute
+  '/_app/reports/trial-balance': typeof AppReportsTrialBalanceRoute
   '/_app/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/_app/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/_app/settings/smtp': typeof AppSettingsSmtpRoute
@@ -443,6 +549,8 @@ export interface FileRoutesById {
   '/_app/categories/': typeof AppCategoriesIndexRoute
   '/_app/chart-of-accounts/': typeof AppChartOfAccountsIndexRoute
   '/_app/contacts/': typeof AppContactsIndexRoute
+  '/_app/credit-notes/': typeof AppCreditNotesIndexRoute
+  '/_app/inventory/': typeof AppInventoryIndexRoute
   '/_app/invoices/': typeof AppInvoicesIndexRoute
   '/_app/journal-entries/': typeof AppJournalEntriesIndexRoute
   '/_app/journals/': typeof AppJournalsIndexRoute
@@ -454,6 +562,7 @@ export interface FileRoutesById {
   '/_app/bills/$id/pay': typeof AppBillsIdPayRoute
   '/_app/invoices/$id/pay': typeof AppInvoicesIdPayRoute
   '/_app/bills/$id/': typeof AppBillsIdIndexRoute
+  '/_app/credit-notes/$id/': typeof AppCreditNotesIdIndexRoute
   '/_app/invoices/$id/': typeof AppInvoicesIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -465,6 +574,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/dashboard'
+    | '/admin/audit-log'
     | '/analyticals/$id'
     | '/analyticals/new'
     | '/bills/new'
@@ -474,6 +584,8 @@ export interface FileRouteTypes {
     | '/chart-of-accounts/new'
     | '/contacts/$id'
     | '/contacts/new'
+    | '/credit-notes/new'
+    | '/inventory/moves'
     | '/invoices/new'
     | '/journal-entries/new'
     | '/journals/new'
@@ -481,9 +593,15 @@ export interface FileRouteTypes {
     | '/products/new'
     | '/purchase-orders/$id'
     | '/purchase-orders/new'
+    | '/reports/aging-payables'
+    | '/reports/aging-receivables'
     | '/reports/balance-sheet'
     | '/reports/budget-report'
+    | '/reports/cash-flow'
+    | '/reports/gstr-1'
+    | '/reports/gstr-3b'
     | '/reports/profit-and-loss'
+    | '/reports/trial-balance'
     | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/settings/smtp'
@@ -495,6 +613,8 @@ export interface FileRouteTypes {
     | '/categories/'
     | '/chart-of-accounts/'
     | '/contacts/'
+    | '/credit-notes/'
+    | '/inventory/'
     | '/invoices/'
     | '/journal-entries/'
     | '/journals/'
@@ -506,6 +626,7 @@ export interface FileRouteTypes {
     | '/bills/$id/pay'
     | '/invoices/$id/pay'
     | '/bills/$id/'
+    | '/credit-notes/$id/'
     | '/invoices/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -515,6 +636,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/dashboard'
+    | '/admin/audit-log'
     | '/analyticals/$id'
     | '/analyticals/new'
     | '/bills/new'
@@ -524,6 +646,8 @@ export interface FileRouteTypes {
     | '/chart-of-accounts/new'
     | '/contacts/$id'
     | '/contacts/new'
+    | '/credit-notes/new'
+    | '/inventory/moves'
     | '/invoices/new'
     | '/journal-entries/new'
     | '/journals/new'
@@ -531,9 +655,15 @@ export interface FileRouteTypes {
     | '/products/new'
     | '/purchase-orders/$id'
     | '/purchase-orders/new'
+    | '/reports/aging-payables'
+    | '/reports/aging-receivables'
     | '/reports/balance-sheet'
     | '/reports/budget-report'
+    | '/reports/cash-flow'
+    | '/reports/gstr-1'
+    | '/reports/gstr-3b'
     | '/reports/profit-and-loss'
+    | '/reports/trial-balance'
     | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/settings/smtp'
@@ -545,6 +675,8 @@ export interface FileRouteTypes {
     | '/categories'
     | '/chart-of-accounts'
     | '/contacts'
+    | '/credit-notes'
+    | '/inventory'
     | '/invoices'
     | '/journal-entries'
     | '/journals'
@@ -556,6 +688,7 @@ export interface FileRouteTypes {
     | '/bills/$id/pay'
     | '/invoices/$id/pay'
     | '/bills/$id'
+    | '/credit-notes/$id'
     | '/invoices/$id'
   id:
     | '__root__'
@@ -566,6 +699,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_app/dashboard'
+    | '/_app/admin/audit-log'
     | '/_app/analyticals/$id'
     | '/_app/analyticals/new'
     | '/_app/bills/new'
@@ -575,6 +709,8 @@ export interface FileRouteTypes {
     | '/_app/chart-of-accounts/new'
     | '/_app/contacts/$id'
     | '/_app/contacts/new'
+    | '/_app/credit-notes/new'
+    | '/_app/inventory/moves'
     | '/_app/invoices/new'
     | '/_app/journal-entries/new'
     | '/_app/journals/new'
@@ -582,9 +718,15 @@ export interface FileRouteTypes {
     | '/_app/products/new'
     | '/_app/purchase-orders/$id'
     | '/_app/purchase-orders/new'
+    | '/_app/reports/aging-payables'
+    | '/_app/reports/aging-receivables'
     | '/_app/reports/balance-sheet'
     | '/_app/reports/budget-report'
+    | '/_app/reports/cash-flow'
+    | '/_app/reports/gstr-1'
+    | '/_app/reports/gstr-3b'
     | '/_app/reports/profit-and-loss'
+    | '/_app/reports/trial-balance'
     | '/_app/sales-orders/$id'
     | '/_app/sales-orders/new'
     | '/_app/settings/smtp'
@@ -596,6 +738,8 @@ export interface FileRouteTypes {
     | '/_app/categories/'
     | '/_app/chart-of-accounts/'
     | '/_app/contacts/'
+    | '/_app/credit-notes/'
+    | '/_app/inventory/'
     | '/_app/invoices/'
     | '/_app/journal-entries/'
     | '/_app/journals/'
@@ -607,6 +751,7 @@ export interface FileRouteTypes {
     | '/_app/bills/$id/pay'
     | '/_app/invoices/$id/pay'
     | '/_app/bills/$id/'
+    | '/_app/credit-notes/$id/'
     | '/_app/invoices/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -668,6 +813,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/audit-log': {
+      id: '/_app/admin/audit-log'
+      path: '/admin/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AppAdminAuditLogRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/analyticals/': {
@@ -782,6 +934,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContactsNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/credit-notes/': {
+      id: '/_app/credit-notes/'
+      path: '/credit-notes'
+      fullPath: '/credit-notes/'
+      preLoaderRoute: typeof AppCreditNotesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/credit-notes/new': {
+      id: '/_app/credit-notes/new'
+      path: '/credit-notes/new'
+      fullPath: '/credit-notes/new'
+      preLoaderRoute: typeof AppCreditNotesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inventory/': {
+      id: '/_app/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AppInventoryIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inventory/moves': {
+      id: '/_app/inventory/moves'
+      path: '/inventory/moves'
+      fullPath: '/inventory/moves'
+      preLoaderRoute: typeof AppInventoryMovesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/invoices/': {
       id: '/_app/invoices/'
       path: '/invoices'
@@ -873,6 +1053,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPurchaseOrdersNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/aging-payables': {
+      id: '/_app/reports/aging-payables'
+      path: '/reports/aging-payables'
+      fullPath: '/reports/aging-payables'
+      preLoaderRoute: typeof AppReportsAgingPayablesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports/aging-receivables': {
+      id: '/_app/reports/aging-receivables'
+      path: '/reports/aging-receivables'
+      fullPath: '/reports/aging-receivables'
+      preLoaderRoute: typeof AppReportsAgingReceivablesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/reports/balance-sheet': {
       id: '/_app/reports/balance-sheet'
       path: '/reports/balance-sheet'
@@ -887,11 +1081,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsBudgetReportRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/cash-flow': {
+      id: '/_app/reports/cash-flow'
+      path: '/reports/cash-flow'
+      fullPath: '/reports/cash-flow'
+      preLoaderRoute: typeof AppReportsCashFlowRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports/gstr-1': {
+      id: '/_app/reports/gstr-1'
+      path: '/reports/gstr-1'
+      fullPath: '/reports/gstr-1'
+      preLoaderRoute: typeof AppReportsGstr1RouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports/gstr-3b': {
+      id: '/_app/reports/gstr-3b'
+      path: '/reports/gstr-3b'
+      fullPath: '/reports/gstr-3b'
+      preLoaderRoute: typeof AppReportsGstr3bRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/reports/profit-and-loss': {
       id: '/_app/reports/profit-and-loss'
       path: '/reports/profit-and-loss'
       fullPath: '/reports/profit-and-loss'
       preLoaderRoute: typeof AppReportsProfitAndLossRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports/trial-balance': {
+      id: '/_app/reports/trial-balance'
+      path: '/reports/trial-balance'
+      fullPath: '/reports/trial-balance'
+      preLoaderRoute: typeof AppReportsTrialBalanceRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/sales-orders/': {
@@ -950,6 +1172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillsIdPayRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/credit-notes/$id/': {
+      id: '/_app/credit-notes/$id/'
+      path: '/credit-notes/$id'
+      fullPath: '/credit-notes/$id/'
+      preLoaderRoute: typeof AppCreditNotesIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/invoices/$id/': {
       id: '/_app/invoices/$id/'
       path: '/invoices/$id'
@@ -969,6 +1198,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppAdminAuditLogRoute: typeof AppAdminAuditLogRoute
   AppAnalyticalsIdRoute: typeof AppAnalyticalsIdRoute
   AppAnalyticalsNewRoute: typeof AppAnalyticalsNewRoute
   AppBillsNewRoute: typeof AppBillsNewRoute
@@ -978,6 +1208,8 @@ interface AppRouteChildren {
   AppChartOfAccountsNewRoute: typeof AppChartOfAccountsNewRoute
   AppContactsIdRoute: typeof AppContactsIdRoute
   AppContactsNewRoute: typeof AppContactsNewRoute
+  AppCreditNotesNewRoute: typeof AppCreditNotesNewRoute
+  AppInventoryMovesRoute: typeof AppInventoryMovesRoute
   AppInvoicesNewRoute: typeof AppInvoicesNewRoute
   AppJournalEntriesNewRoute: typeof AppJournalEntriesNewRoute
   AppJournalsNewRoute: typeof AppJournalsNewRoute
@@ -985,9 +1217,15 @@ interface AppRouteChildren {
   AppProductsNewRoute: typeof AppProductsNewRoute
   AppPurchaseOrdersIdRoute: typeof AppPurchaseOrdersIdRoute
   AppPurchaseOrdersNewRoute: typeof AppPurchaseOrdersNewRoute
+  AppReportsAgingPayablesRoute: typeof AppReportsAgingPayablesRoute
+  AppReportsAgingReceivablesRoute: typeof AppReportsAgingReceivablesRoute
   AppReportsBalanceSheetRoute: typeof AppReportsBalanceSheetRoute
   AppReportsBudgetReportRoute: typeof AppReportsBudgetReportRoute
+  AppReportsCashFlowRoute: typeof AppReportsCashFlowRoute
+  AppReportsGstr1Route: typeof AppReportsGstr1Route
+  AppReportsGstr3bRoute: typeof AppReportsGstr3bRoute
   AppReportsProfitAndLossRoute: typeof AppReportsProfitAndLossRoute
+  AppReportsTrialBalanceRoute: typeof AppReportsTrialBalanceRoute
   AppSalesOrdersIdRoute: typeof AppSalesOrdersIdRoute
   AppSalesOrdersNewRoute: typeof AppSalesOrdersNewRoute
   AppSettingsSmtpRoute: typeof AppSettingsSmtpRoute
@@ -999,6 +1237,8 @@ interface AppRouteChildren {
   AppCategoriesIndexRoute: typeof AppCategoriesIndexRoute
   AppChartOfAccountsIndexRoute: typeof AppChartOfAccountsIndexRoute
   AppContactsIndexRoute: typeof AppContactsIndexRoute
+  AppCreditNotesIndexRoute: typeof AppCreditNotesIndexRoute
+  AppInventoryIndexRoute: typeof AppInventoryIndexRoute
   AppInvoicesIndexRoute: typeof AppInvoicesIndexRoute
   AppJournalEntriesIndexRoute: typeof AppJournalEntriesIndexRoute
   AppJournalsIndexRoute: typeof AppJournalsIndexRoute
@@ -1010,11 +1250,13 @@ interface AppRouteChildren {
   AppBillsIdPayRoute: typeof AppBillsIdPayRoute
   AppInvoicesIdPayRoute: typeof AppInvoicesIdPayRoute
   AppBillsIdIndexRoute: typeof AppBillsIdIndexRoute
+  AppCreditNotesIdIndexRoute: typeof AppCreditNotesIdIndexRoute
   AppInvoicesIdIndexRoute: typeof AppInvoicesIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppAdminAuditLogRoute: AppAdminAuditLogRoute,
   AppAnalyticalsIdRoute: AppAnalyticalsIdRoute,
   AppAnalyticalsNewRoute: AppAnalyticalsNewRoute,
   AppBillsNewRoute: AppBillsNewRoute,
@@ -1024,6 +1266,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppChartOfAccountsNewRoute: AppChartOfAccountsNewRoute,
   AppContactsIdRoute: AppContactsIdRoute,
   AppContactsNewRoute: AppContactsNewRoute,
+  AppCreditNotesNewRoute: AppCreditNotesNewRoute,
+  AppInventoryMovesRoute: AppInventoryMovesRoute,
   AppInvoicesNewRoute: AppInvoicesNewRoute,
   AppJournalEntriesNewRoute: AppJournalEntriesNewRoute,
   AppJournalsNewRoute: AppJournalsNewRoute,
@@ -1031,9 +1275,15 @@ const AppRouteChildren: AppRouteChildren = {
   AppProductsNewRoute: AppProductsNewRoute,
   AppPurchaseOrdersIdRoute: AppPurchaseOrdersIdRoute,
   AppPurchaseOrdersNewRoute: AppPurchaseOrdersNewRoute,
+  AppReportsAgingPayablesRoute: AppReportsAgingPayablesRoute,
+  AppReportsAgingReceivablesRoute: AppReportsAgingReceivablesRoute,
   AppReportsBalanceSheetRoute: AppReportsBalanceSheetRoute,
   AppReportsBudgetReportRoute: AppReportsBudgetReportRoute,
+  AppReportsCashFlowRoute: AppReportsCashFlowRoute,
+  AppReportsGstr1Route: AppReportsGstr1Route,
+  AppReportsGstr3bRoute: AppReportsGstr3bRoute,
   AppReportsProfitAndLossRoute: AppReportsProfitAndLossRoute,
+  AppReportsTrialBalanceRoute: AppReportsTrialBalanceRoute,
   AppSalesOrdersIdRoute: AppSalesOrdersIdRoute,
   AppSalesOrdersNewRoute: AppSalesOrdersNewRoute,
   AppSettingsSmtpRoute: AppSettingsSmtpRoute,
@@ -1045,6 +1295,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppCategoriesIndexRoute: AppCategoriesIndexRoute,
   AppChartOfAccountsIndexRoute: AppChartOfAccountsIndexRoute,
   AppContactsIndexRoute: AppContactsIndexRoute,
+  AppCreditNotesIndexRoute: AppCreditNotesIndexRoute,
+  AppInventoryIndexRoute: AppInventoryIndexRoute,
   AppInvoicesIndexRoute: AppInvoicesIndexRoute,
   AppJournalEntriesIndexRoute: AppJournalEntriesIndexRoute,
   AppJournalsIndexRoute: AppJournalsIndexRoute,
@@ -1056,6 +1308,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBillsIdPayRoute: AppBillsIdPayRoute,
   AppInvoicesIdPayRoute: AppInvoicesIdPayRoute,
   AppBillsIdIndexRoute: AppBillsIdIndexRoute,
+  AppCreditNotesIdIndexRoute: AppCreditNotesIdIndexRoute,
   AppInvoicesIdIndexRoute: AppInvoicesIdIndexRoute,
 }
 

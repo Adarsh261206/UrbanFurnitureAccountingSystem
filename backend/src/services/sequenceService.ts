@@ -16,6 +16,7 @@ const SEQUENCE_CONFIG: Record<string, SequenceConfig> = {
   BILL: { name: 'bill_reference', prefix: 'Bill', yearScoped: true, padding: 4, separator: '/' },
   JE: { name: 'je_entry_number', prefix: 'JE', yearScoped: true, padding: 4, separator: '/' },
   PAY: { name: 'payment_number', prefix: 'PAY', yearScoped: true, padding: 4, separator: '/' },
+  CN: { name: 'credit_note_number', prefix: 'CN', yearScoped: true, padding: 4, separator: '/' },
 };
 
 const ALL_SEQUENCES: SequenceConfig[] = Object.values(SEQUENCE_CONFIG);

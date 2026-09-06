@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../utils/errors';
 import { serializeProduct } from '../utils/serializers';
+import { logAudit } from '../services/auditService';
 
 const PRODUCT_INCLUDE = {
   category: true,
@@ -90,6 +91,17 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
     }
 
     const product = await prisma.product.create({ data, include: PRODUCT_INCLUDE });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'create',
+      entity: 'product',
+      entityId: product.id,
+      entityName: product.name,
+      newValues: { name: product.name, product_type: product.productType },
+      req,
+    });
+
     res.status(201).json(serializeProduct(product));
   } catch (err) { next(err); }
 }
@@ -118,13 +130,36 @@ export async function updateProduct(req: Request, res: Response, next: NextFunct
       data,
       include: PRODUCT_INCLUDE,
     });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'update',
+      entity: 'product',
+      entityId: updated.id,
+      entityName: updated.name,
+      newValues: { name: updated.name, product_type: updated.productType },
+      req,
+    });
+
     res.json(serializeProduct(updated));
   } catch (err) { next(err); }
 }
 
 export async function deleteProduct(req: Request, res: Response, next: NextFunction) {
   try {
+    const product = await prisma.product.findFirst({ where: { id: req.params.id, deletedAt: null } });
     await prisma.product.update({ where: { id: req.params.id }, data: { deletedAt: new Date() } });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'delete',
+      entity: 'product',
+      entityId: req.params.id,
+      entityName: product?.name ?? undefined,
+      oldValues: product ? { name: product.name, product_type: product.productType } : undefined,
+      req,
+    });
+
     res.status(204).send();
   } catch (err) { next(err); }
 }

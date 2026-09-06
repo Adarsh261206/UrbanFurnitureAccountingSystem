@@ -144,3 +144,41 @@ export function BalanceCheck({ balanced }: { balanced: boolean }) {
     </div>
   );
 }
+
+export function CashFlowSummary({
+  net_change,
+  opening_balance,
+  closing_balance,
+}: {
+  net_change: number;
+  opening_balance: number;
+  closing_balance: number;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="divide-y">
+        <div className="flex items-center justify-between px-5 py-3">
+          <span className="text-[13px] text-muted-foreground">Opening Balance</span>
+          <span className="text-[13px] tabular-nums text-foreground">{money(opening_balance)}</span>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3">
+          <span className="text-sm font-semibold text-foreground">Net Change</span>
+          <span
+            className={cn(
+              "text-[13px] font-bold tabular-nums",
+              net_change >= 0 ? "text-success" : "text-destructive",
+            )}
+          >
+            {money(net_change)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between bg-muted/40 px-5 py-3">
+          <span className="text-sm font-semibold text-foreground">Closing Balance</span>
+          <span className="text-[13px] font-bold tabular-nums text-foreground">
+            {money(closing_balance)}
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}

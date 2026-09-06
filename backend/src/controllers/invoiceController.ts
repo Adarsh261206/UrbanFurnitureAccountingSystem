@@ -5,6 +5,7 @@ import { generateSequence } from '../services/sequenceService';
 import { serializeInvoiceDetail, serializeInvoiceListRow } from '../utils/serializers';
 import { generateInvoicePdf } from '../services/documentPdfService';
 import { sendPdfBuffer } from '../services/pdfService';
+import { logAudit } from '../services/auditService';
 
 async function getUserContactId(user: any): Promise<string | null> {
   if (user.role !== 'user') return null;
@@ -93,7 +94,7 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
     }, 0);
     const total = subtotal + taxAmount;
 
-    const invoice = await prisma.customerInvoice.create({
+    const result = await prisma.customerInvoice.create({
       data: {
         invoiceReference,
         invoiceNumber,
@@ -128,7 +129,17 @@ export async function createInvoice(req: Request, res: Response, next: NextFunct
       include: { customer: true, partner: true, invoiceLines: { include: { product: true } } },
     });
 
-    res.status(201).json(serializeInvoiceDetail(invoice));
+    logAudit({
+      userId: req.user!.id,
+      action: 'create',
+      entity: 'invoice',
+      entityId: result.id,
+      entityName: result.invoiceNumber,
+      newValues: { status: result.status, total: Number(result.total) },
+      req,
+    });
+
+    res.status(201).json(serializeInvoiceDetail(result));
   } catch (err) { next(err); }
 }
 
@@ -238,6 +249,16 @@ export async function confirmInvoice(req: Request, res: Response, next: NextFunc
 
       return updated;
     }, { isolationLevel: 'Serializable' });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'confirm',
+      entity: 'invoice',
+      entityId: result.id,
+      entityName: result.invoiceNumber,
+      newValues: { status: result.status },
+      req,
+    });
 
     res.json(serializeInvoiceDetail(result));
   } catch (err) { next(err); }
@@ -365,6 +386,17 @@ export async function cancelInvoice(req: Request, res: Response, next: NextFunct
     if (invoice.status !== 'draft') throw new AppError('DRAFT_REQUIRED', 'Only draft invoices can be cancelled', 400);
 
     await prisma.customerInvoice.delete({ where: { id: req.params.id } });
+
+    logAudit({
+      userId: req.user!.id,
+      action: 'delete',
+      entity: 'invoice',
+      entityId: invoice.id,
+      entityName: invoice.invoiceNumber,
+      oldValues: { status: invoice.status },
+      req,
+    });
+
     res.json(serializeInvoiceDetail(invoice));
   } catch (err) { next(err); }
 }
