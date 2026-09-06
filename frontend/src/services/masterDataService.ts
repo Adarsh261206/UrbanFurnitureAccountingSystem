@@ -34,6 +34,7 @@ export const usersService = {
   create: (body: CreateUserRequest) => http.post<User>("/users", body),
   approve: (id: string) => http.post<User>(`/users/${id}/approve`),
   reject: (id: string) => http.post<User>(`/users/${id}/reject`),
+  delete: (id: string) => http.delete<void>(`/users/${id}`),
 };
 
 /** PART B3 — Contacts. */
@@ -65,6 +66,7 @@ export const contactsService = {
   get: (id: string) => http.get<Contact>(`/contacts/${id}`),
   create: (body: ContactInput) => http.post<Contact>("/contacts", body),
   update: (id: string, body: Partial<ContactInput>) => http.put<Contact>(`/contacts/${id}`, body),
+  delete: (id: string) => http.delete<void>(`/contacts/${id}`),
 };
 
 /** PART B3 — Products. */

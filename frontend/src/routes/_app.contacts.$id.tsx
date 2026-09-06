@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmationModal } from "@/components/common/ConfirmationModal";
 import { ErrorState, LoadingState } from "@/components/common/States";
 import {
   FormSection,
@@ -84,6 +85,7 @@ function Page() {
   const [form, setForm] = useState<ContactInput | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (query.data) setForm(toInput(query.data));
@@ -99,6 +101,18 @@ function Page() {
       const normalized = normalizeError(error);
       if (normalized.field) setFieldErrors({ [normalized.field]: normalized.message });
       else setFormError(errorMessage(error));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => contactsService.delete(id),
+    onSuccess: () => {
+      toast.success("Contact deleted");
+      void navigate({ to: "/contacts" });
+    },
+    onError: (error) => {
+      setDeleteOpen(false);
+      toast.error(errorMessage(error));
     },
   });
 
@@ -148,9 +162,18 @@ function Page() {
         crumbs={[{ label: "Master Data" }, { label: "Contacts", to: "/contacts" }]}
         description={`Created ${fmtDate(query.data.created_at)}`}
         actions={
-          <Button variant="outline" onClick={() => navigate({ to: "/contacts" })}>
-            Back to contacts
-          </Button>
+          <>
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteOpen(true)}
+              disabled={deleteMutation.isPending}
+            >
+              Delete
+            </Button>
+            <Button variant="outline" onClick={() => navigate({ to: "/contacts" })}>
+              Back to contacts
+            </Button>
+          </>
         }
       />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -312,6 +335,22 @@ function Page() {
           </FormActions>
         </FormSection>
       </form>
+
+      <ConfirmationModal
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this contact?"
+        description={
+          <>
+            This will permanently remove <strong>{query.data.name}</strong> from your contacts.
+            Existing invoices, bills and orders keep their history. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete contact"
+        destructive
+        pending={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+      />
     </div>
   );
 }

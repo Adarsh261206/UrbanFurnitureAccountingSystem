@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmationModal } from "@/components/common/ConfirmationModal";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { KanbanCard, KanbanGrid, ViewToggle, type ViewMode } from "@/components/common/ViewToggle";
@@ -63,11 +65,13 @@ function TypeBadge({ type }: { type: ContactType }) {
 
 function Page() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [view, setView] = useState<ViewMode>("list");
+  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
 
   useMemo(() => {
     const t = setTimeout(() => {
@@ -104,7 +108,40 @@ function Page() {
     { key: "city", header: "City", cell: (r) => r.city ?? "—" },
     { key: "gstin", header: "GSTIN", cell: (r) => r.gstin ?? "—" },
     { key: "created_at", header: "Created", cell: (r) => fmtDate(r.created_at) },
+    {
+      key: "actions",
+      header: "",
+      cell: (r) => (
+        <span className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10"
+            title="Delete contact"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(r);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </span>
+      ),
+    },
   ];
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => contactsService.delete(id),
+    onSuccess: () => {
+      toast.success("Contact deleted");
+      setDeleteTarget(null);
+      void queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+      setDeleteTarget(null);
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -236,6 +273,26 @@ function Page() {
           }
         />
       )}
+
+      <ConfirmationModal
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Delete this contact?"
+        description={
+          <>
+            This will permanently remove <strong>{deleteTarget?.name}</strong> from your contacts.
+            Existing invoices, bills and orders keep their history. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete contact"
+        destructive
+        pending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+        }}
+      />
     </div>
   );
 }

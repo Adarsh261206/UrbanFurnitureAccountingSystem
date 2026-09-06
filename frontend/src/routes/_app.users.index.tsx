@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Plus, Search, X } from "lucide-react";
+import { Check, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
+import { ConfirmationModal } from "@/components/common/ConfirmationModal";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { DataTable, TablePagination, type Column } from "@/components/common/DataTable";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usersService } from "@/services/masterDataService";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { User } from "@/types/api";
 import { cn } from "@/lib/utils";
 
@@ -50,9 +52,11 @@ function ApprovalBadge({ status }: { status: User["approval_status"] }) {
 function Page() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   useMemo(() => {
     const t = setTimeout(() => {
@@ -85,6 +89,19 @@ function Page() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => usersService.delete(id),
+    onSuccess: () => {
+      toast.success("User deleted");
+      setDeleteTarget(null);
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+      setDeleteTarget(null);
+    },
+  });
+
   const columns: Column<User>[] = [
     {
       key: "name",
@@ -102,35 +119,51 @@ function Page() {
     {
       key: "actions",
       header: "",
-      cell: (r) =>
-        r.approval_status === "pending" ? (
-          <span className="flex items-center justify-end gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-emerald-600 hover:text-emerald-700"
-              disabled={approveMutation.isPending}
-              onClick={(e) => {
-                e.stopPropagation();
-                approveMutation.mutate(r.id);
-              }}
-            >
-              <Check className="size-3.5" /> Approve
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-red-600 hover:text-red-700"
-              disabled={rejectMutation.isPending}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm(`Reject account "${r.login_id}"?`)) rejectMutation.mutate(r.id);
-              }}
-            >
-              <X className="size-3.5" /> Reject
-            </Button>
-          </span>
-        ) : null,
+      cell: (r) => (
+        <span className="flex items-center justify-end gap-1.5">
+          {r.approval_status === "pending" ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-emerald-600 hover:text-emerald-700"
+                disabled={approveMutation.isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  approveMutation.mutate(r.id);
+                }}
+              >
+                <Check className="size-3.5" /> Approve
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:text-red-700"
+                disabled={rejectMutation.isPending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`Reject account "${r.login_id}"?`)) rejectMutation.mutate(r.id);
+                }}
+              >
+                <X className="size-3.5" /> Reject
+              </Button>
+            </>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10"
+            disabled={r.id === currentUser?.id || deleteMutation.isPending}
+            title={r.id === currentUser?.id ? "You cannot delete your own account" : "Delete user"}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteTarget(r);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </span>
+      ),
     },
   ];
 
@@ -188,6 +221,28 @@ function Page() {
           }
         />
       )}
+
+      <ConfirmationModal
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Delete this user?"
+        description={
+          <>
+            This will immediately disable{" "}
+            <strong>{deleteTarget?.name ?? deleteTarget?.login_id}</strong> (
+            <strong>{deleteTarget?.login_id}</strong>). They will no longer be able to sign in. This
+            cannot be undone.
+          </>
+        }
+        confirmLabel="Delete user"
+        destructive
+        pending={deleteMutation.isPending}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+        }}
+      />
     </div>
   );
 }

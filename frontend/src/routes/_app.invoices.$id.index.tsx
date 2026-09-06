@@ -90,9 +90,10 @@ function Page() {
   const cancelMutation = useMutation({
     mutationFn: () => invoicesService.cancel(id),
     onSuccess: () => {
-      toast.success("Invoice cancelled");
+      toast.success("Invoice deleted");
       setCancelOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["invoices", id] });
+      void navigate({ to: "/invoices" });
     },
     onError: (error) => {
       toast.error(errorMessage(error));
@@ -185,7 +186,7 @@ function Page() {
             ) : null}
             {canManage && isDraft ? (
               <Button variant="destructive" onClick={() => setCancelOpen(true)}>
-                Cancel
+                Delete
               </Button>
             ) : null}
             {canPay ? (
@@ -428,10 +429,9 @@ function Page() {
       <ConfirmationModal
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        title="Cancel this invoice?"
-        description="This invoice is still in draft. Cancelling it cannot be undone."
-        confirmLabel="Cancel invoice"
-        destructive
+        title="Delete this invoice?"
+        description="This invoice is still in draft. Deleting it cannot be undone."
+        confirmLabel="Delete invoice"
         pending={cancelMutation.isPending}
         onConfirm={() => cancelMutation.mutate()}
       />

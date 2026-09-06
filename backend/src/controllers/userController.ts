@@ -86,6 +86,11 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
 
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
+    if (req.params.id === req.user!.id) {
+      throw new AppError('SELF_DELETE', 'You cannot delete your own account', 400);
+    }
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
     await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
     res.status(204).send();
   } catch (err) { next(err); }
