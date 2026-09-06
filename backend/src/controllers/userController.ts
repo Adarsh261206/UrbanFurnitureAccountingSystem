@@ -11,7 +11,7 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: any = { deletedAt: null };
 
     if (req.query.search) {
       where.OR = [
@@ -32,7 +32,9 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
 
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+    const user = await prisma.user.findFirst({
+      where: { id: req.params.id, deletedAt: null },
+    });
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
     res.json(serializeUser(user));
   } catch (err) { next(err); }
@@ -91,7 +93,10 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
     }
     const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     if (!user) throw new AppError('USER_NOT_FOUND', 'User not found', 404);
-    await prisma.user.update({ where: { id: req.params.id }, data: { isActive: false } });
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
     res.status(204).send();
   } catch (err) { next(err); }
 }

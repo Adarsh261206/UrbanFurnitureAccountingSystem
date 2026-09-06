@@ -50,7 +50,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const password = req.body.password;
 
     const user = await prisma.user.findFirst({
-      where: { OR: [{ loginId }, { email: loginId }] },
+      where: { OR: [{ loginId }, { email: loginId }], deletedAt: null },
     });
     if (!user) {
       throw new AppError('INVALID_CREDENTIALS', 'Invalid Login Id or Password', 401, 'login_id');

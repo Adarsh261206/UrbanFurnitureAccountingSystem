@@ -112,6 +112,7 @@ model User {
   approvalStatus   approval_status @default(approved) @map("approval_status")
   resetTokenHash   String?         @map("reset_token_hash") @db.VarChar(255)
   resetTokenExpiry DateTime?       @map("reset_token_expiry") @db.Timestamptz()
+  deletedAt        DateTime?       @map("deleted_at") @db.Timestamptz()
   createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime        @default(now()) @map("updated_at") @db.Timestamptz()
 
