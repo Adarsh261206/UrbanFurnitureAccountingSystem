@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 import { Plus } from "lucide-react";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -39,12 +39,6 @@ export const Route = createFileRoute("/_app/budgets/")({
 
 const LIMIT = 20;
 
-function responsibleName(r: BudgetListRow["responsible"]): string {
-  if (!r) return "—";
-  if (typeof r === "string") return r;
-  return (r as { name?: string }).name ?? "—";
-}
-
 function Page() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -63,54 +57,20 @@ function Page() {
       }),
   });
 
-  // Charts need the full set (not just the current page) so the
-  // distribution is correct regardless of pagination.
-  const chartsQuery = useQuery({
-    queryKey: ["budgets", "charts", type, status],
-    queryFn: () =>
-      budgetsService.list({
-        page: 1,
-        limit: 500,
-        type: type !== "all" ? type : undefined,
-        status: status !== "all" ? status : undefined,
-      }),
-  });
-
   const columns: Column<BudgetListRow>[] = [
     {
       key: "name",
-      header: "Name",
+      header: "Budget",
       cell: (r) => <span className="font-medium text-foreground">{r.name}</span>,
     },
-    { key: "responsible", header: "Responsible", cell: (r) => responsibleName(r.responsible) },
-    { key: "type", header: "Type", cell: (r) => <span className="capitalize">{r.type}</span> },
-    { key: "start_date", header: "Start", cell: (r) => fmtDate(r.start_date) },
-    { key: "end_date", header: "End", cell: (r) => fmtDate(r.end_date) },
-    {
-      key: "committed_amount",
-      header: "Committed",
-      cell: (r) => money(r.committed_amount),
-      align: "right",
-    },
-    {
-      key: "achieved_amount",
-      header: "Achieved",
-      cell: (r) => money(r.achieved_amount),
-      align: "right",
-    },
+    { key: "start_date", header: "Start Date", cell: (r) => fmtDate(r.start_date) },
+    { key: "end_date", header: "End Date", cell: (r) => fmtDate(r.end_date) },
+    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
     {
       key: "achieved_percentage",
-      header: "Achieved %",
-      cell: (r) => percent(r.achieved_percentage),
-      align: "right",
+      header: "Pie Chart",
+      cell: (r) => <RowPie budget={r} />,
     },
-    {
-      key: "amount_to_achieve",
-      header: "To achieve",
-      cell: (r) => money(r.amount_to_achieve),
-      align: "right",
-    },
-    { key: "status", header: "Status", cell: (r) => <StatusBadge status={r.status} /> },
   ];
 
   return (
@@ -172,10 +132,6 @@ function Page() {
         </div>
       </div>
 
-      {chartsQuery.data && chartsQuery.data.budgets.length > 0 ? (
-        <BudgetPieCharts budgets={chartsQuery.data.budgets} />
-      ) : null}
-
       {query.isLoading ? (
         <LoadingState label="Loading budgets" />
       ) : query.isError ? (
@@ -202,7 +158,10 @@ function Page() {
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-foreground">{b.name}</span>
                       <span className="block truncate text-xs capitalize text-muted-foreground">
-                        {b.type} · {responsibleName(b.responsible)}
+                        {b.type} ·{" "}
+                        {typeof b.responsible === "string"
+                          ? b.responsible
+                          : ((b.responsible as { name?: string })?.name ?? "—")}
                       </span>
                     </span>
                     <StatusBadge status={b.status} />
@@ -259,126 +218,43 @@ function Page() {
   );
 }
 
-const PIE_COLORS = ["#714B67", "#017E84", "#8F8F8F", "#D97B6C", "#C9A24B", "#7A9E7E"];
+const PIE_ACHIEVED = "#017E84";
+const PIE_BALANCE = "#D97B6C";
 
-function BudgetPieCharts({
-  budgets,
-}: {
-  budgets: {
-    name: string;
-    type: string;
-    status: string;
-    committed_amount: number | null;
-    achieved_amount: number;
-    amount_to_achieve: number | null;
-  }[];
-}) {
-  const byType = ["income", "expense"]
-    .map((t) => ({
-      name: t === "income" ? "Income" : "Expense",
-      value: budgets.filter((b) => b.type === t).reduce((s, b) => s + (b.committed_amount ?? 0), 0),
-    }))
-    .filter((d) => d.value > 0);
+function RowPie({ budget }: { budget: BudgetListRow }) {
+  const achieved = Math.min(budget.achieved_amount, budget.committed_amount ?? 0);
+  const balance = Math.max((budget.committed_amount ?? 0) - achieved, 0);
 
-  const byStatus = ["draft", "confirmed", "revised", "cancelled"]
-    .map((s, i) => ({
-      name: s.charAt(0).toUpperCase() + s.slice(1),
-      value: budgets.filter((b) => b.status === s).length,
-      color: PIE_COLORS[i % PIE_COLORS.length],
-    }))
-    .filter((d) => d.value > 0);
+  const data = [
+    { name: "Achieved", value: achieved },
+    { name: "Balance", value: balance },
+  ].filter((d) => d.value > 0);
 
-  const byName = budgets
-    .map((b, i) => ({
-      name: b.name,
-      value: b.committed_amount ?? 0,
-      color: PIE_COLORS[i % PIE_COLORS.length],
-    }))
-    .filter((d) => d.value > 0)
-    .slice(0, 6);
-
-  const fmt = (v: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(v);
+  if (data.length === 0 || (budget.committed_amount ?? 0) === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
 
   return (
-    <section aria-label="Budget charts" className="grid gap-4 lg:grid-cols-3">
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold text-foreground">Income vs Expense</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Committed amounts by type</p>
-        {byType.length > 0 ? (
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={byType}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={45}
-                  outerRadius={80}
-                  paddingAngle={3}
-                  strokeWidth={2}
-                >
-                  {byType.map((d, i) => (
-                    <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">No committed budgets</p>
-        )}
-      </div>
-
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold text-foreground">Budget Status</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Count by status</p>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={byStatus}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={45}
-                outerRadius={80}
-                paddingAngle={3}
-                strokeWidth={2}
-              >
-                {byStatus.map((d) => (
-                  <Cell key={d.name} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold text-foreground">Top Budgets by Amount</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Largest committed budgets</p>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={byName} dataKey="value" nameKey="name" outerRadius={80} strokeWidth={2}>
-                {byName.map((d) => (
-                  <Cell key={d.name} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </section>
+    <div className="inline-flex flex-col items-center gap-0.5">
+      <PieChart width={48} height={48}>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          innerRadius={12}
+          outerRadius={20}
+          strokeWidth={1}
+        >
+          {data.map((d) => (
+            <Cell key={d.name} fill={d.name === "Achieved" ? PIE_ACHIEVED : PIE_BALANCE} />
+          ))}
+        </Pie>
+      </PieChart>
+      <span className="text-[10px] text-muted-foreground">
+        {percent(budget.achieved_percentage)}
+      </span>
+    </div>
   );
 }
