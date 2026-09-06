@@ -27,14 +27,14 @@ const REPORT_COLUMNS: PdfColumn[] = [
 
 function drawReportHeader(pdf: PdfDoc, title: string, subtitle: string): void {
   const { doc } = pdf;
-  doc.rect(0, 0, PAGE.width, 96).fillColor(COLORS.dark).fill();
-  doc.rect(PAGE.margin, 24, 34, 34).fillColor(COLORS.brand).fill();
-  doc.font('Helvetica-Bold').fontSize(12).fillColor(COLORS.lightText).text('UF', PAGE.margin + 9, 34);
-  doc.font('Helvetica-Bold').fontSize(14).fillColor(COLORS.lightText).text('Urban Furniture', PAGE.margin + 46, 27);
-  doc.font('Helvetica').fontSize(9).fillColor(COLORS.headerSub).text('Accounting System', PAGE.margin + 46, 47);
-  doc.font('Helvetica-Bold').fontSize(18).fillColor(COLORS.brand).text(title, PAGE.margin, 24, { width: PAGE.contentWidth, align: 'right' });
-  doc.font('Helvetica').fontSize(9).fillColor(COLORS.headerSub).text(subtitle, PAGE.margin, 50, { width: PAGE.contentWidth, align: 'right' });
-  doc.rect(PAGE.margin, 78, PAGE.contentWidth, 2).fillColor(COLORS.brand).fill();
+  doc.rect(0, 0, PAGE.width, 96).fillColor(COLORS.brand).fill();
+  doc.rect(PAGE.margin, 24, 34, 34).fillColor('#FFFFFF').fill();
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(COLORS.brand).text('UF', PAGE.margin + 9, 34);
+  doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF').text('Urban Furniture', PAGE.margin + 46, 27);
+  doc.font('Helvetica').fontSize(9).fillColor('#E8D5E3').text('Accounting System', PAGE.margin + 46, 47);
+  doc.font('Helvetica-Bold').fontSize(18).fillColor('#FFFFFF').text(title, PAGE.margin, 24, { width: PAGE.contentWidth, align: 'right' });
+  doc.font('Helvetica').fontSize(9).fillColor('#E8D5E3').text(subtitle, PAGE.margin, 50, { width: PAGE.contentWidth, align: 'right' });
+  doc.rect(PAGE.margin, 78, PAGE.contentWidth, 2).fillColor('#FFFFFF').fill();
   pdf.y = 112;
 }
 

@@ -45,40 +45,40 @@ const DOC_COLUMNS: PdfColumn[] = [
 function drawDocumentHeader(pdf: PdfDoc, docType: 'INVOICE' | 'BILL', document: DocumentModel): void {
   const { doc } = pdf;
 
-  // Brand band
+  // Brand band — plum background
   doc
     .rect(0, 0, PAGE.width, 96)
-    .fillColor(COLORS.dark)
+    .fillColor(COLORS.brand)
     .fill();
 
-  // Logo mark
+  // Logo mark — white box
   doc
     .rect(PAGE.margin, 24, 34, 34)
-    .fillColor(COLORS.brand)
+    .fillColor('#FFFFFF')
     .fill();
   doc
     .font('Helvetica-Bold')
     .fontSize(12)
-    .fillColor(COLORS.lightText)
+    .fillColor(COLORS.brand)
     .text('UF', PAGE.margin + 9, 34);
 
-  // Company
+  // Company — white text
   doc
     .font('Helvetica-Bold')
     .fontSize(14)
-    .fillColor(COLORS.lightText)
+    .fillColor('#FFFFFF')
     .text('Urban Furniture', PAGE.margin + 46, 27);
   doc
     .font('Helvetica')
     .fontSize(9)
-    .fillColor(COLORS.headerSub)
+    .fillColor('#E8D5E3')
     .text('Accounting System', PAGE.margin + 46, 47);
 
-  // Document title (right)
+  // Document title (right) — white
   doc
     .font('Helvetica-Bold')
     .fontSize(18)
-    .fillColor(COLORS.brand)
+    .fillColor('#FFFFFF')
     .text(
       docType === 'INVOICE' ? 'CUSTOMER INVOICE' : 'VENDOR BILL',
       PAGE.margin,
@@ -88,11 +88,11 @@ function drawDocumentHeader(pdf: PdfDoc, docType: 'INVOICE' | 'BILL', document: 
   doc
     .font('Helvetica')
     .fontSize(9)
-    .fillColor(COLORS.headerSub)
+    .fillColor('#E8D5E3')
     .text(document.document_no, PAGE.margin, 50, { width: PAGE.contentWidth, align: 'right' });
 
-  // Accent line
-  doc.rect(PAGE.margin, 78, PAGE.contentWidth, 2).fillColor(COLORS.brand).fill();
+  // Accent line — white
+  doc.rect(PAGE.margin, 78, PAGE.contentWidth, 2).fillColor('#FFFFFF').fill();
 
   pdf.y = 112;
 }

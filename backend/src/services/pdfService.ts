@@ -51,16 +51,17 @@ export interface PdfRow {
 const FONT = 'Helvetica';
 const FONT_BOLD = 'Helvetica-Bold';
 
-/** Indian-format currency. */
+/** Indian-format currency — manual formatting to avoid font encoding issues. */
 export function money(v: number | string | null | undefined): string {
   const n = Number(v ?? 0);
   if (Number.isNaN(n)) return '—';
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  // Indian grouping: last 3 digits, then groups of 2
+  const [intPart, decPart] = abs.toFixed(2).split('.');
+  const intRev = intPart.split('').reverse().join('');
+  const grouped = intRev.replace(/(\d{3})(?=\d)/g, '$1,').replace(/(\d{2})(?=\d{2},)/g, '$1,').split('').reverse().join('');
+  return `${sign}Rs.${grouped}.${decPart}`;
 }
 
 export function cellText(v: string | number): string {
