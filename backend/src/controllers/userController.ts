@@ -95,6 +95,25 @@ export async function approveUser(req: Request, res: Response, next: NextFunctio
       data: { approvalStatus: 'approved', isActive: true },
     });
 
+    // Auto-create a customer contact from the approved user's name/email so
+    // they appear in Contacts immediately (skip if the email is taken).
+    const existingContact = await prisma.contact.findUnique({
+      where: { email: updated.email },
+    });
+    if (!existingContact) {
+      await prisma.contact
+        .create({
+          data: {
+            name: updated.name || updated.loginId,
+            email: updated.email,
+            contactType: 'customer',
+          },
+        })
+        .catch(() => {
+          // Race safety — a contact with this email may have been created meanwhile.
+        });
+    }
+
     await sendApprovalEmail(updated.email, updated.name);
     res.json(serializeUser(updated));
   } catch (err) { next(err); }

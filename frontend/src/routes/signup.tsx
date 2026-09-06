@@ -14,6 +14,7 @@ import {
   validateEmail,
   validateLoginId,
   validatePassword,
+  validateRequired,
 } from "@/lib/validation";
 
 export const Route = createFileRoute("/signup")({
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/signup")({
 function SignupPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    name: "",
     login_id: "",
     email: "",
     password: "",
@@ -51,11 +53,12 @@ function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [errors, setErrors] = useState<{
+    name: string | null;
     login_id: string | null;
     email: string | null;
     password: string | null;
     confirm_password: string | null;
-  }>({ login_id: null, email: null, password: null, confirm_password: null });
+  }>({ name: null, login_id: null, email: null, password: null, confirm_password: null });
 
   function set(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -66,6 +69,7 @@ function SignupPage() {
     event.preventDefault();
     if (submitting) return;
     const nextErrors = {
+      name: validateRequired(form.name, "Name"),
       login_id: validateLoginId(form.login_id),
       email: validateEmail(form.email),
       password: validatePassword(form.password),
@@ -116,6 +120,26 @@ function SignupPage() {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Full name</Label>
+            <Input
+              id="name"
+              autoComplete="name"
+              required
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              onBlur={() =>
+                setErrors((prev) => ({ ...prev, name: validateRequired(form.name, "Name") }))
+              }
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "name-error" : undefined}
+            />
+            {errors.name ? (
+              <p id="name-error" className="text-xs font-medium text-destructive">
+                {errors.name}
+              </p>
+            ) : null}
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="login_id">Login ID</Label>
             <Input
