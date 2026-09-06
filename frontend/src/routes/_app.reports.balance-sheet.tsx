@@ -62,16 +62,18 @@ function Page() {
 
       {query.data ? (
         <div className="space-y-6">
-          <FinancialStatementTable
-            title="Assets"
-            items={query.data.assets.items}
-            total={query.data.assets.total}
-          />
-          <FinancialStatementTable
-            title="Liabilities"
-            items={query.data.liabilities.items}
-            total={query.data.liabilities.total}
-          />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FinancialStatementTable
+              title="Assets"
+              items={query.data.assets.items}
+              total={query.data.assets.total}
+            />
+            <FinancialStatementTable
+              title="Liabilities"
+              items={query.data.liabilities.items}
+              total={query.data.liabilities.total}
+            />
+          </div>
           <BalanceCheck balanced={query.data.balance_check} />
         </div>
       ) : null}

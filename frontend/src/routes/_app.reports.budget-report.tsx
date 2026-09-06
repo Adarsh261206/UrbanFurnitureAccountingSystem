@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/States";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -246,16 +258,46 @@ function BudgetPieCharts({
     }).format(v);
 
   return (
-    <section aria-label="Budget charts" className="grid gap-4 lg:grid-cols-3">
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold text-foreground">Income vs Expense</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Committed amounts by type</p>
-        {byType.length > 0 ? (
+    <section aria-label="Budget charts" className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border bg-card p-5 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold text-foreground">Income vs Expense</h2>
+          <p className="mb-2 text-xs text-muted-foreground">Committed amounts by type</p>
+          {byType.length > 0 ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={byType}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    strokeWidth={2}
+                  >
+                    {byType.map((d, i) => (
+                      <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-sm text-muted-foreground">No committed budgets</p>
+          )}
+        </div>
+
+        <div className="rounded-lg border bg-card p-5 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold text-foreground">Budget Status</h2>
+          <p className="mb-2 text-xs text-muted-foreground">Count by status</p>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={byType}
+                  data={byStatus}
                   dataKey="value"
                   nameKey="name"
                   innerRadius={45}
@@ -263,62 +305,54 @@ function BudgetPieCharts({
                   paddingAngle={3}
                   strokeWidth={2}
                 >
-                  {byType.map((d, i) => (
-                    <Cell key={d.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  {byStatus.map((d) => (
+                    <Cell key={d.name} fill={d.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-        ) : (
-          <p className="py-10 text-center text-sm text-muted-foreground">No committed budgets</p>
-        )}
-      </div>
-
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-sm font-semibold text-foreground">Budget Status</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Count by status</p>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={byStatus}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={45}
-                outerRadius={80}
-                paddingAngle={3}
-                strokeWidth={2}
-              >
-                {byStatus.map((d) => (
-                  <Cell key={d.name} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
       <div className="rounded-lg border bg-card p-5 shadow-sm">
         <h2 className="mb-1 text-sm font-semibold text-foreground">Top Budgets by Amount</h2>
-        <p className="mb-2 text-xs text-muted-foreground">Largest committed budgets</p>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={byName} dataKey="value" nameKey="name" outerRadius={80} strokeWidth={2}>
-                {byName.map((d) => (
-                  <Cell key={d.name} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <p className="mb-3 text-xs text-muted-foreground">Largest committed budgets</p>
+        {byName.length > 0 ? (
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={byName}
+                layout="vertical"
+                margin={{ top: 0, right: 20, bottom: 0, left: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={180}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v: string) => (v.length > 24 ? `${v.slice(0, 22)}…` : v)}
+                />
+                <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                  {byName.map((d) => (
+                    <Cell key={d.name} fill={d.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="py-10 text-center text-sm text-muted-foreground">No budgets</p>
+        )}
       </div>
     </section>
   );

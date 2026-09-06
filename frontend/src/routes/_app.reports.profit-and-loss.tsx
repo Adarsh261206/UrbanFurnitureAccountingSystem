@@ -64,16 +64,18 @@ function Page() {
 
       {query.data ? (
         <div className="space-y-6">
-          <FinancialStatementTable
-            title="Income"
-            items={query.data.income.items}
-            total={query.data.income.total}
-          />
-          <FinancialStatementTable
-            title="Expenses"
-            items={query.data.expenses.items}
-            total={query.data.expenses.total}
-          />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FinancialStatementTable
+              title="Income"
+              items={query.data.income.items}
+              total={query.data.income.total}
+            />
+            <FinancialStatementTable
+              title="Expenses"
+              items={query.data.expenses.items}
+              total={query.data.expenses.total}
+            />
+          </div>
           <section
             className={cn(
               "flex items-center justify-between rounded-lg border px-5 py-4",
