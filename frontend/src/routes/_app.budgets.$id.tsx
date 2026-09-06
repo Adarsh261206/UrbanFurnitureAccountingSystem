@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { Cell, Pie, PieChart } from "recharts";
 import { toast } from "sonner";
 import { RequireRole } from "@/components/guards/RouteGuards";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -123,21 +124,70 @@ function Page() {
         <Detail label="Amount to achieve" value={money(budget.amount_to_achieve)} />
       </div>
 
-      {budget.status === "confirmed" || budget.status === "revised" ? (
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="font-medium text-foreground">Achievement</span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {money(budget.achieved_amount)} / {money(budget.committed_amount)}{" "}
-              <span className="ml-1 text-muted-foreground">
-                ({percent(budget.achieved_percentage)})
-              </span>
-            </span>
+      {(budget.status === "confirmed" || budget.status === "revised") &&
+      (budget.committed_amount ?? 0) > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-6 shadow-sm">
+            <PieChart width={180} height={180}>
+              <Pie
+                data={[
+                  {
+                    name: "Achieved",
+                    value: Math.min(budget.achieved_amount, budget.committed_amount ?? 0),
+                  },
+                  {
+                    name: "Balance",
+                    value: Math.max((budget.committed_amount ?? 0) - budget.achieved_amount, 0),
+                  },
+                ].filter((d) => d.value > 0)}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={75}
+                paddingAngle={3}
+                strokeWidth={2}
+              >
+                <Cell fill="#017E84" />
+                <Cell fill="#D97B6C" />
+              </Pie>
+            </PieChart>
+            <p className="mt-2 text-2xl font-bold text-foreground">
+              {percent(budget.achieved_percentage)}
+            </p>
+            <p className="text-xs text-muted-foreground">achieved</p>
           </div>
-          <Progress
-            value={Math.min(100, Math.max(0, budget.achieved_percentage ?? 0))}
-            className="mt-3 h-2"
-          />
+
+          <div className="rounded-lg border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-foreground">Achievement Details</h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Achieved</span>
+                  <span className="font-semibold text-foreground">
+                    {money(budget.achieved_amount)}
+                  </span>
+                </div>
+                <Progress
+                  value={Math.min(100, Math.max(0, budget.achieved_percentage ?? 0))}
+                  className="mt-2 h-2"
+                />
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Committed</span>
+                <span className="font-medium text-foreground">
+                  {money(budget.committed_amount)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Remaining</span>
+                <span className="font-medium text-foreground">
+                  {money(budget.amount_to_achieve)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
 

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { budgetsService } from "@/services/budgetsService";
-import { date as fmtDate, money, percent } from "@/lib/format";
+import { date as fmtDate, percent } from "@/lib/format";
 import type { BudgetListRow } from "@/types/api";
 
 export const Route = createFileRoute("/_app/budgets/")({
@@ -154,44 +154,23 @@ function Page() {
                   ariaLabel={`Open budget ${b.name}`}
                   onClick={() => navigate({ to: "/budgets/$id", params: { id: b.id } })}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium text-foreground">{b.name}</span>
-                      <span className="block truncate text-xs capitalize text-muted-foreground">
-                        {b.type} ·{" "}
-                        {typeof b.responsible === "string"
-                          ? b.responsible
-                          : ((b.responsible as { name?: string })?.name ?? "—")}
-                      </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                      {b.name}
                     </span>
                     <StatusBadge status={b.status} />
                   </div>
-                  <dl className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex justify-between gap-3">
-                      <dt>Committed</dt>
-                      <dd className="tabular-nums text-foreground">{money(b.committed_amount)}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Achieved</dt>
-                      <dd className="tabular-nums text-foreground">{money(b.achieved_amount)}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Achieved %</dt>
-                      <dd className="tabular-nums text-foreground">
-                        {percent(b.achieved_percentage)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>To achieve</dt>
-                      <dd className="tabular-nums text-foreground">{money(b.amount_to_achieve)}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt>Period</dt>
-                      <dd className="text-foreground">
-                        {fmtDate(b.start_date)} – {fmtDate(b.end_date)}
-                      </dd>
-                    </div>
-                  </dl>
+
+                  <div className="flex items-center justify-center py-1">
+                    <RowPie budget={b} />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="capitalize">{b.type}</span>
+                    <span>
+                      {fmtDate(b.start_date)} – {fmtDate(b.end_date)}
+                    </span>
+                  </div>
                 </KanbanCard>
               ))}
             </KanbanGrid>
