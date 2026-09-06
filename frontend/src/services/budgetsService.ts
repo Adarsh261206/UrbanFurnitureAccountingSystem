@@ -12,8 +12,9 @@ export interface BudgetInput {
 }
 
 export const budgetsService = {
-  list: (params: { page?: number; limit?: number; type?: string; status?: string } = {}) =>
-    http.get<BudgetList>("/budgets", { params }),
+  list: (
+    params: { page?: number; limit?: number; type?: string; status?: string; search?: string } = {},
+  ) => http.get<BudgetList>("/budgets", { params }),
   get: (id: string) => http.get<BudgetDetail>(`/budgets/${id}`),
   create: (body: BudgetInput) => http.post<BudgetDetail>("/budgets", body),
   /** Draft only. */

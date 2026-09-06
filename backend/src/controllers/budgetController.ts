@@ -13,6 +13,12 @@ export async function listBudgets(req: Request, res: Response, next: NextFunctio
     if (req.query.status) where.status = req.query.status;
     if (req.query.type) where.type = req.query.type;
     if (req.query.analytical_id) where.analyticalId = req.query.analytical_id;
+    if (req.query.search) {
+      where.OR = [
+        { name: { contains: req.query.search, mode: 'insensitive' } },
+        { responsible: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.budget.findMany({

@@ -11,10 +11,19 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (req.query.search) {
+      where.OR = [
+        { name: { contains: req.query.search, mode: 'insensitive' } },
+        { loginId: { contains: req.query.search, mode: 'insensitive' } },
+        { email: { contains: req.query.search, mode: 'insensitive' } },
+      ];
+    }
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      prisma.user.count(),
+      prisma.user.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.user.count({ where }),
     ]);
 
     res.json({ users: users.map(serializeUser), total, page, limit });

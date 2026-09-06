@@ -13,6 +13,12 @@ export async function listCreditNotes(req: Request, res: Response, next: NextFun
     if (req.query.status) where.status = req.query.status;
     if (req.query.type) where.type = req.query.type;
     if (req.query.contact_id) where.contactId = req.query.contact_id;
+    if (req.query.search) {
+      where.OR = [
+        { number: { contains: req.query.search, mode: 'insensitive' } },
+        { contact: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.creditNote.findMany({

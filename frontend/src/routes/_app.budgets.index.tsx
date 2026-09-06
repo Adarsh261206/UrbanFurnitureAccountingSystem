@@ -46,27 +46,28 @@ function Page() {
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [view, setView] = useState<ViewMode>("list");
 
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const query = useQuery({
-    queryKey: ["budgets", page, type, status],
+    queryKey: ["budgets", page, type, status, debouncedSearch],
     queryFn: () =>
       budgetsService.list({
         page,
         limit: LIMIT,
         type: type !== "all" ? type : undefined,
         status: status !== "all" ? status : undefined,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
   });
-
-  const filteredRows = useMemo(() => {
-    const rows = query.data?.budgets ?? [];
-    const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (b) => b.name.toLowerCase().includes(q) || b.responsible.toLowerCase().includes(q),
-    );
-  }, [query.data, search]);
 
   const columns: Column<BudgetListRow>[] = [
     {
@@ -158,55 +159,53 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.budgets.length > 0 ? (
-        filteredRows.length > 0 ? (
-          <div className="space-y-4">
-            {view === "list" ? (
-              <DataTable
-                columns={columns}
-                rows={filteredRows}
-                rowKey={(r) => r.id}
-                onRowClick={(r) => navigate({ to: "/budgets/$id", params: { id: r.id } })}
-                caption="Budgets"
-              />
-            ) : (
-              <KanbanGrid>
-                {filteredRows.map((b) => (
-                  <KanbanCard
-                    key={b.id}
-                    ariaLabel={`Open budget ${b.name}`}
-                    onClick={() => navigate({ to: "/budgets/$id", params: { id: b.id } })}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                        {b.name}
-                      </span>
-                      <StatusBadge status={b.status} />
-                    </div>
-
-                    <div className="flex items-center justify-center py-1">
-                      <RowPie budget={b} />
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span className="capitalize">{b.type}</span>
-                      <span>
-                        {fmtDate(b.start_date)} – {fmtDate(b.end_date)}
-                      </span>
-                    </div>
-                  </KanbanCard>
-                ))}
-              </KanbanGrid>
-            )}
-            <TablePagination
-              page={page}
-              limit={LIMIT}
-              total={query.data.total}
-              onPageChange={setPage}
+        <div className="space-y-4">
+          {view === "list" ? (
+            <DataTable
+              columns={columns}
+              rows={query.data.budgets}
+              rowKey={(r) => r.id}
+              onRowClick={(r) => navigate({ to: "/budgets/$id", params: { id: r.id } })}
+              caption="Budgets"
             />
-          </div>
-        ) : (
-          <EmptyState title="No matching records found" description="Try a different search." />
-        )
+          ) : (
+            <KanbanGrid>
+              {query.data.budgets.map((b) => (
+                <KanbanCard
+                  key={b.id}
+                  ariaLabel={`Open budget ${b.name}`}
+                  onClick={() => navigate({ to: "/budgets/$id", params: { id: b.id } })}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                      {b.name}
+                    </span>
+                    <StatusBadge status={b.status} />
+                  </div>
+
+                  <div className="flex items-center justify-center py-1">
+                    <RowPie budget={b} />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="capitalize">{b.type}</span>
+                    <span>
+                      {fmtDate(b.start_date)} – {fmtDate(b.end_date)}
+                    </span>
+                  </div>
+                </KanbanCard>
+              ))}
+            </KanbanGrid>
+          )}
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
+        </div>
+      ) : debouncedSearch ? (
+        <EmptyState title="No matching records found" description="Try a different search." />
       ) : (
         <EmptyState
           title="No budgets yet"

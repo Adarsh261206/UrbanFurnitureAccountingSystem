@@ -46,6 +46,7 @@ export const invoicesService = {
       limit?: number;
       status?: InvoiceStatus | "";
       customer_id?: string;
+      search?: string;
     } = {},
   ) => http.get<InvoiceList>("/invoices", { params }),
   get: (id: string) => http.get<InvoiceDetail>(`/invoices/${id}`),

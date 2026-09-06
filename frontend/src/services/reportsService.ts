@@ -23,6 +23,7 @@ export const paymentsService = {
       limit?: number;
       invoice_id?: string;
       vendor_bill_id?: string;
+      search?: string;
     } = {},
   ) => http.get<PaymentList>("/payments", { params }),
 };

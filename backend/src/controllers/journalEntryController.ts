@@ -18,6 +18,12 @@ export async function listJournalEntries(req: Request, res: Response, next: Next
       where.accountingDate = where.accountingDate || {};
       where.accountingDate.lte = new Date(req.query.date_to as string);
     }
+    if (req.query.search) {
+      where.OR = [
+        { entryNumber: { contains: req.query.search, mode: 'insensitive' } },
+        { journal: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.journalEntry.findMany({

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/guards/RouteGuards";
@@ -19,7 +19,6 @@ import { invoicesService } from "@/services/salesService";
 import { contactsService } from "@/services/masterDataService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { money, date } from "@/lib/format";
-import { enumLabel } from "@/lib/labels";
 import type { InvoiceListRow, InvoiceStatus } from "@/types/api";
 
 /** Reachable by admin, accountant and user (portal). No role restriction here. */
@@ -55,6 +54,15 @@ function InvoicesPage() {
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [customerId, setCustomerId] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all"],
@@ -63,13 +71,14 @@ function InvoicesPage() {
   });
 
   const query = useQuery({
-    queryKey: ["invoices", page, status, customerId],
+    queryKey: ["invoices", page, status, customerId, debouncedSearch],
     queryFn: () =>
       invoicesService.list({
         page,
         limit: LIMIT,
         ...(status ? { status } : {}),
         ...(canManage && customerId ? { customer_id: customerId } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
   });
 
@@ -92,16 +101,6 @@ function InvoicesPage() {
     { key: "amount_paid", header: "Paid", cell: (r) => money(r.amount_paid), align: "right" },
     { key: "amount_due", header: "Due", cell: (r) => money(r.amount_due), align: "right" },
   ];
-
-  const pageRows = query.data?.invoices ?? [];
-  const searchText = search.trim().toLowerCase();
-  const filteredRows = searchText
-    ? pageRows.filter((r) =>
-        [r.invoice_number, r.customer_name, enumLabel(r.status)]
-          .map((v) => v.toLowerCase())
-          .some((v) => v.includes(searchText)),
-      )
-    : pageRows;
 
   return (
     <div className="space-y-6">
@@ -171,33 +170,33 @@ function InvoicesPage() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : !query.data || query.data.invoices.length === 0 ? (
-        <EmptyState
-          title="No invoices yet"
-          description={
-            canManage
-              ? "Create an invoice directly, or confirm a sales order first."
-              : "No invoices have been issued to you yet."
-          }
-          action={
-            canManage ? (
-              <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button>
-            ) : undefined
-          }
-        />
+        debouncedSearch ? (
+          <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
+            No matching records found
+          </div>
+        ) : (
+          <EmptyState
+            title="No invoices yet"
+            description={
+              canManage
+                ? "Create an invoice directly, or confirm a sales order first."
+                : "No invoices have been issued to you yet."
+            }
+            action={
+              canManage ? (
+                <Button onClick={() => navigate({ to: "/invoices/new" })}>New invoice</Button>
+              ) : undefined
+            }
+          />
+        )
       ) : (
         <div className="space-y-4">
-          {filteredRows.length === 0 ? (
-            <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
-              No matching records found
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              rows={filteredRows}
-              rowKey={(r) => r.id}
-              onRowClick={(r) => navigate({ to: "/invoices/$id", params: { id: r.id } })}
-            />
-          )}
+          <DataTable
+            columns={columns}
+            rows={query.data.invoices}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => navigate({ to: "/invoices/$id", params: { id: r.id } })}
+          />
           <TablePagination
             page={page}
             limit={LIMIT}

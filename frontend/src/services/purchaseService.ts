@@ -41,6 +41,7 @@ export const billsService = {
       limit?: number;
       status?: InvoiceStatus | "";
       vendor_id?: string;
+      search?: string;
     } = {},
   ) => http.get<BillList>("/bills", { params }),
   get: (id: string) => http.get<BillDetail>(`/bills/${id}`),

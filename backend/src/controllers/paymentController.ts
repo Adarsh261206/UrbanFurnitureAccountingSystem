@@ -15,6 +15,13 @@ export async function listPayments(req: Request, res: Response, next: NextFuncti
     if (req.query.status) where.status = req.query.status;
     if (req.query.invoice_id) where.invoiceId = req.query.invoice_id;
     if (req.query.vendor_bill_id) where.vendorBillId = req.query.vendor_bill_id;
+    if (req.query.search) {
+      where.OR = [
+        { paymentNumber: { contains: req.query.search, mode: 'insensitive' } },
+        { invoice: { is: { invoiceNumber: { contains: req.query.search, mode: 'insensitive' } } } },
+        { vendorBill: { is: { billReference: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     if (req.user!.role === 'user') {
       const contact = await prisma.contact.findFirst({ where: { email: req.user!.email } });

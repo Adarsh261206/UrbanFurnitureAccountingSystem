@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireRole } from "@/components/guards/RouteGuards";
@@ -10,7 +10,6 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { billsService } from "@/services/purchaseService";
 import { money, date } from "@/lib/format";
-import { enumLabel } from "@/lib/labels";
 import type { BillListRow, InvoiceStatus } from "@/types/api";
 
 export const Route = createFileRoute("/_app/bills/")({
@@ -36,10 +35,25 @@ function Page() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const query = useQuery({
-    queryKey: ["bills", page, status],
-    queryFn: () => billsService.list({ page, limit: LIMIT, ...(status ? { status } : {}) }),
+    queryKey: ["bills", page, status, debouncedSearch],
+    queryFn: () =>
+      billsService.list({
+        page,
+        limit: LIMIT,
+        ...(status ? { status } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      }),
   });
 
   const columns: Column<BillListRow>[] = [
@@ -56,16 +70,6 @@ function Page() {
     { key: "amount_paid", header: "Paid", cell: (r) => money(r.amount_paid), align: "right" },
     { key: "amount_due", header: "Due", cell: (r) => money(r.amount_due), align: "right" },
   ];
-
-  const pageRows = query.data?.bills ?? [];
-  const searchText = search.trim().toLowerCase();
-  const filteredRows = searchText
-    ? pageRows.filter((r) =>
-        [r.bill_reference, r.vendor_name, enumLabel(r.status)]
-          .map((v) => v.toLowerCase())
-          .some((v) => v.includes(searchText)),
-      )
-    : pageRows;
 
   return (
     <div className="space-y-6">
@@ -113,25 +117,25 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : !query.data || query.data.bills.length === 0 ? (
-        <EmptyState
-          title="No bills yet"
-          description="Record a vendor bill to track amounts due."
-          action={<Button onClick={() => navigate({ to: "/bills/new" })}>New bill</Button>}
-        />
+        debouncedSearch ? (
+          <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
+            No matching records found
+          </div>
+        ) : (
+          <EmptyState
+            title="No bills yet"
+            description="Record a vendor bill to track amounts due."
+            action={<Button onClick={() => navigate({ to: "/bills/new" })}>New bill</Button>}
+          />
+        )
       ) : (
         <div className="space-y-4">
-          {filteredRows.length === 0 ? (
-            <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
-              No matching records found
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              rows={filteredRows}
-              rowKey={(r) => r.id}
-              onRowClick={(r) => navigate({ to: "/bills/$id", params: { id: r.id } })}
-            />
-          )}
+          <DataTable
+            columns={columns}
+            rows={query.data.bills}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => navigate({ to: "/bills/$id", params: { id: r.id } })}
+          />
           <TablePagination
             page={page}
             limit={LIMIT}

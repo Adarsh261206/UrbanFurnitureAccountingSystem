@@ -16,6 +16,13 @@ export async function listBills(req: Request, res: Response, next: NextFunction)
 
     if (req.query.status) where.status = req.query.status;
     if (req.query.vendor_id) where.vendorId = req.query.vendor_id;
+    if (req.query.search) {
+      where.OR = [
+        { billReference: { contains: req.query.search, mode: 'insensitive' } },
+        { vendorBillNo: { contains: req.query.search, mode: 'insensitive' } },
+        { vendor: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.vendorBill.findMany({

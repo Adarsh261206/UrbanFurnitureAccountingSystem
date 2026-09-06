@@ -22,6 +22,13 @@ export async function listInvoices(req: Request, res: Response, next: NextFuncti
 
     if (req.query.status) where.status = req.query.status;
     if (req.query.customer_id) where.customerId = req.query.customer_id;
+    if (req.query.search) {
+      where.OR = [
+        { invoiceNumber: { contains: req.query.search, mode: 'insensitive' } },
+        { invoiceReference: { contains: req.query.search, mode: 'insensitive' } },
+        { customer: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     if (req.user!.role === 'user') {
       const contactId = await getUserContactId(req.user);

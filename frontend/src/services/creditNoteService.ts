@@ -22,6 +22,7 @@ export const creditNotesService = {
       status?: CreditNoteStatus | "";
       type?: string;
       contact_id?: string;
+      search?: string;
     } = {},
   ) => http.get<CreditNoteList>("/credit-notes", { params }),
   get: (id: string) => http.get<CreditNoteDetail>(`/credit-notes/${id}`),

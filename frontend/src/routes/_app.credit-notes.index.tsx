@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -22,7 +22,6 @@ import { contactsService } from "@/services/masterDataService";
 import { useAuth } from "@/lib/auth/auth-context";
 import { errorMessage } from "@/lib/api/errors";
 import { money, date } from "@/lib/format";
-import { enumLabel } from "@/lib/labels";
 import type { CreditNoteListRow, CreditNoteStatus } from "@/types/api";
 
 export const Route = createFileRoute("/_app/credit-notes/")({
@@ -53,7 +52,16 @@ function CreditNotesPage() {
   const [type, setType] = useState("");
   const [contactId, setContactId] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const contactsQuery = useQuery({
     queryKey: ["contacts", "all"],
@@ -62,7 +70,7 @@ function CreditNotesPage() {
   });
 
   const query = useQuery({
-    queryKey: ["credit-notes", page, status, type, contactId],
+    queryKey: ["credit-notes", page, status, type, contactId, debouncedSearch],
     queryFn: () =>
       creditNotesService.list({
         page,
@@ -70,19 +78,9 @@ function CreditNotesPage() {
         ...(status ? { status } : {}),
         ...(type ? { type } : {}),
         ...(canManage && contactId ? { contact_id: contactId } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
   });
-
-  const q = search.trim().toLowerCase();
-  const rows = q
-    ? (query.data?.credit_notes ?? []).filter(
-        (r) =>
-          r.number.toLowerCase().includes(q) ||
-          r.contact_name.toLowerCase().includes(q) ||
-          enumLabel(r.type).toLowerCase().includes(q) ||
-          enumLabel(r.status).toLowerCase().includes(q),
-      )
-    : (query.data?.credit_notes ?? []);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => creditNotesService.delete(id),
@@ -211,15 +209,23 @@ function CreditNotesPage() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : !query.data || query.data.credit_notes.length === 0 ? (
-        <EmptyState
-          title="No credit notes yet"
-          description="Create a credit note to adjust amounts on invoices or bills."
-          action={
-            canManage ? (
-              <Button onClick={() => navigate({ to: "/credit-notes/new" })}>New credit note</Button>
-            ) : undefined
-          }
-        />
+        debouncedSearch ? (
+          <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            No matching records found
+          </div>
+        ) : (
+          <EmptyState
+            title="No credit notes yet"
+            description="Create a credit note to adjust amounts on invoices or bills."
+            action={
+              canManage ? (
+                <Button onClick={() => navigate({ to: "/credit-notes/new" })}>
+                  New credit note
+                </Button>
+              ) : undefined
+            }
+          />
+        )
       ) : (
         <div className="space-y-4">
           <SearchInput
@@ -232,26 +238,18 @@ function CreditNotesPage() {
             label="Search credit notes"
             className="max-w-sm"
           />
-          {q && rows.length === 0 ? (
-            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-              No matching records found
-            </div>
-          ) : (
-            <>
-              <DataTable
-                columns={columns}
-                rows={rows}
-                rowKey={(r) => r.id}
-                onRowClick={(r) => navigate({ to: "/credit-notes/$id", params: { id: r.id } })}
-              />
-              <TablePagination
-                page={page}
-                limit={LIMIT}
-                total={q ? rows.length : query.data.total}
-                onPageChange={setPage}
-              />
-            </>
-          )}
+          <DataTable
+            columns={columns}
+            rows={query.data.credit_notes}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => navigate({ to: "/credit-notes/$id", params: { id: r.id } })}
+          />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

@@ -31,7 +31,6 @@ import {
   contactsService,
 } from "@/services/masterDataService";
 import { date as fmtDate, money } from "@/lib/format";
-import { enumLabel } from "@/lib/labels";
 import type { JournalEntryRow } from "@/types/api";
 
 export const Route = createFileRoute("/_app/journal-entries/")({
@@ -64,12 +63,21 @@ function Page() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useMemo(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const journalsQuery = useQuery({ queryKey: ["journals"], queryFn: () => journalsService.list() });
 
   const query = useQuery({
-    queryKey: ["journal-entries", page, journalId, status, dateFrom, dateTo],
+    queryKey: ["journal-entries", page, journalId, status, dateFrom, dateTo, debouncedSearch],
     queryFn: () =>
       journalEntriesService.list({
         page,
@@ -78,6 +86,7 @@ function Page() {
         status: status !== "all" ? status : undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
   });
 
@@ -90,20 +99,9 @@ function Page() {
     setDateFrom("");
     setDateTo("");
     setSearch("");
+    setDebouncedSearch("");
     setPage(1);
   }
-
-  const filteredRows = useMemo(() => {
-    const rows = query.data?.journal_entries ?? [];
-    const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (r) =>
-        (r.reference ?? "").toLowerCase().includes(q) ||
-        r.journal_name.toLowerCase().includes(q) ||
-        enumLabel(r.status).toLowerCase().includes(q),
-    );
-  }, [query.data, search]);
 
   const columns: Column<JournalEntryRow>[] = [
     {
@@ -219,25 +217,23 @@ function Page() {
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : query.data && query.data.journal_entries.length > 0 ? (
-        filteredRows.length > 0 ? (
-          <div className="space-y-4">
-            <DataTable
-              columns={columns}
-              rows={filteredRows}
-              rowKey={(r) => r.id}
-              onRowClick={(r) => setSelectedId(r.id)}
-              caption="Journal entries"
-            />
-            <TablePagination
-              page={page}
-              limit={LIMIT}
-              total={query.data.total}
-              onPageChange={setPage}
-            />
-          </div>
-        ) : (
-          <EmptyState title="No matching records found" description="Try a different search." />
-        )
+        <div className="space-y-4">
+          <DataTable
+            columns={columns}
+            rows={query.data.journal_entries}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => setSelectedId(r.id)}
+            caption="Journal entries"
+          />
+          <TablePagination
+            page={page}
+            limit={LIMIT}
+            total={query.data.total}
+            onPageChange={setPage}
+          />
+        </div>
+      ) : debouncedSearch ? (
+        <EmptyState title="No matching records found" description="Try a different search." />
       ) : (
         <EmptyState
           title="No journal entries yet"

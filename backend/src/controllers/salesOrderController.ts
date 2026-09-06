@@ -36,6 +36,12 @@ export async function listSalesOrders(req: Request, res: Response, next: NextFun
 
     if (req.query.status) where.status = req.query.status;
     if (req.query.customer_id) where.customerId = req.query.customer_id;
+    if (req.query.search) {
+      where.OR = [
+        { soNumber: { contains: req.query.search, mode: 'insensitive' } },
+        { customer: { is: { name: { contains: req.query.search, mode: 'insensitive' } } } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.salesOrder.findMany({

@@ -183,6 +183,7 @@ export const journalEntriesService = {
       status?: string;
       date_from?: string;
       date_to?: string;
+      search?: string;
     } = {},
   ) => http.get<JournalEntryList>("/journal-entries", { params }),
   get: (id: string) => http.get<JournalEntryDetail>(`/journal-entries/${id}`),

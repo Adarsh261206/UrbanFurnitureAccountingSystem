@@ -12,6 +12,14 @@ export async function listContacts(req: Request, res: Response, next: NextFuncti
     const query: any = { ...req.query };
     const where: any = { deletedAt: null };
     if (query.contact_type) where.contactType = query.contact_type;
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+        { phone: { contains: query.search, mode: 'insensitive' } },
+        { city: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
     const result = await controller.list({ ...query, where });
     res.json({ contacts: result.data.map(serializeContact), total: result.total, page: result.page, limit: result.limit });
   } catch (err) { next(err); }
